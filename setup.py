@@ -8,7 +8,7 @@ import zhawss
 
 setup(
     name="zhawss",
-    version=zhawss.__version__,
+    version="2021.12.0",
     description="Library implementing a Zigbee websocket server",
     long_description=(pathlib.Path(__file__).parent / "README.md").read_text(),
     long_description_content_type="text/markdown",
