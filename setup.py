@@ -4,8 +4,6 @@ import pathlib
 
 from setuptools import find_packages, setup
 
-import zhawss
-
 setup(
     name="zhawss",
     version="2021.12.0",
