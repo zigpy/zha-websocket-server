@@ -1,0 +1,5 @@
+[run]
+source = zhawss
+
+omit =
+    zhawss/typing.py
