@@ -1,5 +1,10 @@
 """Constants."""
 
+
+COMMAND = "command"
+COMMAND_START_NETWORK = "start_network"
+COMMAND_STOP_NETWORK = "stop_network"
+
 CONF_BAUDRATE = "baudrate"
 CONF_CUSTOM_QUIRKS_PATH = "custom_quirks_path"
 CONF_DATABASE = "database_path"

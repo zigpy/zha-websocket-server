@@ -9,25 +9,29 @@ from application.controller import Controller
 import uvloop
 import websockets
 
+from zhawss.const import COMMAND, COMMAND_START_NETWORK, COMMAND_STOP_NETWORK
+
 HANDLERS: Dict[str, Callable] = {}
+_LOGGER = logging.getLogger(__name__)
 
 
 if __name__ == "__main__":
     uvloop.install()
-    _LOGGER = logging.getLogger(__name__)
     logging.basicConfig(level=logging.DEBUG)
     waiter = asyncio.Future()
+    controller: Controller = Controller(waiter)
 
     async def handler(websocket):
-        controller: Controller = Controller(websocket)
+        """Websocket handler."""
+
+        # maybe use a decorator to do this somehow
+        HANDLERS[COMMAND_START_NETWORK] = controller.start_network
+        HANDLERS[COMMAND_STOP_NETWORK] = controller.stop_network
+
         async for message in websocket:
             message = json.loads(message)
-            print(message)
-            if message["type"] == "start":
-                await controller.start_network(message["data"]["configuration"])
-            if message["type"] == "stop":
-                await controller.stop_network()
-                waiter.set_result(True)
+            _LOGGER.info("received websocket message: %s", message)
+            await HANDLERS[message[COMMAND]](message)
 
     async def main():
         async with websockets.serve(handler, "", 8001, logger=_LOGGER):

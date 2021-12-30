@@ -1,14 +1,16 @@
 """Controller for zha web socket server."""
 import asyncio
+from asyncio.futures import Future
 import logging
 
 from bellows.zigbee.application import ControllerApplication
 from serial.serialutil import SerialException
+from zhaquirks import setup as setup_quirks
 from zigpy.device import Device
 from zigpy.endpoint import Endpoint
 from zigpy.group import Group
 
-from zhawss.const import CONF_RADIO_TYPE
+from zhawss.const import CONF_ENABLE_QUIRKS, CONF_RADIO_TYPE
 from zhawss.radio import RadioType
 
 _LOGGER = logging.getLogger(__name__)
@@ -17,14 +19,16 @@ _LOGGER = logging.getLogger(__name__)
 class Controller:
     """Controller for the Zigbee application."""
 
-    def __init__(self, websocket):
+    def __init__(self, waiter: Future):
         """Initialize the controller."""
         self.application_controller: ControllerApplication = None
-        self._websocket = websocket
+        self._waiter: Future = waiter
         self.radio_description: str = None
 
     async def start_network(self, configuration):
         """Start the Zigbee network."""
+        if configuration.get(CONF_ENABLE_QUIRKS):
+            setup_quirks(configuration)
         radio_type = configuration[CONF_RADIO_TYPE]
         app_controller_cls = RadioType[radio_type].controller
         self.radio_description = RadioType[radio_type].description
@@ -40,9 +44,10 @@ class Controller:
                 exc_info=exception,
             )
 
-    async def stop_network(self):
+    async def stop_network(self, _):
         """Stop the Zigbee network."""
         await self.application_controller.pre_shutdown()
+        self._waiter.set_result(True)
 
     async def get_devices(self):
         """Stop the Zigbee network."""

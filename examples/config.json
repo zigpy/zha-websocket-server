@@ -5,5 +5,6 @@
     "flow_control": "software",
     "baudrate": 57600
   },
-  "database_path": "./zigbee.db"
+  "database_path": "./zigbee.db",
+  "enable_quirks": true
 }
