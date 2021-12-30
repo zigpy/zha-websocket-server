@@ -1,0 +1,14 @@
+{
+  "type": "start",
+  "data": {
+    "configuration": {
+      "radio_type": "ezsp",
+      "device": {
+        "path": "/dev/cu.GoControl_zigbee\u0011",
+        "flow_control": "software",
+        "baudrate": 57600
+      },
+      "database_path": "./zigbee.db"
+    }
+  }
+}

@@ -1,6 +1,7 @@
 """Websocket application to run a zigpy Zigbee network."""
 
 import asyncio
+import json
 import logging
 from typing import Callable, Dict
 
@@ -16,21 +17,15 @@ if __name__ == "__main__":
     _LOGGER = logging.getLogger(__name__)
     logging.basicConfig(level=logging.DEBUG)
     waiter = asyncio.Future()
-    app_config = {}
-    app_config["database_path"] = "./zigbee.db"
-    app_config["device"] = {
-        "path": "/dev/cu.GoControl_zigbee\u0011",
-        "flow_control": "software",
-        "baudrate": 57600,
-    }
 
     async def handler(websocket):
         controller: Controller = Controller(websocket)
         async for message in websocket:
+            message = json.loads(message)
             print(message)
-            if message == "start":
-                await controller.start_network(app_config)
-            if message == "stop":
+            if message["type"] == "start":
+                await controller.start_network(message["data"]["configuration"])
+            if message["type"] == "stop":
                 await controller.stop_network()
                 waiter.set_result(True)
 

@@ -8,6 +8,9 @@ from zigpy.device import Device
 from zigpy.endpoint import Endpoint
 from zigpy.group import Group
 
+from zhawss.const import CONF_RADIO_TYPE
+from zhawss.radio import RadioType
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -18,18 +21,22 @@ class Controller:
         """Initialize the controller."""
         self.application_controller: ControllerApplication = None
         self._websocket = websocket
+        self.radio_description: str = None
 
     async def start_network(self, configuration):
         """Start the Zigbee network."""
-        controller_config = ControllerApplication.SCHEMA(configuration)
+        radio_type = configuration[CONF_RADIO_TYPE]
+        app_controller_cls = RadioType[radio_type].controller
+        self.radio_description = RadioType[radio_type].description
+        controller_config = app_controller_cls.SCHEMA(configuration)
         try:
-            self.application_controller = await ControllerApplication.new(
+            self.application_controller = await app_controller_cls.new(
                 controller_config, auto_form=True, start_radio=True
             )
         except (asyncio.TimeoutError, SerialException, OSError) as exception:
             _LOGGER.error(
                 "Couldn't start %s coordinator",
-                "/dev/cu.GoControl_zigbee\u0011",
+                self.radio_description,
                 exc_info=exception,
             )
 

@@ -18,7 +18,15 @@ setup(
     install_requires=[
         "websockets",
         "voluptuous",
+        "uvloop",
         "zigpy>=0.42.0",
+        "bellows==0.29.0",
+        "zha-quirks==0.0.65",
+        "zigpy-deconz==0.14.0",
+        "zigpy==0.42.0",
+        "zigpy-xbee==0.14.0",
+        "zigpy-zigate==0.7.3",
+        "zigpy-znp==0.6.4",
     ],
     package_data={"": ["appdb_schemas/schema_v*.sql"]},
 )
