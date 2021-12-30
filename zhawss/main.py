@@ -5,6 +5,7 @@ import json
 import logging
 from typing import Callable, Dict
 
+from colorlog import ColoredFormatter
 import uvloop
 import voluptuous as vol
 import websockets
@@ -19,7 +20,24 @@ _LOGGER = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     uvloop.install()
+    fmt = "%(asctime)s %(levelname)s (%(threadName)s) [%(name)s] %(message)s"
+    datefmt = "%Y-%m-%d %H:%M:%S"
+    colorfmt = f"%(log_color)s{fmt}%(reset)s"
     logging.basicConfig(level=logging.DEBUG)
+    logging.getLogger().handlers[0].setFormatter(
+        ColoredFormatter(
+            colorfmt,
+            datefmt=datefmt,
+            reset=True,
+            log_colors={
+                "DEBUG": "cyan",
+                "INFO": "green",
+                "WARNING": "yellow",
+                "ERROR": "red",
+                "CRITICAL": "red",
+            },
+        )
+    )
     waiter = asyncio.Future()
     controller: Controller = Controller(waiter)
 
