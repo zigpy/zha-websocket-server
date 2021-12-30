@@ -2,6 +2,7 @@
 import asyncio
 from asyncio.futures import Future
 import logging
+from typing import Any, Dict
 
 from bellows.zigbee.application import ControllerApplication
 from serial.serialutil import SerialException
@@ -12,6 +13,7 @@ from zigpy.group import Group
 
 from zhawss.const import CONF_ENABLE_QUIRKS, CONF_RADIO_TYPE
 from zhawss.radio import RadioType
+from zhawss.websocket_api.api import load_api
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,6 +26,8 @@ class Controller:
         self.application_controller: ControllerApplication = None
         self._waiter: Future = waiter
         self.radio_description: str = None
+        self.data: Dict[str, Any] = {}
+        load_api(self)
 
     async def start_network(self, configuration):
         """Start the Zigbee network."""

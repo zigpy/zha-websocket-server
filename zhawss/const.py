@@ -16,3 +16,5 @@ CONF_FLOWCONTROL = "flow_control"
 CONF_RADIO_TYPE = "radio_type"
 CONF_USB_PATH = "usb_path"
 CONF_ZIGPY = "zigpy_config"
+
+WEBSOCKET_API = "websocket_api"

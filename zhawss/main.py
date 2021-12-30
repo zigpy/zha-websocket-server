@@ -5,11 +5,13 @@ import json
 import logging
 from typing import Callable, Dict
 
-from application.controller import Controller
 import uvloop
+import voluptuous as vol
 import websockets
 
-from zhawss.const import COMMAND, COMMAND_START_NETWORK, COMMAND_STOP_NETWORK
+from zhawss.application.controller import Controller
+from zhawss.const import COMMAND, WEBSOCKET_API
+from zhawss.websocket_api.decorators import MINIMAL_MESSAGE_SCHEMA
 
 HANDLERS: Dict[str, Callable] = {}
 _LOGGER = logging.getLogger(__name__)
@@ -24,14 +26,30 @@ if __name__ == "__main__":
     async def handler(websocket):
         """Websocket handler."""
 
-        # maybe use a decorator to do this somehow
-        HANDLERS[COMMAND_START_NETWORK] = controller.start_network
-        HANDLERS[COMMAND_STOP_NETWORK] = controller.stop_network
-
         async for message in websocket:
+
+            handlers = controller.data[WEBSOCKET_API]
+
             message = json.loads(message)
-            _LOGGER.info("received websocket message: %s", message)
-            await HANDLERS[message[COMMAND]](message)
+            _LOGGER.info("Received message on websocket: %s", message)
+
+            try:
+                msg = MINIMAL_MESSAGE_SCHEMA(message)
+            except vol.Invalid:
+                _LOGGER.error("Received invalid command", message)
+                continue
+
+            if msg[COMMAND] not in handlers:
+                _LOGGER.error("Received invalid command: {}".format(msg[COMMAND]))
+                continue
+
+            handler, schema = handlers[msg[COMMAND]]
+
+            try:
+                handler(controller, websocket, schema(msg))
+            except Exception as err:  # pylint: disable=broad-except
+                # TODO Fix this
+                websocket.async_handle_exception(msg, err)
 
     async def main():
         async with websockets.serve(handler, "", 8001, logger=_LOGGER):
