@@ -144,4 +144,8 @@ class ClientManager:
     def broadcast(self, message: dict[str, Any]):
         """Broadcast a message to all connected clients."""
         for client in self._clients:
-            client.send_event(message)
+            if client.is_connected:
+                client.send_event(message)
+            else:
+                client.disconnect()
+                self._clients.remove(client)
