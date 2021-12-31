@@ -2,6 +2,7 @@
 
 import json
 import logging
+from typing import Any
 
 import voluptuous as vol
 from zigpy.config import CONF_DEVICE, CONF_DEVICE_PATH
@@ -21,6 +22,7 @@ from zhawss.const import (
     DEVICES,
     DURATION,
 )
+from zhawss.types import ControllerType
 
 from . import async_register_command, decorators
 
@@ -43,7 +45,9 @@ _LOGGER = logging.getLogger(__name__)
         vol.Required(CONF_ENABLE_QUIRKS): bool,
     }
 )
-async def start_network(controller, websocket, message):
+async def start_network(
+    controller: ControllerType, websocket, message: dict[str, Any]
+) -> None:
     """Start the Zigbee network."""
     await controller.start_network(message)
 
@@ -54,7 +58,9 @@ async def start_network(controller, websocket, message):
         vol.Required(COMMAND): COMMAND_STOP_NETWORK,
     }
 )
-async def stop_network(controller, websocket, message):
+async def stop_network(
+    controller: ControllerType, websocket, message: dict[str, Any]
+) -> None:
     """Stop the Zigbee network."""
     await controller.stop_network(message)
 
@@ -65,7 +71,9 @@ async def stop_network(controller, websocket, message):
         vol.Required(COMMAND): COMMAND_GET_DEVICES,
     }
 )
-async def get_devices(controller, websocket, message):
+async def get_devices(
+    controller: ControllerType, websocket, message: dict[str, Any]
+) -> None:
     """Get Zigbee devices."""
     devices: list[Device] = controller.get_devices()
     _LOGGER.info("devices: %s", devices)
@@ -90,12 +98,14 @@ async def get_devices(controller, websocket, message):
         vol.Optional(DURATION, default=60): vol.All(vol.Coerce(int), vol.Range(0, 254)),
     }
 )
-async def permit_joining(controller, websocket, message):
+async def permit_joining(
+    controller: ControllerType, websocket, message: dict[str, Any]
+) -> None:
     """Permit joining devices to the Zigbee network."""
     await controller.application_controller.permit(message[DURATION])
 
 
-def load_api(controller):
+def load_api(controller) -> None:
     """Load the api command handlers."""
     async_register_command(controller, start_network)
     async_register_command(controller, stop_network)

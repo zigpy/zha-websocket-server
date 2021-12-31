@@ -14,7 +14,6 @@ from zhawss.application.controller import Controller
 from zhawss.const import COMMAND, WEBSOCKET_API
 from zhawss.websocket_api.decorators import MINIMAL_MESSAGE_SCHEMA
 
-HANDLERS: Dict[str, Callable] = {}
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -46,7 +45,7 @@ if __name__ == "__main__":
 
         async for message in websocket:
 
-            handlers = controller.data[WEBSOCKET_API]
+            handlers: Dict[str, Callable] = controller.data[WEBSOCKET_API]
 
             message = json.loads(message)
             _LOGGER.info("Received message on websocket: %s", message)

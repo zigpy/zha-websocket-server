@@ -9,6 +9,7 @@ from typing import Any, Awaitable, Dict, Final
 import voluptuous as vol
 
 from zhawss.const import COMMAND
+from zhawss.types import ControllerType
 
 POSITIVE_INT = vol.All(vol.Coerce(int), vol.Range(min=0))
 
@@ -22,7 +23,7 @@ MINIMAL_MESSAGE_SCHEMA: Final = vol.Schema(
 
 async def _handle_async_response(
     func: AsyncWebSocketCommandHandler,
-    controller,
+    controller: ControllerType,
     websocket,
     msg: dict[str, Any],
 ) -> None:
@@ -40,7 +41,9 @@ def async_response(
     """Decorate an async function to handle WebSocket API messages."""
 
     @wraps(func)
-    def schedule_handler(controller, websocket, msg: dict[str, Any]) -> None:
+    def schedule_handler(
+        controller: ControllerType, websocket, msg: dict[str, Any]
+    ) -> None:
         """Schedule the handler."""
         # As the webserver is now started before the start
         # event we do not want to block for websocket responders
