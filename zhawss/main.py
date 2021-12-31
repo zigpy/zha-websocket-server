@@ -33,16 +33,14 @@ if __name__ == "__main__":
             },
         )
     )
-    waiter = asyncio.Future()
+    waiter: asyncio.Future = asyncio.Future()
     controller: Controller = Controller(waiter)
     client_manager: ClientManager = ClientManager(controller)
 
-    async def handler(websocket):
-        """Websocket handler."""
-        await client_manager.add_client(websocket)
-
     async def main():
-        async with websockets.serve(handler, "", 8001, logger=_LOGGER):
+        async with websockets.serve(
+            client_manager.add_client, "", 8001, logger=_LOGGER
+        ):
             await waiter
 
     asyncio.get_event_loop().run_until_complete(main())

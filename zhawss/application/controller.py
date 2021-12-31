@@ -58,6 +58,7 @@ class Controller:
 
     def get_devices(self) -> list[Device]:
         """Get Zigbee devices."""
+        # temporary to test response
         return list(self.application_controller.devices.values())
 
     def get_groups(self):
