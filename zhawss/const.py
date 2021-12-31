@@ -10,6 +10,7 @@ COMMAND_GET_DEVICES = "get_devices"
 COMMAND_PERMIT_JOINING = "permit_joining"
 COMMAND_START_NETWORK = "start_network"
 COMMAND_STOP_NETWORK = "stop_network"
+COMMAND_STOP_SERVER = "stop_server"
 
 CONF_BAUDRATE = "baudrate"
 CONF_CUSTOM_QUIRKS_PATH = "custom_quirks_path"

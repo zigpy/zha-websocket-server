@@ -140,3 +140,8 @@ class ClientManager:
         client: Client = Client(websocket, self, self._controller)
         self._clients.append(client)
         await client.listen()
+
+    def broadcast(self, message: dict[str, Any]):
+        """Broadcast a message to all connected clients."""
+        for client in self._clients:
+            client.send_event(message)

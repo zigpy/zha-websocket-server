@@ -14,6 +14,7 @@ from zhawss.const import (
     COMMAND_PERMIT_JOINING,
     COMMAND_START_NETWORK,
     COMMAND_STOP_NETWORK,
+    COMMAND_STOP_SERVER,
     CONF_BAUDRATE,
     CONF_DATABASE,
     CONF_ENABLE_QUIRKS,
@@ -71,6 +72,20 @@ async def stop_network(
 @decorators.async_response
 @decorators.websocket_command(
     {
+        vol.Required(COMMAND): COMMAND_STOP_SERVER,
+    }
+)
+async def stop_server(
+    controller: ControllerType, client: Client, message: dict[str, Any]
+) -> None:
+    """Stop the Zigbee network."""
+    await controller.stop_server(message)
+    client.send_result_success(message[MESSAGE_ID], {})
+
+
+@decorators.async_response
+@decorators.websocket_command(
+    {
         vol.Required(COMMAND): COMMAND_GET_DEVICES,
     }
 )
@@ -114,3 +129,4 @@ def load_api(controller) -> None:
     async_register_command(controller, stop_network)
     async_register_command(controller, get_devices)
     async_register_command(controller, permit_joining)
+    async_register_command(controller, stop_server)

@@ -51,6 +51,9 @@ class Controller:
     async def stop_network(self, _):
         """Stop the Zigbee network."""
         await self.application_controller.pre_shutdown()
+
+    async def stop_server(self, _):
+        """Stop the websocket server."""
         self._waiter.set_result(True)
 
     def get_devices(self) -> list[Device]:
