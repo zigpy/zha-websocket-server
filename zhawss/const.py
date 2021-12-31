@@ -2,6 +2,8 @@
 
 
 COMMAND = "command"
+COMMAND_GET_DEVICES = "get_devices"
+COMMAND_PERMIT_JOINING = "permit_joining"
 COMMAND_START_NETWORK = "start_network"
 COMMAND_STOP_NETWORK = "stop_network"
 
@@ -17,4 +19,6 @@ CONF_RADIO_TYPE = "radio_type"
 CONF_USB_PATH = "usb_path"
 CONF_ZIGPY = "zigpy_config"
 
+DEVICES = "devices"
+DURATION = "duration"
 WEBSOCKET_API = "websocket_api"

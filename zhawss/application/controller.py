@@ -53,11 +53,12 @@ class Controller:
         await self.application_controller.pre_shutdown()
         self._waiter.set_result(True)
 
-    async def get_devices(self):
-        """Stop the Zigbee network."""
+    def get_devices(self) -> list[Device]:
+        """Get Zigbee devices."""
+        return list(self.application_controller.devices.values())
 
-    async def get_groups(self):
-        """Stop the Zigbee network."""
+    def get_groups(self):
+        """Get Zigbee groups."""
 
     def device_joined(self, device: Device):
         """Handle device joined.

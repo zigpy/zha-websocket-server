@@ -1,10 +1,16 @@
 """Websocket API for zhawss."""
 
+import json
+import logging
+
 import voluptuous as vol
 from zigpy.config import CONF_DEVICE, CONF_DEVICE_PATH
+from zigpy.device import Device
 
 from zhawss.const import (
     COMMAND,
+    COMMAND_GET_DEVICES,
+    COMMAND_PERMIT_JOINING,
     COMMAND_START_NETWORK,
     COMMAND_STOP_NETWORK,
     CONF_BAUDRATE,
@@ -12,9 +18,13 @@ from zhawss.const import (
     CONF_ENABLE_QUIRKS,
     CONF_FLOWCONTROL,
     CONF_RADIO_TYPE,
+    DEVICES,
+    DURATION,
 )
 
 from . import async_register_command, decorators
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @decorators.async_response
@@ -49,7 +59,45 @@ async def stop_network(controller, websocket, message):
     await controller.stop_network(message)
 
 
+@decorators.async_response
+@decorators.websocket_command(
+    {
+        vol.Required(COMMAND): COMMAND_GET_DEVICES,
+    }
+)
+async def get_devices(controller, websocket, message):
+    """Get Zigbee devices."""
+    devices: list[Device] = controller.get_devices()
+    _LOGGER.info("devices: %s", devices)
+    output = [
+        {
+            "ieee": str(device.ieee),
+            "nwk": device.nwk,
+            "manufacturer": device.manufacturer,
+            "model": device.model,
+            "status": device.status.name,
+        }
+        for device in devices
+    ]
+    message[DEVICES] = output
+    await websocket.send(json.dumps(message))
+
+
+@decorators.async_response
+@decorators.websocket_command(
+    {
+        vol.Required(COMMAND): COMMAND_PERMIT_JOINING,
+        vol.Optional(DURATION, default=60): vol.All(vol.Coerce(int), vol.Range(0, 254)),
+    }
+)
+async def permit_joining(controller, websocket, message):
+    """Permit joining devices to the Zigbee network."""
+    await controller.application_controller.permit(message[DURATION])
+
+
 def load_api(controller):
     """Load the api command handlers."""
     async_register_command(controller, start_network)
     async_register_command(controller, stop_network)
+    async_register_command(controller, get_devices)
+    async_register_command(controller, permit_joining)

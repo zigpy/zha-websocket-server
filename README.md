@@ -17,6 +17,6 @@ Open another terminal at the root of the project and run the following command:
 python -m websockets ws://localhost:8001/
 ```
 
-To start the server modify the content of the `start.json` file in the examples directory to match your radio and paste it as a single line into the console and press return / enter
+To start the server modify the content of the `start_network.json` file in the examples directory to match your radio and paste it as a single line into the console and press return / enter
 
-to stop the server paste the content of the `stop.json` file into the prompt in the console as a single line and press return / enter
+to stop the server paste the content of the `stop_network.json` file into the prompt in the console as a single line and press return / enter
