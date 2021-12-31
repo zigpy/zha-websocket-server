@@ -1,6 +1,5 @@
 """Websocket API for zhawss."""
 
-import json
 import logging
 from typing import Any
 
@@ -8,6 +7,7 @@ import voluptuous as vol
 from zigpy.config import CONF_DEVICE, CONF_DEVICE_PATH
 from zigpy.device import Device
 
+from zhawss.application.client import Client
 from zhawss.const import (
     COMMAND,
     COMMAND_GET_DEVICES,
@@ -21,6 +21,7 @@ from zhawss.const import (
     CONF_RADIO_TYPE,
     DEVICES,
     DURATION,
+    MESSAGE_ID,
 )
 from zhawss.types import ControllerType
 
@@ -46,10 +47,11 @@ _LOGGER = logging.getLogger(__name__)
     }
 )
 async def start_network(
-    controller: ControllerType, websocket, message: dict[str, Any]
+    controller: ControllerType, client: Client, message: dict[str, Any]
 ) -> None:
     """Start the Zigbee network."""
     await controller.start_network(message)
+    client.send_result_success(message[MESSAGE_ID], {})
 
 
 @decorators.async_response
@@ -59,10 +61,11 @@ async def start_network(
     }
 )
 async def stop_network(
-    controller: ControllerType, websocket, message: dict[str, Any]
+    controller: ControllerType, client: Client, message: dict[str, Any]
 ) -> None:
     """Stop the Zigbee network."""
     await controller.stop_network(message)
+    client.send_result_success(message[MESSAGE_ID], {})
 
 
 @decorators.async_response
@@ -72,7 +75,7 @@ async def stop_network(
     }
 )
 async def get_devices(
-    controller: ControllerType, websocket, message: dict[str, Any]
+    controller: ControllerType, client: Client, message: dict[str, Any]
 ) -> None:
     """Get Zigbee devices."""
     devices: list[Device] = controller.get_devices()
@@ -87,8 +90,7 @@ async def get_devices(
         }
         for device in devices
     ]
-    message[DEVICES] = output
-    await websocket.send(json.dumps(message))
+    client.send_result_success(message[MESSAGE_ID], {DEVICES: output})
 
 
 @decorators.async_response
@@ -99,10 +101,11 @@ async def get_devices(
     }
 )
 async def permit_joining(
-    controller: ControllerType, websocket, message: dict[str, Any]
+    controller: ControllerType, client: Client, message: dict[str, Any]
 ) -> None:
     """Permit joining devices to the Zigbee network."""
     await controller.application_controller.permit(message[DURATION])
+    client.send_result_success(message[MESSAGE_ID], {DURATION: message[DURATION]})
 
 
 def load_api(controller) -> None:

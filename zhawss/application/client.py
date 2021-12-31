@@ -2,14 +2,24 @@
 import asyncio
 import json
 import logging
-from typing import Any, Awaitable, Dict
+from typing import Any, Awaitable
 
 import voluptuous
 from websockets.server import WebSocketServerProtocol
 
-from zhawss.const import COMMAND, WEBSOCKET_API
+from zhawss.const import (
+    COMMAND,
+    ERROR_CODE,
+    MESSAGE_ID,
+    MESSAGE_TYPE,
+    MESSAGE_TYPE_EVENT,
+    MESSAGE_TYPE_RESULT,
+    MINIMAL_MESSAGE_SCHEMA,
+    SUCCESS,
+    WEBSOCKET_API,
+    ZIGBEE_ERROR_CODE,
+)
 from zhawss.types import ControllerType
-from zhawss.websocket_api.decorators import MINIMAL_MESSAGE_SCHEMA
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,19 +47,44 @@ class Client:
         """Disconnect this client and close the websocket."""
         asyncio.create_task(self._websocket.close())
 
-    def send_event(self):
+    def send_event(self, message: dict[str, Any]):
         """Send event data to this client."""
+        message[MESSAGE_TYPE] = MESSAGE_TYPE_EVENT
+        self._send_data(message)
 
-    def send_result_success(self):
+    def send_result_success(self, message_id: str, message: dict[str, Any]):
         """Send success result prompted by a client request."""
+        message[SUCCESS] = True
+        message[MESSAGE_ID] = message_id
+        message[MESSAGE_TYPE] = MESSAGE_TYPE_RESULT
+        self._send_data(message)
 
-    def send_result_error(self):
+    def send_result_error(
+        self, message_id: str, error_code: str, message: dict[str, Any]
+    ):
         """Send error result prompted by a client request."""
+        message[SUCCESS] = False
+        message[MESSAGE_ID] = message_id
+        message[ERROR_CODE] = error_code
+        message[MESSAGE_TYPE] = MESSAGE_TYPE_RESULT
+        self._send_data(message)
 
-    def send_result_zigbee_error(self):
+    def send_result_zigbee_error(
+        self,
+        message_id: str,
+        error_code: str,
+        zigbee_error_code: str,
+        message: dict[str, Any],
+    ):
         """Send zigbee error result prompted by a client zigbee request."""
+        message[SUCCESS] = False
+        message[MESSAGE_ID] = message_id
+        message[ERROR_CODE] = error_code
+        message[ZIGBEE_ERROR_CODE] = zigbee_error_code
+        message[MESSAGE_TYPE] = MESSAGE_TYPE_RESULT
+        self._send_data(message)
 
-    def _send_data(self, data: Any):
+    def _send_data(self, data: dict[str, Any]):
         """Send data to this client."""
         try:
             message = json.dumps(data)
@@ -60,10 +95,12 @@ class Client:
     async def _handle_incoming_message(self, message):
         """Handle an incoming message."""
         _LOGGER.info("Message received: %s", message)
-        handlers: Dict[str, Awaitable] = self._controller.data[WEBSOCKET_API]
+        handlers: dict[str, Awaitable] = self._controller.data[WEBSOCKET_API]
 
         message = json.loads(message)
-        _LOGGER.info("Received message: %s on websocket: %s", message, self._websocket)
+        _LOGGER.info(
+            "Received message: %s on websocket: %s", message, self._websocket.id
+        )
 
         try:
             msg = MINIMAL_MESSAGE_SCHEMA(message)
@@ -78,7 +115,7 @@ class Client:
         handler, schema = handlers[msg[COMMAND]]
 
         try:
-            handler(self._controller, self._websocket, schema(msg))
+            handler(self._controller, self, schema(msg))
         except Exception as err:  # pylint: disable=broad-except
             # TODO Fix this
             _LOGGER.error(
@@ -97,7 +134,6 @@ class ClientManager:
         """Initialize the client."""
         self._clients: list[Client] = []
         self._controller: ControllerType = controller
-        self._tasks: list[Awaitable] = []
 
     async def add_client(self, websocket):
         """Adds a new client to the client manager."""

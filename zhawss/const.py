@@ -1,6 +1,10 @@
 """Constants."""
 
 
+from typing import Final
+
+import voluptuous
+
 COMMAND = "command"
 COMMAND_GET_DEVICES = "get_devices"
 COMMAND_PERMIT_JOINING = "permit_joining"
@@ -19,6 +23,19 @@ CONF_RADIO_TYPE = "radio_type"
 CONF_USB_PATH = "usb_path"
 CONF_ZIGPY = "zigpy_config"
 
+MESSAGE_TYPE = "message_type"
+MESSAGE_TYPE_EVENT = "event"
+MESSAGE_TYPE_RESULT = "result"
+
 DEVICES = "devices"
 DURATION = "duration"
+ERROR_CODE = "error_code"
+MESSAGE_ID = "message_id"
+SUCCESS = "success"
 WEBSOCKET_API = "websocket_api"
+ZIGBEE_ERROR_CODE = "zigbee_error_code"
+
+MINIMAL_MESSAGE_SCHEMA: Final = voluptuous.Schema(
+    {voluptuous.Required(COMMAND): str},
+    extra=voluptuous.ALLOW_EXTRA,
+)
