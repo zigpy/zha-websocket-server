@@ -37,6 +37,6 @@ WEBSOCKET_API = "websocket_api"
 ZIGBEE_ERROR_CODE = "zigbee_error_code"
 
 MINIMAL_MESSAGE_SCHEMA: Final = voluptuous.Schema(
-    {voluptuous.Required(COMMAND): str},
+    {voluptuous.Required(COMMAND): str, voluptuous.Required(MESSAGE_ID): int},
     extra=voluptuous.ALLOW_EXTRA,
 )
