@@ -23,7 +23,7 @@ class Controller:
         self.application_controller: ControllerApplication = None
         self.radio_description: str = None
 
-    async def start_network(self, configuration):
+    async def start_network(self, configuration) -> None:
         """Start the Zigbee network."""
         if configuration.get(CONF_ENABLE_QUIRKS):
             setup_quirks(configuration)
@@ -42,7 +42,7 @@ class Controller:
                 exc_info=exception,
             )
 
-    async def stop_network(self, _):
+    async def stop_network(self, _) -> None:
         """Stop the Zigbee network."""
         await self.application_controller.pre_shutdown()
 
@@ -55,20 +55,20 @@ class Controller:
         """Get Zigbee groups."""
 
     # TODO connect the following methods to the client manager broadcast somehow
-    def device_joined(self, device: Device):
+    def device_joined(self, device: Device) -> None:
         """Handle device joined.
 
         At this point, no information about the device is known other than its
         address
         """
 
-    def raw_device_initialized(self, device: Device):
+    def raw_device_initialized(self, device: Device) -> None:
         """Handle a device initialization without quirks loaded."""
 
-    def device_initialized(self, device: Device):
+    def device_initialized(self, device: Device) -> None:
         """Handle device joined and basic information discovered."""
 
-    def device_left(self, device: Device):
+    def device_left(self, device: Device) -> None:
         """Handle device leaving the network."""
 
     def group_member_removed(self, zigpy_group: Group, endpoint: Endpoint) -> None:

@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Any
+from typing import Any, Awaitable
 
 import voluptuous
 import websockets
@@ -38,18 +38,18 @@ class Server:
         """Return the zigbee application controller."""
         return self._client_manager
 
-    async def start_server(self):
+    async def start_server(self) -> Awaitable:
         """Stop the websocket server."""
         async with websockets.serve(
             self._client_manager.add_client, "", 8001, logger=_LOGGER
         ):
             await self._waiter
 
-    def stop_server(self):
+    def stop_server(self) -> None:
         """Stop the websocket server."""
         self._waiter.set_result(True)
 
-    def _register_api_commands(self):
+    def _register_api_commands(self) -> None:
         """Load server API commands."""
         async_register_command(self, stop_server)
         load_zigbee_controller_api(self)

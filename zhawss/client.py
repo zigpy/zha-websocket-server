@@ -36,20 +36,20 @@ class Client:
         self._client_manager: ClientManagerType = client_manager
 
     @property
-    def is_connected(self):
+    def is_connected(self) -> bool:
         """Return True if the websocket connection is connected."""
         return self._websocket.open
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         """Disconnect this client and close the websocket."""
         asyncio.create_task(self._websocket.close())
 
-    def send_event(self, message: dict[str, Any]):
+    def send_event(self, message: dict[str, Any]) -> None:
         """Send event data to this client."""
         message[MESSAGE_TYPE] = MessageTypes.EVENT
         self._send_data(message)
 
-    def send_result_success(self, message_id: str, message: dict[str, Any]):
+    def send_result_success(self, message_id: str, message: dict[str, Any]) -> None:
         """Send success result prompted by a client request."""
         message[SUCCESS] = True
         message[MESSAGE_ID] = message_id
@@ -58,7 +58,7 @@ class Client:
 
     def send_result_error(
         self, message_id: str, error_code: str, message: dict[str, Any]
-    ):
+    ) -> None:
         """Send error result prompted by a client request."""
         message[SUCCESS] = False
         message[MESSAGE_ID] = message_id
@@ -72,7 +72,7 @@ class Client:
         error_code: str,
         zigbee_error_code: str,
         message: dict[str, Any],
-    ):
+    ) -> None:
         """Send zigbee error result prompted by a client zigbee request."""
         message[SUCCESS] = False
         message[MESSAGE_ID] = message_id
@@ -81,7 +81,7 @@ class Client:
         message[MESSAGE_TYPE] = MessageTypes.RESULT
         self._send_data(message)
 
-    def _send_data(self, data: dict[str, Any]):
+    def _send_data(self, data: dict[str, Any]) -> None:
         """Send data to this client."""
         try:
             message = json.dumps(data)
@@ -89,7 +89,7 @@ class Client:
         except (TypeError) as exception:
             _LOGGER.error("Couldn't serialize data: %s", data, exc_info=exception)
 
-    async def _handle_incoming_message(self, message):
+    async def _handle_incoming_message(self, message) -> Awaitable:
         """Handle an incoming message."""
         _LOGGER.info("Message received: %s", message)
         handlers: dict[str, Awaitable] = self._client_manager.server.data[WEBSOCKET_API]
@@ -137,13 +137,13 @@ class ClientManager:
         """Return the server this ClientManager belongs to."""
         return self._server
 
-    async def add_client(self, websocket):
+    async def add_client(self, websocket) -> None:
         """Adds a new client to the client manager."""
         client: Client = Client(websocket, self)
         self._clients.append(client)
         await client.listen()
 
-    def broadcast(self, message: dict[str, Any]):
+    def broadcast(self, message: dict[str, Any]) -> None:
         """Broadcast a message to all connected clients."""
         for client in self._clients:
             if client.is_connected:
