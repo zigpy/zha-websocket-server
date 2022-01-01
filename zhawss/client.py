@@ -19,7 +19,7 @@ from zhawss.const import (
     WEBSOCKET_API,
     ZIGBEE_ERROR_CODE,
 )
-from zhawss.types import ControllerType
+from zhawss.types import ClientManagerType, ServerType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,13 +30,11 @@ class Client:
     def __init__(
         self,
         websocket: WebSocketServerProtocol,
-        client_manager,
-        controller: ControllerType,
+        client_manager: ClientManagerType,
     ):
         """Initialize the client."""
         self._websocket: WebSocketServerProtocol = websocket
-        self._client_manager: ClientManager = client_manager
-        self._controller: ControllerType = controller
+        self._client_manager: ClientManagerType = client_manager
 
     @property
     def is_connected(self):
@@ -95,7 +93,7 @@ class Client:
     async def _handle_incoming_message(self, message):
         """Handle an incoming message."""
         _LOGGER.info("Message received: %s", message)
-        handlers: dict[str, Awaitable] = self._controller.data[WEBSOCKET_API]
+        handlers: dict[str, Awaitable] = self._client_manager.server.data[WEBSOCKET_API]
 
         message = json.loads(message)
         _LOGGER.info(
@@ -115,7 +113,7 @@ class Client:
         handler, schema = handlers[msg[COMMAND]]
 
         try:
-            handler(self._controller, self, schema(msg))
+            handler(self._client_manager.server, self, schema(msg))
         except Exception as err:  # pylint: disable=broad-except
             # TODO Fix this
             _LOGGER.error(
@@ -130,14 +128,19 @@ class Client:
 class ClientManager:
     """ZHAWSS client manager implementation."""
 
-    def __init__(self, controller: ControllerType):
+    def __init__(self, server: ServerType):
         """Initialize the client."""
+        self._server: ServerType = server
         self._clients: list[Client] = []
-        self._controller: ControllerType = controller
+
+    @property
+    def server(self) -> ServerType:
+        """Return the server this ClientManager belongs to."""
+        return self._server
 
     async def add_client(self, websocket):
         """Adds a new client to the client manager."""
-        client: Client = Client(websocket, self, self._controller)
+        client: Client = Client(websocket, self)
         self._clients.append(client)
         await client.listen()
 

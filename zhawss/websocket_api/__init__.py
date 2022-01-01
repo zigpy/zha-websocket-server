@@ -5,11 +5,11 @@ from typing import Union, cast
 import voluptuous
 
 from zhawss.const import WEBSOCKET_API
-from zhawss.types import ControllerType, WebSocketCommandHandler
+from zhawss.types import ServerType, WebSocketCommandHandler
 
 
 def async_register_command(
-    controller: ControllerType,
+    server: ServerType,
     command_or_handler: Union[str, WebSocketCommandHandler],
     handler: Union[WebSocketCommandHandler, None] = None,
     schema: Union[voluptuous.Schema, None] = None,
@@ -22,6 +22,6 @@ def async_register_command(
         schema = handler._ws_schema  # type: ignore[attr-defined]
     else:
         command = command_or_handler
-    if (handlers := controller.data.get(WEBSOCKET_API)) is None:
-        handlers = controller.data[WEBSOCKET_API] = {}
+    if (handlers := server.data.get(WEBSOCKET_API)) is None:
+        handlers = server.data[WEBSOCKET_API] = {}
     handlers[command] = (handler, schema)

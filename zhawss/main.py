@@ -5,10 +5,8 @@ import logging
 
 from colorlog import ColoredFormatter
 import uvloop
-import websockets
 
-from zhawss.application.client import ClientManager
-from zhawss.application.controller import Controller
+from zhawss.server import Server
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,14 +31,8 @@ if __name__ == "__main__":
             },
         )
     )
-    waiter: asyncio.Future = asyncio.Future()
-    controller: Controller = Controller(waiter)
-    client_manager: ClientManager = ClientManager(controller)
 
     async def main():
-        async with websockets.serve(
-            client_manager.add_client, "", 8001, logger=_LOGGER
-        ):
-            await waiter
+        await Server().start_server()
 
     asyncio.get_event_loop().run_until_complete(main())

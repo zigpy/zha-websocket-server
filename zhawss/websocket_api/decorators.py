@@ -8,11 +8,11 @@ from typing import Any
 
 import voluptuous as vol
 
-from zhawss.application.client import Client
 from zhawss.const import COMMAND, MINIMAL_MESSAGE_SCHEMA
 from zhawss.types import (
     AsyncWebSocketCommandHandler,
-    ControllerType,
+    ClientType,
+    ServerType,
     WebSocketCommandHandler,
 )
 
@@ -21,13 +21,13 @@ POSITIVE_INT = vol.All(vol.Coerce(int), vol.Range(min=0))
 
 async def _handle_async_response(
     func: AsyncWebSocketCommandHandler,
-    controller: ControllerType,
-    client: Client,
+    server: ServerType,
+    client: ClientType,
     msg: dict[str, Any],
 ) -> None:
     """Create a response and handle exception."""
     try:
-        await func(controller, client, msg)
+        await func(server, client, msg)
     except Exception as err:  # pylint: disable=broad-except
         # TODO fix this
         client.async_handle_exception(msg, err)
@@ -40,12 +40,12 @@ def async_response(
 
     @wraps(func)
     def schedule_handler(
-        controller: ControllerType, client: Client, msg: dict[str, Any]
+        server: ServerType, client: ClientType, msg: dict[str, Any]
     ) -> None:
         """Schedule the handler."""
         # As the webserver is now started before the start
         # event we do not want to block for websocket responders
-        asyncio.create_task(_handle_async_response(func, controller, client, msg))
+        asyncio.create_task(_handle_async_response(func, server, client, msg))
 
     return schedule_handler
 

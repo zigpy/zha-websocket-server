@@ -7,14 +7,12 @@ import voluptuous as vol
 from zigpy.config import CONF_DEVICE, CONF_DEVICE_PATH
 from zigpy.device import Device
 
-from zhawss.application.client import Client
 from zhawss.const import (
     COMMAND,
     COMMAND_GET_DEVICES,
     COMMAND_PERMIT_JOINING,
     COMMAND_START_NETWORK,
     COMMAND_STOP_NETWORK,
-    COMMAND_STOP_SERVER,
     CONF_BAUDRATE,
     CONF_DATABASE,
     CONF_ENABLE_QUIRKS,
@@ -24,9 +22,8 @@ from zhawss.const import (
     DURATION,
     MESSAGE_ID,
 )
-from zhawss.types import ControllerType
-
-from . import async_register_command, decorators
+from zhawss.types import ClientType, ServerType
+from zhawss.websocket_api import async_register_command, decorators
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,10 +45,10 @@ _LOGGER = logging.getLogger(__name__)
     }
 )
 async def start_network(
-    controller: ControllerType, client: Client, message: dict[str, Any]
+    server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> None:
     """Start the Zigbee network."""
-    await controller.start_network(message)
+    await server.controller.start_network(message)
     client.send_result_success(message[MESSAGE_ID], {})
 
 
@@ -62,24 +59,10 @@ async def start_network(
     }
 )
 async def stop_network(
-    controller: ControllerType, client: Client, message: dict[str, Any]
+    server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> None:
     """Stop the Zigbee network."""
-    await controller.stop_network(message)
-    client.send_result_success(message[MESSAGE_ID], {})
-
-
-@decorators.async_response
-@decorators.websocket_command(
-    {
-        vol.Required(COMMAND): COMMAND_STOP_SERVER,
-    }
-)
-async def stop_server(
-    controller: ControllerType, client: Client, message: dict[str, Any]
-) -> None:
-    """Stop the Zigbee network."""
-    await controller.stop_server(message)
+    await server.controller.stop_network(message)
     client.send_result_success(message[MESSAGE_ID], {})
 
 
@@ -90,10 +73,10 @@ async def stop_server(
     }
 )
 async def get_devices(
-    controller: ControllerType, client: Client, message: dict[str, Any]
+    server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> None:
     """Get Zigbee devices."""
-    devices: list[Device] = controller.get_devices()
+    devices: list[Device] = server.controller.get_devices()
     _LOGGER.info("devices: %s", devices)
     output = [
         {
@@ -116,17 +99,16 @@ async def get_devices(
     }
 )
 async def permit_joining(
-    controller: ControllerType, client: Client, message: dict[str, Any]
+    server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> None:
     """Permit joining devices to the Zigbee network."""
-    await controller.application_controller.permit(message[DURATION])
+    await server.controller.application_controller.permit(message[DURATION])
     client.send_result_success(message[MESSAGE_ID], {DURATION: message[DURATION]})
 
 
-def load_api(controller) -> None:
+def load_api(server) -> None:
     """Load the api command handlers."""
-    async_register_command(controller, start_network)
-    async_register_command(controller, stop_network)
-    async_register_command(controller, get_devices)
-    async_register_command(controller, permit_joining)
-    async_register_command(controller, stop_server)
+    async_register_command(server, start_network)
+    async_register_command(server, stop_network)
+    async_register_command(server, get_devices)
+    async_register_command(server, permit_joining)
