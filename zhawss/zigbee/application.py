@@ -23,6 +23,14 @@ class Controller:
         self.application_controller: ControllerApplication = None
         self.radio_description: str = None
 
+    @property
+    def is_running(self) -> bool:
+        """Return true if the controller is running."""
+        return (
+            self.application_controller
+            and self.application_controller.is_controller_running
+        )
+
     async def start_network(self, configuration) -> None:
         """Start the Zigbee network."""
         if configuration.get(CONF_ENABLE_QUIRKS):
@@ -42,7 +50,7 @@ class Controller:
                 exc_info=exception,
             )
 
-    async def stop_network(self, _) -> None:
+    async def stop_network(self) -> None:
         """Stop the Zigbee network."""
         await self.application_controller.pre_shutdown()
 

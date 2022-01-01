@@ -45,8 +45,10 @@ class Server:
         ):
             await self._waiter
 
-    def stop_server(self) -> None:
+    async def stop_server(self) -> None:
         """Stop the websocket server."""
+        if self._controller.is_running:
+            await self._controller.stop_network()
         self._waiter.set_result(True)
 
     def _register_api_commands(self) -> None:
@@ -55,12 +57,15 @@ class Server:
         load_zigbee_controller_api(self)
 
 
+@decorators.async_response
 @decorators.websocket_command(
     {
         voluptuous.Required(COMMAND): str(APICommands.STOP_SERVER),
     }
 )
-def stop_server(server: Server, client: ClientType, message: dict[str, Any]) -> None:
+async def stop_server(
+    server: Server, client: ClientType, message: dict[str, Any]
+) -> None:
     """Stop the Zigbee network."""
-    server.stop_server()
+    await server.stop_server()
     client.send_result_success(message[MESSAGE_ID], {})

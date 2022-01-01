@@ -59,7 +59,7 @@ async def stop_network(
     server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> None:
     """Stop the Zigbee network."""
-    await server.controller.stop_network(message)
+    await server.controller.stop_network()
     client.send_result_success(message[MESSAGE_ID], {})
 
 
