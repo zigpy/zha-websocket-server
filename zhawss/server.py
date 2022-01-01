@@ -8,7 +8,7 @@ import voluptuous
 import websockets
 
 from zhawss.client import ClientManager
-from zhawss.const import COMMAND, COMMAND_STOP_SERVER, MESSAGE_ID
+from zhawss.const import COMMAND, MESSAGE_ID, APICommands
 from zhawss.types import ClientType, ControllerType
 from zhawss.websocket_api import async_register_command, decorators
 from zhawss.zigbee.api import load_api as load_zigbee_controller_api
@@ -57,7 +57,7 @@ class Server:
 
 @decorators.websocket_command(
     {
-        voluptuous.Required(COMMAND): COMMAND_STOP_SERVER,
+        voluptuous.Required(COMMAND): str(APICommands.STOP_SERVER),
     }
 )
 def stop_server(server: Server, client: ClientType, message: dict[str, Any]) -> None:

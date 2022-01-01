@@ -20,6 +20,7 @@ setup(
         "websockets",
         "voluptuous",
         "uvloop",
+        "backports.strenum",
         "zigpy>=0.42.0",
         "bellows==0.29.0",
         "zha-quirks==0.0.65",

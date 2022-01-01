@@ -9,10 +9,6 @@ from zigpy.device import Device
 
 from zhawss.const import (
     COMMAND,
-    COMMAND_GET_DEVICES,
-    COMMAND_PERMIT_JOINING,
-    COMMAND_START_NETWORK,
-    COMMAND_STOP_NETWORK,
     CONF_BAUDRATE,
     CONF_DATABASE,
     CONF_ENABLE_QUIRKS,
@@ -21,6 +17,7 @@ from zhawss.const import (
     DEVICES,
     DURATION,
     MESSAGE_ID,
+    APICommands,
 )
 from zhawss.types import ClientType, ServerType
 from zhawss.websocket_api import async_register_command, decorators
@@ -31,7 +28,7 @@ _LOGGER = logging.getLogger(__name__)
 @decorators.async_response
 @decorators.websocket_command(
     {
-        vol.Required(COMMAND): COMMAND_START_NETWORK,
+        vol.Required(COMMAND): str(APICommands.START_NETWORK),
         vol.Required(CONF_RADIO_TYPE): str,
         vol.Required(CONF_DEVICE): vol.Schema(
             {
@@ -55,7 +52,7 @@ async def start_network(
 @decorators.async_response
 @decorators.websocket_command(
     {
-        vol.Required(COMMAND): COMMAND_STOP_NETWORK,
+        vol.Required(COMMAND): str(APICommands.STOP_NETWORK),
     }
 )
 async def stop_network(
@@ -69,7 +66,7 @@ async def stop_network(
 @decorators.async_response
 @decorators.websocket_command(
     {
-        vol.Required(COMMAND): COMMAND_GET_DEVICES,
+        vol.Required(COMMAND): str(APICommands.GET_DEVICES),
     }
 )
 async def get_devices(
@@ -94,7 +91,7 @@ async def get_devices(
 @decorators.async_response
 @decorators.websocket_command(
     {
-        vol.Required(COMMAND): COMMAND_PERMIT_JOINING,
+        vol.Required(COMMAND): str(APICommands.PERMIT_JOINING),
         vol.Optional(DURATION, default=60): vol.All(vol.Coerce(int), vol.Range(0, 254)),
     }
 )

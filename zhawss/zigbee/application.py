@@ -10,7 +10,7 @@ from zigpy.endpoint import Endpoint
 from zigpy.group import Group
 
 from zhawss.const import CONF_ENABLE_QUIRKS, CONF_RADIO_TYPE
-from zhawss.radio import RadioType
+from zhawss.zigbee.radio import RadioType
 
 _LOGGER = logging.getLogger(__name__)
 

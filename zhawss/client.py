@@ -12,12 +12,11 @@ from zhawss.const import (
     ERROR_CODE,
     MESSAGE_ID,
     MESSAGE_TYPE,
-    MESSAGE_TYPE_EVENT,
-    MESSAGE_TYPE_RESULT,
     MINIMAL_MESSAGE_SCHEMA,
     SUCCESS,
     WEBSOCKET_API,
     ZIGBEE_ERROR_CODE,
+    MessageTypes,
 )
 from zhawss.types import ClientManagerType, ServerType
 
@@ -47,14 +46,14 @@ class Client:
 
     def send_event(self, message: dict[str, Any]):
         """Send event data to this client."""
-        message[MESSAGE_TYPE] = MESSAGE_TYPE_EVENT
+        message[MESSAGE_TYPE] = MessageTypes.EVENT
         self._send_data(message)
 
     def send_result_success(self, message_id: str, message: dict[str, Any]):
         """Send success result prompted by a client request."""
         message[SUCCESS] = True
         message[MESSAGE_ID] = message_id
-        message[MESSAGE_TYPE] = MESSAGE_TYPE_RESULT
+        message[MESSAGE_TYPE] = MessageTypes.RESULT
         self._send_data(message)
 
     def send_result_error(
@@ -64,7 +63,7 @@ class Client:
         message[SUCCESS] = False
         message[MESSAGE_ID] = message_id
         message[ERROR_CODE] = error_code
-        message[MESSAGE_TYPE] = MESSAGE_TYPE_RESULT
+        message[MESSAGE_TYPE] = MessageTypes.RESULT
         self._send_data(message)
 
     def send_result_zigbee_error(
@@ -79,7 +78,7 @@ class Client:
         message[MESSAGE_ID] = message_id
         message[ERROR_CODE] = error_code
         message[ZIGBEE_ERROR_CODE] = zigbee_error_code
-        message[MESSAGE_TYPE] = MESSAGE_TYPE_RESULT
+        message[MESSAGE_TYPE] = MessageTypes.RESULT
         self._send_data(message)
 
     def _send_data(self, data: dict[str, Any]):
