@@ -18,7 +18,7 @@ from zhawss.const import (
     ZIGBEE_ERROR_CODE,
     MessageTypes,
 )
-from zhawss.types import ClientManagerType, ServerType
+from zhawss.websocket.types import ClientManagerType, ServerType
 
 _LOGGER = logging.getLogger(__name__)
 

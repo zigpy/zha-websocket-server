@@ -19,8 +19,8 @@ from zhawss.const import (
     MESSAGE_ID,
     APICommands,
 )
-from zhawss.types import ClientType, ServerType
-from zhawss.websocket_api import async_register_command, decorators
+from zhawss.websocket.api import async_register_command, decorators
+from zhawss.websocket.types import ClientType, ServerType
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -9,12 +9,11 @@ from typing import Any
 import voluptuous as vol
 
 from zhawss.const import COMMAND, MINIMAL_MESSAGE_SCHEMA
-from zhawss.types import (
+from zhawss.websocket.api.types import (
     AsyncWebSocketCommandHandler,
-    ClientType,
-    ServerType,
     WebSocketCommandHandler,
 )
+from zhawss.websocket.types import ClientType, ServerType
 
 POSITIVE_INT = vol.All(vol.Coerce(int), vol.Range(min=0))
 

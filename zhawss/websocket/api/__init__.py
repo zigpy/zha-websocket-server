@@ -5,7 +5,8 @@ from typing import Union, cast
 import voluptuous
 
 from zhawss.const import WEBSOCKET_API
-from zhawss.types import ServerType, WebSocketCommandHandler
+from zhawss.websocket.api.types import WebSocketCommandHandler
+from zhawss.websocket.types import ServerType
 
 
 def async_register_command(

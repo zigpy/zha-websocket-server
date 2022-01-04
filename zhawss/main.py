@@ -6,8 +6,6 @@ import logging
 from colorlog import ColoredFormatter
 import uvloop
 
-from zhawss.server import Server
-
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -33,6 +31,8 @@ if __name__ == "__main__":
     )
 
     async def main():
+        from zhawss.websocket.server import Server
+
         await Server().start_server()
 
     asyncio.get_event_loop().run_until_complete(main())

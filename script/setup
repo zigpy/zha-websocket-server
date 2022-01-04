@@ -11,5 +11,7 @@ if [ ! -n "$DEVCONTAINER" ];then
   source venv/bin/activate
 fi
 
+pip install pre-commit
 pre-commit install
+
 python3 -m pip install -e .
