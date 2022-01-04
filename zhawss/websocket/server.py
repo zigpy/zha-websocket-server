@@ -11,7 +11,7 @@ from zhawss.const import COMMAND, MESSAGE_ID, APICommands
 from zhawss.websocket.api import async_register_command, decorators
 from zhawss.websocket.client import ClientManager
 from zhawss.websocket.types import ClientType
-from zhawss.zigbee.api import load_api as load_zigbee_controller_api
+from zhawss.zigbee.application.api import load_api as load_zigbee_controller_api
 from zhawss.zigbee.application.controller import Controller
 from zhawss.zigbee.application.types import ControllerType
 
