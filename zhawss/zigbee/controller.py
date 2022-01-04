@@ -1,16 +1,18 @@
 """Controller for zha web socket server."""
 import asyncio
 import logging
+from typing import Any, List
 
 from bellows.zigbee.application import ControllerApplication
 from serial.serialutil import SerialException
 from zhaquirks import setup as setup_quirks
-from zigpy.device import Device
 from zigpy.endpoint import Endpoint
 from zigpy.group import Group
 
 from zhawss.const import CONF_ENABLE_QUIRKS, CONF_RADIO_TYPE
+from zhawss.zigbee.device import Device
 from zhawss.zigbee.radio import RadioType
+from zhawss.zigbee.types import DeviceType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,6 +24,7 @@ class Controller:
         """Initialize the controller."""
         self.application_controller: ControllerApplication = None
         self.radio_description: str = None
+        self._devices: List[DeviceType] = []
 
     @property
     def is_running(self) -> bool:
@@ -49,15 +52,23 @@ class Controller:
                 self.radio_description,
                 exc_info=exception,
             )
+        self.load_devices()
+
+    def load_devices(self):
+        """Load devices."""
+        self._devices = [
+            Device(zigpy_device)
+            for zigpy_device in self.application_controller.devices.values()
+        ]
 
     async def stop_network(self) -> None:
         """Stop the Zigbee network."""
         await self.application_controller.pre_shutdown()
 
-    def get_devices(self) -> list[Device]:
+    def get_devices(self) -> list[Any]:
         """Get Zigbee devices."""
         # temporary to test response
-        return list(self.application_controller.devices.values())
+        return [device.zha_device_info for device in self._devices]
 
     def get_groups(self):
         """Get Zigbee groups."""
