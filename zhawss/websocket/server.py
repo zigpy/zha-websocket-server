@@ -24,7 +24,7 @@ class Server:
     def __init__(self):
         """Initialize the server."""
         self._waiter: asyncio.Future = asyncio.Future()
-        self._controller: ControllerType = Controller()
+        self._controller: ControllerType = Controller(self)
         self._client_manager: ClientManager = ClientManager(self)
         self.data: dict[str, Any] = {}
         self._register_api_commands()
