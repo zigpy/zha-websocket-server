@@ -68,4 +68,5 @@ class PlatformEntity:
             "device_ieee": str(self._device.ieee),
             "endpoint_id": self._endpoint.id,
             "platform": self.PLATFORM.name,
+            "class_name": self.__class__.__name__,
         }
