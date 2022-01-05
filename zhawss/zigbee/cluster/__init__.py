@@ -369,6 +369,18 @@ class ClusterHandler(LogMixin):
 
     get_attributes = partialmethod(_get_attributes, False)
 
+    def to_json(self) -> dict:
+        """Return JSON representation of this cluster handler."""
+        return {
+            "generic_id": self._generic_id,
+            "endpoint_id": self._endpoint.id,
+            "cluster_id": self._cluster.cluster_id,
+            "id": self._id,
+            "unique_id": self._unique_id,
+            "value_attribute": self.value_attribute,
+            "status": self._status.name,
+        }
+
     def log(self, level, msg, *args) -> None:
         """Log a message."""
         msg = f"[%s:%s]: {msg}"

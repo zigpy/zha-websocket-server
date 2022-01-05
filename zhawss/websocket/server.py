@@ -8,6 +8,7 @@ import voluptuous
 import websockets
 
 from zhawss.const import COMMAND, MESSAGE_ID, APICommands
+from zhawss.platforms.discovery import PLATFORMS
 from zhawss.websocket.api import decorators, register_api_command
 from zhawss.websocket.client import ClientManager
 from zhawss.websocket.types import ClientType
@@ -26,7 +27,9 @@ class Server:
         self._waiter: asyncio.Future = asyncio.Future()
         self._controller: ControllerType = Controller(self)
         self._client_manager: ClientManager = ClientManager(self)
-        self.data: dict[str, Any] = {}
+        self.data: dict[Any, Any] = {}
+        for platform in PLATFORMS:
+            self.data.setdefault(platform, [])
         self._register_api_commands()
 
     @property

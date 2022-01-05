@@ -7,6 +7,8 @@ from typing import Any, Awaitable
 import zigpy
 from zigpy.typing import EndpointType as ZigpyEndpointType
 
+from zhawss.platforms import discovery
+from zhawss.platforms.registries import Platform
 from zhawss.zigbee import registries
 from zhawss.zigbee.cluster import ClusterHandler
 from zhawss.zigbee.cluster.general import MultistateInput
@@ -15,6 +17,7 @@ from zhawss.zigbee.cluster.types import (
     ClusterHandlerDictType,
     ClusterHandlerType,
 )
+from zhawss.zigbee.decorators import CALLABLE_T
 from zhawss.zigbee.types import DeviceType, EndpointType
 
 ATTR_DEVICE_TYPE = "device_type"
@@ -34,6 +37,11 @@ class Endpoint:
         self._claimed_cluster_handlers: ClusterHandlerDictType = {}
         self._client_cluster_handlers: dict[str, ClientClusterHandlerType] = {}
         self._unique_id: str = f"{str(device.ieee)}-{zigpy_endpoint.endpoint_id}"
+
+    @property
+    def device(self) -> DeviceType:
+        """Return the device this endpoint belongs to."""
+        return self._device
 
     @property
     def all_cluster_handlers(self) -> ClusterHandlerDictType:
@@ -92,7 +100,7 @@ class Endpoint:
         endpoint = cls(zigpy_endpoint, device)
         endpoint.add_all_cluster_handlers()
         endpoint.add_client_cluster_handlers()
-        # zha_disc.PROBE.discover_entities(endpoint)
+        discovery.PROBE.discover_entities(endpoint)
         return endpoint
 
     def add_all_cluster_handlers(self) -> None:
@@ -167,17 +175,21 @@ class Endpoint:
                 continue
             cluster_handler.debug("'%s' stage succeeded", func_name)
 
-    """ TODO
     def async_new_entity(
         self,
-        component: str,
-        entity_class: zha_typing.CALLABLE_T,
+        platform: Platform,
+        entity_class: CALLABLE_T,
         unique_id: str,
-        channels: list[zha_typing.ChannelType],
+        cluster_handlers: list[ClusterHandlerType],
     ):
-        #Signal new entity addition
-        self._channels.async_new_entity(component, entity_class, unique_id, channels)
-    """
+        from zhawss.zigbee.device import DeviceStatus
+
+        if self.device.status == DeviceStatus.INITIALIZED:
+            return
+
+        self.device.controller.server.data[platform].append(
+            (entity_class, (unique_id, cluster_handlers, self, self.device))
+        )
 
     """ TODO
     def async_send_signal(self, signal: str, *args: Any) -> None:

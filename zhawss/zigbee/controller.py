@@ -10,6 +10,7 @@ from zigpy.endpoint import Endpoint
 from zigpy.group import Group
 
 from zhawss.const import CONF_ENABLE_QUIRKS, CONF_RADIO_TYPE
+from zhawss.platforms import discovery
 from zhawss.websocket.types import ServerType
 from zhawss.zigbee.device import Device
 from zhawss.zigbee.radio import RadioType
@@ -27,6 +28,7 @@ class Controller:
         self._server: ServerType = server
         self.radio_description: str = None
         self._devices: List[DeviceType] = []
+        discovery.PROBE.initialize(self)
 
     @property
     def is_running(self) -> bool:
@@ -35,6 +37,11 @@ class Controller:
             self._application_controller
             and self._application_controller.is_controller_running
         )
+
+    @property
+    def server(self) -> ServerType:
+        """Return the server."""
+        return self._server
 
     @property
     def application_controller(self) -> ControllerApplication:
@@ -67,6 +74,10 @@ class Controller:
             Device(zigpy_device, self)
             for zigpy_device in self._application_controller.devices.values()
         ]
+
+        for platform in discovery.PLATFORMS:
+            for platform_entity in self.server.data[platform]:
+                _LOGGER.info("Discovered platform entity: %s", platform_entity)
 
     async def stop_network(self) -> Awaitable[None]:
         """Stop the Zigbee network."""
