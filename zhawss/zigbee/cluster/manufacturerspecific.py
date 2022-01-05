@@ -1,4 +1,4 @@
-"""Manufacturer specific cluster handlers module for Zigbee Home Automation."""
+"""Manufacturer specific cluster handlers module for zhawss."""
 from zhawss.zigbee import registries
 from zhawss.zigbee.cluster import ClusterHandler
 from zhawss.zigbee.cluster.const import (
@@ -8,9 +8,7 @@ from zhawss.zigbee.cluster.const import (
 )
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
-    registries.SMARTTHINGS_HUMIDITY_CLUSTER
-)
+@registries.CLUSTER_HANDLER_REGISTRY.register(registries.SMARTTHINGS_HUMIDITY_CLUSTER)
 class SmartThingsHumidity(ClusterHandler):
     """Smart Things Humidity cluster handler."""
 
@@ -23,7 +21,7 @@ class SmartThingsHumidity(ClusterHandler):
 
 
 @registries.HANDLER_ONLY_CLUSTERS.register(0xFD00)
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(0xFD00)
+@registries.CLUSTER_HANDLER_REGISTRY.register(0xFD00)
 class OsramButton(ClusterHandler):
     """Osram button cluster handler."""
 
@@ -31,7 +29,7 @@ class OsramButton(ClusterHandler):
 
 
 @registries.HANDLER_ONLY_CLUSTERS.register(registries.PHILLIPS_REMOTE_CLUSTER)
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(registries.PHILLIPS_REMOTE_CLUSTER)
+@registries.CLUSTER_HANDLER_REGISTRY.register(registries.PHILLIPS_REMOTE_CLUSTER)
 class PhillipsRemote(ClusterHandler):
     """Phillips remote cluster handler."""
 
@@ -39,14 +37,14 @@ class PhillipsRemote(ClusterHandler):
 
 
 @registries.HANDLER_ONLY_CLUSTERS.register(0xFCC0)
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(0xFCC0)
+@registries.CLUSTER_HANDLER_REGISTRY.register(0xFCC0)
 class OppleRemote(ClusterHandler):
     """Opple button cluster handler."""
 
     REPORT_CONFIG = []
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
+@registries.CLUSTER_HANDLER_REGISTRY.register(
     registries.SMARTTHINGS_ACCELERATION_CLUSTER
 )
 class SmartThingsAcceleration(ClusterHandler):

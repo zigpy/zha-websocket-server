@@ -6,7 +6,7 @@ from zhawss.zigbee.cluster import ClientClusterHandler, ClusterHandler
 from zhawss.zigbee.cluster.const import REPORT_CONFIG_IMMEDIATE
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(closures.DoorLock.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(closures.DoorLock.cluster_id)
 class DoorLockClusterHandler(ClusterHandler):
     """Door lock cluster handler."""
 
@@ -105,7 +105,7 @@ class DoorLockClusterHandler(ClusterHandler):
         return result
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(closures.Shade.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(closures.Shade.cluster_id)
 class Shade(ClusterHandler):
     """Shade cluster handler."""
 
@@ -115,7 +115,7 @@ class WindowCoveringClient(ClientClusterHandler):
     """Window client cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(closures.WindowCovering.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(closures.WindowCovering.cluster_id)
 class WindowCovering(ClusterHandler):
     """Window cluster handler."""
 

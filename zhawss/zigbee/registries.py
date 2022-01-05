@@ -1,4 +1,4 @@
-"""Mapping registries for Zigbee Home Automation."""
+"""Mapping registries for zhawss."""
 from __future__ import annotations
 
 import collections
@@ -140,7 +140,7 @@ DEVICE_CLASS = {
 DEVICE_CLASS = collections.defaultdict(dict, DEVICE_CLASS)
 
 CLIENT_CLUSTER_HANDLER_REGISTRY = DictRegistry()
-ZIGBEE_CLUSTER_HANDLER_REGISTRY = DictRegistry()
+CLUSTER_HANDLER_REGISTRY = DictRegistry()
 
 
 def set_or_callable(value):

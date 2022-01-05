@@ -1,4 +1,4 @@
-"""Measurement cluster handlers module for Zigbee Home Automation."""
+"""Measurement cluster handlers module for zhawss."""
 from zigpy.zcl.clusters import measurement
 
 from zhawss.zigbee import registries
@@ -11,16 +11,14 @@ from zhawss.zigbee.cluster.const import (
 )
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
-    measurement.FlowMeasurement.cluster_id
-)
+@registries.CLUSTER_HANDLER_REGISTRY.register(measurement.FlowMeasurement.cluster_id)
 class FlowMeasurement(ClusterHandler):
     """Flow Measurement cluster handler."""
 
     REPORT_CONFIG = [{"attr": "measured_value", "config": REPORT_CONFIG_DEFAULT}]
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
+@registries.CLUSTER_HANDLER_REGISTRY.register(
     measurement.IlluminanceLevelSensing.cluster_id
 )
 class IlluminanceLevelSensing(ClusterHandler):
@@ -29,7 +27,7 @@ class IlluminanceLevelSensing(ClusterHandler):
     REPORT_CONFIG = [{"attr": "level_status", "config": REPORT_CONFIG_DEFAULT}]
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
+@registries.CLUSTER_HANDLER_REGISTRY.register(
     measurement.IlluminanceMeasurement.cluster_id
 )
 class IlluminanceMeasurement(ClusterHandler):
@@ -38,16 +36,14 @@ class IlluminanceMeasurement(ClusterHandler):
     REPORT_CONFIG = [{"attr": "measured_value", "config": REPORT_CONFIG_DEFAULT}]
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
-    measurement.OccupancySensing.cluster_id
-)
+@registries.CLUSTER_HANDLER_REGISTRY.register(measurement.OccupancySensing.cluster_id)
 class OccupancySensing(ClusterHandler):
     """Occupancy Sensing cluster handler."""
 
     REPORT_CONFIG = [{"attr": "occupancy", "config": REPORT_CONFIG_IMMEDIATE}]
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
+@registries.CLUSTER_HANDLER_REGISTRY.register(
     measurement.PressureMeasurement.cluster_id
 )
 class PressureMeasurement(ClusterHandler):
@@ -56,9 +52,7 @@ class PressureMeasurement(ClusterHandler):
     REPORT_CONFIG = [{"attr": "measured_value", "config": REPORT_CONFIG_DEFAULT}]
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
-    measurement.RelativeHumidity.cluster_id
-)
+@registries.CLUSTER_HANDLER_REGISTRY.register(measurement.RelativeHumidity.cluster_id)
 class RelativeHumidity(ClusterHandler):
     """Relative Humidity measurement cluster handler."""
 
@@ -70,9 +64,7 @@ class RelativeHumidity(ClusterHandler):
     ]
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
-    measurement.SoilMoisture.cluster_id
-)
+@registries.CLUSTER_HANDLER_REGISTRY.register(measurement.SoilMoisture.cluster_id)
 class SoilMoisture(ClusterHandler):
     """Soil Moisture measurement cluster handler."""
 
@@ -84,7 +76,7 @@ class SoilMoisture(ClusterHandler):
     ]
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(measurement.LeafWetness.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(measurement.LeafWetness.cluster_id)
 class LeafWetness(ClusterHandler):
     """Leaf Wetness measurement cluster handler."""
 
@@ -96,7 +88,7 @@ class LeafWetness(ClusterHandler):
     ]
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
+@registries.CLUSTER_HANDLER_REGISTRY.register(
     measurement.TemperatureMeasurement.cluster_id
 )
 class TemperatureMeasurement(ClusterHandler):
@@ -110,7 +102,7 @@ class TemperatureMeasurement(ClusterHandler):
     ]
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
+@registries.CLUSTER_HANDLER_REGISTRY.register(
     measurement.CarbonMonoxideConcentration.cluster_id
 )
 class CarbonMonoxideConcentration(ClusterHandler):
@@ -124,7 +116,7 @@ class CarbonMonoxideConcentration(ClusterHandler):
     ]
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
+@registries.CLUSTER_HANDLER_REGISTRY.register(
     measurement.CarbonDioxideConcentration.cluster_id
 )
 class CarbonDioxideConcentration(ClusterHandler):
@@ -138,7 +130,7 @@ class CarbonDioxideConcentration(ClusterHandler):
     ]
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
+@registries.CLUSTER_HANDLER_REGISTRY.register(
     measurement.FormaldehydeConcentration.cluster_id
 )
 class FormaldehydeConcentration(ClusterHandler):

@@ -1,4 +1,4 @@
-"""Home automation cluster handlers module for Zigbee Home Automation."""
+"""Home automation cluster handlers module for zhawss."""
 from __future__ import annotations
 
 import enum
@@ -14,35 +14,33 @@ from zhawss.zigbee.cluster.const import (
 )
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
+@registries.CLUSTER_HANDLER_REGISTRY.register(
     homeautomation.ApplianceEventAlerts.cluster_id
 )
 class ApplianceEventAlerts(ClusterHandler):
     """Appliance Event Alerts cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
+@registries.CLUSTER_HANDLER_REGISTRY.register(
     homeautomation.ApplianceIdentification.cluster_id
 )
 class ApplianceIdentification(ClusterHandler):
     """Appliance Identification cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
+@registries.CLUSTER_HANDLER_REGISTRY.register(
     homeautomation.ApplianceStatistics.cluster_id
 )
 class ApplianceStatistics(ClusterHandler):
     """Appliance Statistics cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
-    homeautomation.Diagnostic.cluster_id
-)
+@registries.CLUSTER_HANDLER_REGISTRY.register(homeautomation.Diagnostic.cluster_id)
 class Diagnostic(ClusterHandler):
     """Diagnostic cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
+@registries.CLUSTER_HANDLER_REGISTRY.register(
     homeautomation.ElectricalMeasurement.cluster_id
 )
 class ElectricalMeasurementClusterHandler(ClusterHandler):
@@ -151,7 +149,7 @@ class ElectricalMeasurementClusterHandler(ClusterHandler):
         return ", ".join(m.name for m in self.MeasurementType if m in meas_type)
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
+@registries.CLUSTER_HANDLER_REGISTRY.register(
     homeautomation.MeterIdentification.cluster_id
 )
 class MeterIdentification(ClusterHandler):

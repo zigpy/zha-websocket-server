@@ -1,4 +1,4 @@
-"""Smart energy cluster handlers module for Zigbee Home Automation."""
+"""Smart energy cluster handlers module for zhawss."""
 from __future__ import annotations
 
 import enum
@@ -17,53 +17,47 @@ from zhawss.zigbee.cluster.const import (
 from zhawss.zigbee.types import EndpointType
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(smartenergy.Calendar.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(smartenergy.Calendar.cluster_id)
 class Calendar(ClusterHandler):
     """Calendar cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
-    smartenergy.DeviceManagement.cluster_id
-)
+@registries.CLUSTER_HANDLER_REGISTRY.register(smartenergy.DeviceManagement.cluster_id)
 class DeviceManagement(ClusterHandler):
     """Device Management cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(smartenergy.Drlc.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(smartenergy.Drlc.cluster_id)
 class Drlc(ClusterHandler):
     """Demand Response and Load Control cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
-    smartenergy.EnergyManagement.cluster_id
-)
+@registries.CLUSTER_HANDLER_REGISTRY.register(smartenergy.EnergyManagement.cluster_id)
 class EnergyManagement(ClusterHandler):
     """Energy Management cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(smartenergy.Events.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(smartenergy.Events.cluster_id)
 class Events(ClusterHandler):
     """Event cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
-    smartenergy.KeyEstablishment.cluster_id
-)
+@registries.CLUSTER_HANDLER_REGISTRY.register(smartenergy.KeyEstablishment.cluster_id)
 class KeyEstablishment(ClusterHandler):
     """Key Establishment cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(smartenergy.MduPairing.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(smartenergy.MduPairing.cluster_id)
 class MduPairing(ClusterHandler):
     """Pairing cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(smartenergy.Messaging.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(smartenergy.Messaging.cluster_id)
 class Messaging(ClusterHandler):
     """Messaging cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(smartenergy.Metering.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(smartenergy.Metering.cluster_id)
 class Metering(ClusterHandler):
     """Metering cluster handler."""
 
@@ -210,16 +204,16 @@ class Metering(ClusterHandler):
     summa_formatter = partialmethod(_formatter_function, FormatSelector.SUMMATION)
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(smartenergy.Prepayment.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(smartenergy.Prepayment.cluster_id)
 class Prepayment(ClusterHandler):
     """Prepayment cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(smartenergy.Price.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(smartenergy.Price.cluster_id)
 class Price(ClusterHandler):
     """Price cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(smartenergy.Tunneling.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(smartenergy.Tunneling.cluster_id)
 class Tunneling(ClusterHandler):
     """Tunneling cluster handler."""

@@ -1,5 +1,5 @@
 """
-Security cluster handlers module for Zigbee Home Automation.
+Security cluster handlers module for zhawss.
 
 For more details about this component, please refer to the documentation at
 https://home-assistant.io/integrations/zha/
@@ -59,7 +59,7 @@ WARNING_DEVICE_SQUAWK_MODE_ARMED = 0
 WARNING_DEVICE_SQUAWK_MODE_DISARMED = 1
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(AceCluster.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(AceCluster.cluster_id)
 class IasAce(ClusterHandler):
     """IAS Ancillary Control Equipment cluster handler."""
 
@@ -271,7 +271,7 @@ class IasAce(ClusterHandler):
 
 
 @registries.HANDLER_ONLY_CLUSTERS.register(security.IasWd.cluster_id)
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(security.IasWd.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(security.IasWd.cluster_id)
 class IasWd(ClusterHandler):
     """IAS Warning Device cluster handler."""
 
@@ -351,7 +351,7 @@ class IasWd(ClusterHandler):
         )
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(security.IasZone.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(security.IasZone.cluster_id)
 class IASZoneClusterHandler(ClusterHandler):
     """Cluster handler for the IASZone Zigbee cluster."""
 

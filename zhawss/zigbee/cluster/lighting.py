@@ -1,4 +1,4 @@
-"""Lighting cluster handlers module for Zigbee Home Automation."""
+"""Lighting cluster handlers module for zhawss."""
 from __future__ import annotations
 
 from contextlib import suppress
@@ -10,7 +10,7 @@ from zhawss.zigbee.cluster import ClientClusterHandler, ClusterHandler
 from zhawss.zigbee.cluster.const import REPORT_CONFIG_DEFAULT
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(lighting.Ballast.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(lighting.Ballast.cluster_id)
 class Ballast(ClusterHandler):
     """Ballast cluster handler."""
 
@@ -21,7 +21,7 @@ class ColorClientClusterHandler(ClientClusterHandler):
 
 
 @registries.BINDABLE_CLUSTERS.register(lighting.Color.cluster_id)
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(lighting.Color.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(lighting.Color.cluster_id)
 class ColorClusterHandler(ClusterHandler):
     """Color cluster handler."""
 

@@ -22,12 +22,12 @@ from zhawss.zigbee.cluster.util import parse_and_log_command
 from zhawss.zigbee.types import EndpointType
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.Alarms.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.Alarms.cluster_id)
 class Alarms(ClusterHandler):
     """Alarms cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.AnalogInput.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.AnalogInput.cluster_id)
 class AnalogInput(ClusterHandler):
     """Analog Input cluster handler."""
 
@@ -35,7 +35,7 @@ class AnalogInput(ClusterHandler):
 
 
 @registries.BINDABLE_CLUSTERS.register(general.AnalogOutput.cluster_id)
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.AnalogOutput.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.AnalogOutput.cluster_id)
 class AnalogOutput(ClusterHandler):
     """Analog Output cluster handler."""
 
@@ -104,22 +104,20 @@ class AnalogOutput(ClusterHandler):
         return False
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.AnalogValue.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.AnalogValue.cluster_id)
 class AnalogValue(ClusterHandler):
     """Analog Value cluster handler."""
 
     REPORT_CONFIG = [{"attr": "present_value", "config": REPORT_CONFIG_DEFAULT}]
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
-    general.ApplianceControl.cluster_id
-)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.ApplianceControl.cluster_id)
 class ApplianceContorl(ClusterHandler):
     """Appliance Control cluster handler."""
 
 
 @registries.HANDLER_ONLY_CLUSTERS.register(general.Basic.cluster_id)
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.Basic.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.Basic.cluster_id)
 class BasicClusterHandler(ClusterHandler):
     """Cluster handler to interact with the basic cluster."""
 
@@ -138,54 +136,52 @@ class BasicClusterHandler(ClusterHandler):
     }
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.BinaryInput.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.BinaryInput.cluster_id)
 class BinaryInput(ClusterHandler):
     """Binary Input cluster handler."""
 
     REPORT_CONFIG = [{"attr": "present_value", "config": REPORT_CONFIG_DEFAULT}]
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.BinaryOutput.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.BinaryOutput.cluster_id)
 class BinaryOutput(ClusterHandler):
     """Binary Output cluster handler."""
 
     REPORT_CONFIG = [{"attr": "present_value", "config": REPORT_CONFIG_DEFAULT}]
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.BinaryValue.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.BinaryValue.cluster_id)
 class BinaryValue(ClusterHandler):
     """Binary Value cluster handler."""
 
     REPORT_CONFIG = [{"attr": "present_value", "config": REPORT_CONFIG_DEFAULT}]
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.Commissioning.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.Commissioning.cluster_id)
 class Commissioning(ClusterHandler):
     """Commissioning cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
-    general.DeviceTemperature.cluster_id
-)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.DeviceTemperature.cluster_id)
 class DeviceTemperature(ClusterHandler):
     """Device Temperature cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.GreenPowerProxy.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.GreenPowerProxy.cluster_id)
 class GreenPowerProxy(ClusterHandler):
     """Green Power Proxy cluster handler."""
 
     BIND: bool = False
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.Groups.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.Groups.cluster_id)
 class Groups(ClusterHandler):
     """Groups cluster handler."""
 
     BIND: bool = False
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.Identify.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.Identify.cluster_id)
 class Identify(ClusterHandler):
     """Identify cluster handler."""
 
@@ -205,7 +201,7 @@ class LevelControlClientClusterHandler(ClientClusterHandler):
 
 
 @registries.BINDABLE_CLUSTERS.register(general.LevelControl.cluster_id)
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.LevelControl.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.LevelControl.cluster_id)
 class LevelControlClusterHandler(ClusterHandler):
     """Cluster handler for the LevelControl Zigbee cluster."""
 
@@ -251,23 +247,21 @@ class LevelControlClusterHandler(ClusterHandler):
         # self.async_send_signal(f"{self.unique_id}_{command}", level)
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.MultistateInput.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.MultistateInput.cluster_id)
 class MultistateInput(ClusterHandler):
     """Multistate Input cluster handler."""
 
     REPORT_CONFIG = [{"attr": "present_value", "config": REPORT_CONFIG_DEFAULT}]
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
-    general.MultistateOutput.cluster_id
-)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.MultistateOutput.cluster_id)
 class MultistateOutput(ClusterHandler):
     """Multistate Output cluster handler."""
 
     REPORT_CONFIG = [{"attr": "present_value", "config": REPORT_CONFIG_DEFAULT}]
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.MultistateValue.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.MultistateValue.cluster_id)
 class MultistateValue(ClusterHandler):
     """Multistate Value cluster handler."""
 
@@ -280,7 +274,7 @@ class OnOffClientClusterHandler(ClientClusterHandler):
 
 
 @registries.BINDABLE_CLUSTERS.register(general.OnOff.cluster_id)
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.OnOff.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.OnOff.cluster_id)
 class OnOffClusterHandler(ClusterHandler):
     """Cluster handler for the OnOff Zigbee cluster."""
 
@@ -358,15 +352,13 @@ class OnOffClusterHandler(ClusterHandler):
         await super().async_update()
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
-    general.OnOffConfiguration.cluster_id
-)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.OnOffConfiguration.cluster_id)
 class OnOffConfiguration(ClusterHandler):
     """OnOff Configuration cluster handler."""
 
 
 @registries.CLIENT_CLUSTER_HANDLER_REGISTRY.register(general.Ota.cluster_id)
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.Ota.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.Ota.cluster_id)
 class Ota(ClusterHandler):
     """OTA cluster handler."""
 
@@ -385,13 +377,13 @@ class Ota(ClusterHandler):
             pass
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.Partition.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.Partition.cluster_id)
 class Partition(ClusterHandler):
     """Partition cluster handler."""
 
 
 @registries.HANDLER_ONLY_CLUSTERS.register(general.PollControl.cluster_id)
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.PollControl.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.PollControl.cluster_id)
 class PollControl(ClusterHandler):
     """Poll Control cluster handler."""
 
@@ -434,9 +426,7 @@ class PollControl(ClusterHandler):
         self._IGNORED_MANUFACTURER_ID.add(manufacturer_code)
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
-    general.PowerConfiguration.cluster_id
-)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.PowerConfiguration.cluster_id)
 class PowerConfigurationClusterHandler(ClusterHandler):
     """Cluster handler for the zigbee power configuration cluster."""
 
@@ -454,12 +444,12 @@ class PowerConfigurationClusterHandler(ClusterHandler):
         return self.get_attributes(attributes, from_cache=from_cache)
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.PowerProfile.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.PowerProfile.cluster_id)
 class PowerProfile(ClusterHandler):
     """Power Profile cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.RSSILocation.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.RSSILocation.cluster_id)
 class RSSILocation(ClusterHandler):
     """RSSI Location cluster handler."""
 
@@ -469,11 +459,11 @@ class ScenesClientClusterHandler(ClientClusterHandler):
     """Scenes cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.Scenes.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.Scenes.cluster_id)
 class Scenes(ClusterHandler):
     """Scenes cluster handler."""
 
 
-@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.Time.cluster_id)
+@registries.CLUSTER_HANDLER_REGISTRY.register(general.Time.cluster_id)
 class Time(ClusterHandler):
     """Time cluster handler."""
