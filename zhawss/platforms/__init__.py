@@ -13,6 +13,7 @@ class PlatformEntity:
     """Class that represents an entity for a device platform."""
 
     PLATFORM: Platform = Platform.UNKNOWN
+    unique_id_suffix: Union[str, None] = None
 
     def __init_subclass__(cls, id_suffix: Union[str, None] = None, **kwargs) -> None:
         """Initialize subclass.
@@ -63,9 +64,7 @@ class PlatformEntity:
         return {
             "name": self._name,
             "unique_id": self._unique_id,
-            "cluster_handlers": [
-                ch.to_json() for ch in self._cluster_handlers.values()
-            ],
+            "cluster_handlers": [ch.to_json() for ch in self._cluster_handlers],
             "device_ieee": str(self._device.ieee),
             "endpoint_id": self._endpoint.id,
             "platform": self.PLATFORM.name,

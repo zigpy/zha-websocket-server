@@ -76,8 +76,10 @@ class Controller:
         ]
 
         for platform in discovery.PLATFORMS:
-            for platform_entity in self.server.data[platform]:
-                _LOGGER.info("Discovered platform entity: %s", platform_entity)
+            for platform_entity_class, args in self.server.data[platform]:
+                platform_entity = platform_entity_class.create_platform_entity(*args)
+                if platform_entity:
+                    _LOGGER.info("Platform entity data: %s", platform_entity.to_json())
 
     async def stop_network(self) -> Awaitable[None]:
         """Stop the Zigbee network."""

@@ -377,7 +377,7 @@ class ClusterHandler(LogMixin):
             "cluster_id": self._cluster.cluster_id,
             "id": self._id,
             "unique_id": self._unique_id,
-            "value_attribute": self.value_attribute,
+            # TODO "value_attribute": self.value_attribute,
             "status": self._status.name,
         }
 
