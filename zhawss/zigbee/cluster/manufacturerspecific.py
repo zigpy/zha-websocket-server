@@ -57,7 +57,7 @@ class SmartThingsAcceleration(ClusterHandler):
         {"attr": "z_axis", "config": REPORT_CONFIG_ASAP},
     ]
 
-    def attribute_updated(self, attrid, value):
+    def attribute_updated(self, attrid, value) -> None:
         """Handle attribute updates on this cluster."""
         if attrid == self.value_attribute:
             """TODO

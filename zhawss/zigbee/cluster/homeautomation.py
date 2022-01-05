@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import enum
+from typing import Awaitable
 
 from zigpy.zcl.clusters import homeautomation
 
@@ -82,7 +83,7 @@ class ElectricalMeasurementClusterHandler(ClusterHandler):
         "power_multiplier": True,
     }
 
-    async def async_update(self):
+    async def async_update(self) -> Awaitable[None]:
         """Retrieve latest state."""
         self.debug("async_update")
 

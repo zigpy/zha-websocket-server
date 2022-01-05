@@ -7,7 +7,7 @@ https://home-assistant.io/integrations/zha/
 from __future__ import annotations
 
 from collections import namedtuple
-from typing import Any
+from typing import Any, Awaitable
 
 from zigpy.exceptions import ZigbeeException
 from zigpy.zcl.clusters import hvac
@@ -51,7 +51,7 @@ class FanClusterHandler(ClusterHandler):
         """Return possible fan mode speeds."""
         return self.cluster.get("fan_mode_sequence")
 
-    async def async_set_speed(self, value) -> None:
+    async def async_set_speed(self, value) -> Awaitable[None]:
         """Set the speed of the fan."""
 
         try:
@@ -60,7 +60,7 @@ class FanClusterHandler(ClusterHandler):
             self.error("Could not set speed: %s", ex)
             return
 
-    async def async_update(self) -> None:
+    async def async_update(self) -> Awaitable[None]:
         """Retrieve latest state."""
         await self.get_attribute_value("fan_mode", from_cache=False)
 
@@ -225,7 +225,7 @@ class ThermostatClusterHandler(ClusterHandler):
         """Temperature when room is not occupied."""
         return self.cluster.get("unoccupied_heating_setpoint")
 
-    def attribute_updated(self, attrid, value):
+    def attribute_updated(self, attrid, value) -> None:
         """Handle attribute update cluster."""
         attr_name = self.cluster.attributes.get(attrid, [attrid])[0]
         self.debug(
@@ -238,7 +238,7 @@ class ThermostatClusterHandler(ClusterHandler):
         )
         """
 
-    async def async_set_operation_mode(self, mode) -> bool:
+    async def async_set_operation_mode(self, mode) -> Awaitable[bool]:
         """Set Operation mode."""
         if not await self.write_attributes({"system_mode": mode}):
             self.debug("couldn't set '%s' operation mode", mode)
@@ -249,7 +249,7 @@ class ThermostatClusterHandler(ClusterHandler):
 
     async def async_set_heating_setpoint(
         self, temperature: int, is_away: bool = False
-    ) -> bool:
+    ) -> Awaitable[bool]:
         """Set heating setpoint."""
         if is_away:
             data = {"unoccupied_heating_setpoint": temperature}
@@ -263,7 +263,7 @@ class ThermostatClusterHandler(ClusterHandler):
 
     async def async_set_cooling_setpoint(
         self, temperature: int, is_away: bool = False
-    ) -> bool:
+    ) -> Awaitable[bool]:
         """Set cooling setpoint."""
         if is_away:
             data = {"unoccupied_cooling_setpoint": temperature}
@@ -275,7 +275,7 @@ class ThermostatClusterHandler(ClusterHandler):
         self.debug("set cooling setpoint to %s", temperature)
         return True
 
-    async def get_occupancy(self) -> bool | None:
+    async def get_occupancy(self) -> Awaitable[bool | None]:
         """Get unreportable occupancy attribute."""
         try:
             res, fail = await self.cluster.read_attributes(["occupancy"])
@@ -286,7 +286,7 @@ class ThermostatClusterHandler(ClusterHandler):
         except ZigbeeException as ex:
             self.debug("Couldn't read 'occupancy' attribute: %s", ex)
 
-    async def write_attributes(self, data, **kwargs):
+    async def write_attributes(self, data, **kwargs) -> Awaitable[None]:
         """Write attributes helper."""
         try:
             res = await self.cluster.write_attributes(data, **kwargs)

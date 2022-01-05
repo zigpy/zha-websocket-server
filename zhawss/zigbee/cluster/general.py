@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Coroutine
-from typing import Any
+from typing import Any, Awaitable
 
 import zigpy.exceptions
 from zigpy.zcl import Cluster as ZigpyClusterType
@@ -90,7 +90,7 @@ class AnalogOutput(ClusterHandler):
         """Return cached value of application_type."""
         return self.cluster.get("application_type")
 
-    async def async_set_present_value(self, value: float) -> bool:
+    async def async_set_present_value(self, value: float) -> Awaitable[bool]:
         """Update present_value."""
         try:
             res = await self.cluster.write_attributes({"present_value": value})
@@ -187,7 +187,7 @@ class Identify(ClusterHandler):
 
     BIND: bool = False
 
-    def cluster_command(self, tsn, command_id, args):
+    def cluster_command(self, tsn, command_id, args) -> None:
         """Handle commands received to this cluster."""
         cmd = parse_and_log_command(self, tsn, command_id, args)
 
@@ -213,7 +213,7 @@ class LevelControlClusterHandler(ClusterHandler):
         """Return cached value of the current_level attribute."""
         return self.cluster.get("current_level")
 
-    def cluster_command(self, tsn, command_id, args):
+    def cluster_command(self, tsn, command_id, args) -> None:
         """Handle commands received to this cluster."""
         cmd = parse_and_log_command(self, tsn, command_id, args)
 
@@ -235,14 +235,14 @@ class LevelControlClusterHandler(ClusterHandler):
             )
             """
 
-    def attribute_updated(self, attrid, value):
+    def attribute_updated(self, attrid, value) -> None:
         """Handle attribute updates on this cluster."""
         self.debug("received attribute: %s update with value: %s", attrid, value)
         if attrid == self.CURRENT_LEVEL:
             # self.dispatch_level_change(SIGNAL_SET_LEVEL, value)
             pass
 
-    def dispatch_level_change(self, command, level):
+    def dispatch_level_change(self, command, level) -> None:
         """Dispatch level change."""
         # self.async_send_signal(f"{self.unique_id}_{command}", level)
 
@@ -292,7 +292,7 @@ class OnOffClusterHandler(ClusterHandler):
         """Return cached value of on/off attribute."""
         return self.cluster.get("on_off")
 
-    def cluster_command(self, tsn, command_id, args):
+    def cluster_command(self, tsn, command_id, args) -> None:
         """Handle commands received to this cluster."""
         cmd = parse_and_log_command(self, tsn, command_id, args)
 
@@ -321,12 +321,12 @@ class OnOffClusterHandler(ClusterHandler):
         elif cmd == "toggle":
             self.attribute_updated(self.ON_OFF, not bool(self._state))
 
-    def set_to_off(self, *_):
+    def set_to_off(self, *_) -> None:
         """Set the state to off."""
         self._off_listener = None
         self.attribute_updated(self.ON_OFF, False)
 
-    def attribute_updated(self, attrid, value):
+    def attribute_updated(self, attrid, value) -> None:
         """Handle attribute updates on this cluster."""
         if attrid == self.ON_OFF:
             """TODO
@@ -336,11 +336,13 @@ class OnOffClusterHandler(ClusterHandler):
             """
             self._state = bool(value)
 
-    async def async_initialize_handler_specific(self, from_cache: bool) -> None:
+    async def async_initialize_handler_specific(
+        self, from_cache: bool
+    ) -> Awaitable[None]:
         """Initialize cluster handler."""
         self._state = self.on_off
 
-    async def async_update(self):
+    async def async_update(self) -> Awaitable[None]:
         """Initialize cluster handler."""
         if self.cluster.is_client:
             return
@@ -394,7 +396,7 @@ class PollControl(ClusterHandler):
         4476,
     }  # IKEA
 
-    async def async_configure_handler_specific(self) -> None:
+    async def async_configure_handler_specific(self) -> Awaitable[None]:
         """Configure cluster handler: set check-in interval."""
         try:
             res = await self.cluster.write_attributes(
@@ -414,7 +416,7 @@ class PollControl(ClusterHandler):
         if cmd_name == "checkin":
             self.cluster.create_catching_task(self.check_in_response(tsn))
 
-    async def check_in_response(self, tsn: int) -> None:
+    async def check_in_response(self, tsn: int) -> Awaitable[None]:
         """Respond to checkin command."""
         await self.checkin_response(True, self.CHECKIN_FAST_POLL_TIMEOUT, tsn=tsn)
         if self._ch_pool.manufacturer_code not in self._IGNORED_MANUFACTURER_ID:

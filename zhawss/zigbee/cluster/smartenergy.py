@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import enum
 from functools import partialmethod
+from typing import Awaitable
 
 from zigpy.zcl import Cluster as ZigpyClusterType
 from zigpy.zcl.clusters import smartenergy
@@ -154,7 +155,9 @@ class Metering(ClusterHandler):
         """Return unit of measurement."""
         return self.cluster.get("unit_of_measure")
 
-    async def async_initialize_handler_specific(self, from_cache: bool) -> None:
+    async def async_initialize_handler_specific(
+        self, from_cache: bool
+    ) -> Awaitable[None]:
         """Fetch config from device and updates format specifier."""
 
         fmting = self.cluster.get(

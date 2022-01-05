@@ -7,6 +7,7 @@ https://home-assistant.io/integrations/zha/
 from __future__ import annotations
 
 import asyncio
+from typing import Awaitable
 
 from zigpy.exceptions import ZigbeeException
 from zigpy.zcl import Cluster as ZigpyClusterType
@@ -89,7 +90,7 @@ class IasAce(ClusterHandler):
 
         # These will all be setup by the entity from zha configuration
         self.panel_code: str = "1234"
-        self.code_required_arm_actions = False
+        self.code_required_arm_actions: bool = False
         self.max_invalid_tries: int = 3
 
         # where do we store this to handle restarts
@@ -102,7 +103,7 @@ class IasAce(ClusterHandler):
         )
         self.command_map[command_id](*args)
 
-    def arm(self, arm_mode: int, code: str, zone_id: int):
+    def arm(self, arm_mode: int, code: str, zone_id: int) -> None:
         """Handle the IAS ACE arm command."""
         mode = AceCluster.ArmMode(arm_mode)
 
@@ -127,7 +128,7 @@ class IasAce(ClusterHandler):
             self.async_send_signal(f"{self.unique_id}_{SIGNAL_ARMED_STATE_CHANGED}")
         self._send_panel_status_changed()
 
-    def _disarm(self, code: str):
+    def _disarm(self, code: str) -> None:
         """Test the code and disarm the panel if the code is correct."""
         if (
             code != self.panel_code
@@ -293,7 +294,7 @@ class IasWd(ClusterHandler):
         mode=WARNING_DEVICE_SQUAWK_MODE_ARMED,
         strobe=WARNING_DEVICE_STROBE_YES,
         squawk_level=WARNING_DEVICE_SOUND_HIGH,
-    ):
+    ) -> Awaitable[None]:
         """Issue a squawk command.
 
         This command uses the WD capabilities to emit a quick audible/visible pulse called a
@@ -321,7 +322,7 @@ class IasWd(ClusterHandler):
         warning_duration=5,  # seconds
         strobe_duty_cycle=0x00,
         strobe_intensity=WARNING_DEVICE_STROBE_HIGH,
-    ):
+    ) -> Awaitable[None]:
         """Issue a start warning command.
 
         This command starts the WD operation. The WD alerts the surrounding area by audible
@@ -357,7 +358,7 @@ class IASZoneClusterHandler(ClusterHandler):
 
     ZCL_INIT_ATTRS = {"zone_status": True, "zone_state": False, "zone_type": True}
 
-    def cluster_command(self, tsn, command_id, args):
+    def cluster_command(self, tsn, command_id, args) -> None:
         """Handle commands received to this cluster."""
         if command_id == 0:
             state = args[0] & 3
@@ -372,7 +373,7 @@ class IASZoneClusterHandler(ClusterHandler):
             res = self._cluster.enroll_response(0, 0)
             asyncio.create_task(res)
 
-    async def async_configure(self):
+    async def async_configure(self) -> Awaitable[None]:
         """Configure IAS device."""
         await self.get_attribute_value("zone_type", from_cache=False)
         if self._ch_pool.skip_configuration:
@@ -406,7 +407,7 @@ class IASZoneClusterHandler(ClusterHandler):
         self._status = ClusterHandlerStatus.CONFIGURED
         self.debug("finished IASZoneClusterHandler configuration")
 
-    def attribute_updated(self, attrid, value):
+    def attribute_updated(self, attrid, value) -> None:
         """Handle attribute updates on this cluster."""
         if attrid == 2:
             value = value & 3
