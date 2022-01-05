@@ -36,6 +36,11 @@ class Controller:
             and self._application_controller.is_controller_running
         )
 
+    @property
+    def application_controller(self) -> ControllerApplication:
+        """Return the Zigpy ControllerApplication"""
+        return self._application_controller
+
     async def start_network(self, configuration) -> Awaitable[None]:
         """Start the Zigbee network."""
         if configuration.get(CONF_ENABLE_QUIRKS):
