@@ -4,12 +4,12 @@ import functools
 from typing import List, Union
 
 from zhawss.platforms import PlatformEntity
-from zhawss.platforms.registries import ZHA_ENTITIES, Platform
+from zhawss.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhawss.zigbee.cluster.const import CLUSTER_HANDLER_IDENTIFY
 from zhawss.zigbee.cluster.types import ClusterHandlerType
 from zhawss.zigbee.types import DeviceType, EndpointType
 
-MULTI_MATCH = functools.partial(ZHA_ENTITIES.multipass_match, Platform.BUTTON)
+MULTI_MATCH = functools.partial(PLATFORM_ENTITIES.multipass_match, Platform.BUTTON)
 
 
 class Button(PlatformEntity):
@@ -34,7 +34,7 @@ class IdentifyButton(Button):
         """Entity Factory.
         Return a platform entity if it is a supported configuration, otherwise return None
         """
-        if ZHA_ENTITIES.prevent_entity_creation(
+        if PLATFORM_ENTITIES.prevent_entity_creation(
             Platform.BUTTON, device.ieee, CLUSTER_HANDLER_IDENTIFY
         ):
             return None

@@ -412,4 +412,4 @@ class ZHAEntityRegistry:
         ] = collections.defaultdict(lambda: collections.defaultdict(list))
 
 
-ZHA_ENTITIES = ZHAEntityRegistry()
+PLATFORM_ENTITIES = ZHAEntityRegistry()

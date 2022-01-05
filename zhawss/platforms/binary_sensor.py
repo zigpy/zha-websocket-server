@@ -3,7 +3,7 @@
 import functools
 
 from zhawss.platforms import PlatformEntity
-from zhawss.platforms.registries import ZHA_ENTITIES, Platform
+from zhawss.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhawss.zigbee.cluster.const import (
     CLUSTER_HANDLER_ACCELEROMETER,
     CLUSTER_HANDLER_BINARY_INPUT,
@@ -12,8 +12,10 @@ from zhawss.zigbee.cluster.const import (
     CLUSTER_HANDLER_ZONE,
 )
 
-STRICT_MATCH = functools.partial(ZHA_ENTITIES.strict_match, Platform.BINARY_SENSOR)
-MULTI_MATCH = functools.partial(ZHA_ENTITIES.multipass_match, Platform.BINARY_SENSOR)
+STRICT_MATCH = functools.partial(PLATFORM_ENTITIES.strict_match, Platform.BINARY_SENSOR)
+MULTI_MATCH = functools.partial(
+    PLATFORM_ENTITIES.multipass_match, Platform.BINARY_SENSOR
+)
 
 
 class BinarySensor(PlatformEntity):

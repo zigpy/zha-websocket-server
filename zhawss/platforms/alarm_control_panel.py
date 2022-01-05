@@ -3,11 +3,11 @@
 import functools
 
 from zhawss.platforms import PlatformEntity
-from zhawss.platforms.registries import ZHA_ENTITIES, Platform
+from zhawss.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhawss.zigbee.cluster.const import CLUSTER_HANDLER_IAS_ACE
 
 STRICT_MATCH = functools.partial(
-    ZHA_ENTITIES.strict_match, Platform.ALARM_CONTROL_PANEL
+    PLATFORM_ENTITIES.strict_match, Platform.ALARM_CONTROL_PANEL
 )
 
 

@@ -21,10 +21,10 @@ from zhawss.platforms import (  # noqa: F401 pylint: disable=unused-import,
 )
 from zhawss.platforms.registries import (
     DEVICE_CLASS,
+    PLATFORM_ENTITIES,
     REMOTE_DEVICE_TYPES,
     SINGLE_INPUT_CLUSTER_DEVICE_CLASS,
     SINGLE_OUTPUT_CLUSTER_DEVICE_CLASS,
-    ZHA_ENTITIES,
     Platform,
 )
 from zhawss.websocket.types import ServerType
@@ -40,7 +40,6 @@ PLATFORMS = (
     Platform.ALARM_CONTROL_PANEL,
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
-    """
     Platform.CLIMATE,
     Platform.COVER,
     Platform.DEVICE_TRACKER,
@@ -52,7 +51,6 @@ PLATFORMS = (
     Platform.SENSOR,
     Platform.SIREN,
     Platform.SWITCH,
-    """,
 )
 
 
@@ -68,7 +66,7 @@ class ProbeEndpoint:
         self.discover_by_device_type(endpoint)
         self.discover_multi_entities(endpoint)
         self.discover_by_cluster_id(endpoint)
-        ZHA_ENTITIES.clean_up()
+        PLATFORM_ENTITIES.clean_up()
 
     def discover_by_device_type(self, endpoint: EndpointType) -> None:
         """Process an endpoint on a zigpy device."""
@@ -86,7 +84,7 @@ class ProbeEndpoint:
 
         if platform and platform in PLATFORMS:
             cluster_handlers = endpoint.unclaimed_cluster_handlers()
-            platform_entity_class, claimed = ZHA_ENTITIES.get_entity(
+            platform_entity_class, claimed = PLATFORM_ENTITIES.get_entity(
                 platform,
                 endpoint.device.manufacturer,
                 endpoint.device.model,
@@ -140,7 +138,7 @@ class ProbeEndpoint:
         cluster_handler_list = [cluster_handler]
         unique_id = f"{endpoint.unique_id}-{cluster_handler.cluster.cluster_id}"
 
-        entity_class, claimed = ZHA_ENTITIES.get_entity(
+        entity_class, claimed = PLATFORM_ENTITIES.get_entity(
             platform,
             endpoint.device.manufacturer,
             endpoint.device.model,
@@ -182,7 +180,7 @@ class ProbeEndpoint:
         platform_by_dev_type = DEVICE_CLASS[ep_profile_id].get(ep_device_type)
         remaining_cluster_handlers = endpoint.unclaimed_cluster_handlers()
 
-        matches, claimed = ZHA_ENTITIES.get_multi_entity(
+        matches, claimed = PLATFORM_ENTITIES.get_multi_entity(
             endpoint.device.manufacturer,
             endpoint.device.model,
             remaining_cluster_handlers,
