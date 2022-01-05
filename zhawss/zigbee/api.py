@@ -1,7 +1,7 @@
 """Websocket API for zhawss."""
 
 import logging
-from typing import Any
+from typing import Any, Awaitable
 
 import voluptuous as vol
 from zigpy.config import CONF_DEVICE, CONF_DEVICE_PATH
@@ -19,7 +19,7 @@ from zhawss.const import (
     MESSAGE_ID,
     APICommands,
 )
-from zhawss.websocket.api import async_register_command, decorators
+from zhawss.websocket.api import decorators, register_api_command
 from zhawss.websocket.types import ClientType, ServerType
 
 _LOGGER = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ _LOGGER = logging.getLogger(__name__)
 )
 async def start_network(
     server: ServerType, client: ClientType, message: dict[str, Any]
-) -> None:
+) -> Awaitable[None]:
     """Start the Zigbee network."""
     await server.controller.start_network(message)
     client.send_result_success(message[MESSAGE_ID], {})
@@ -57,7 +57,7 @@ async def start_network(
 )
 async def stop_network(
     server: ServerType, client: ClientType, message: dict[str, Any]
-) -> None:
+) -> Awaitable[None]:
     """Stop the Zigbee network."""
     await server.controller.stop_network()
     client.send_result_success(message[MESSAGE_ID], {})
@@ -71,7 +71,7 @@ async def stop_network(
 )
 async def get_devices(
     server: ServerType, client: ClientType, message: dict[str, Any]
-) -> None:
+) -> Awaitable[None]:
     """Get Zigbee devices."""
     devices: list[Device] = server.controller.get_devices()
     _LOGGER.info("devices: %s", devices)
@@ -87,7 +87,7 @@ async def get_devices(
 )
 async def permit_joining(
     server: ServerType, client: ClientType, message: dict[str, Any]
-) -> None:
+) -> Awaitable[None]:
     """Permit joining devices to the Zigbee network."""
     await server.controller.application_controller.permit(message[DURATION])
     client.send_result_success(message[MESSAGE_ID], {DURATION: message[DURATION]})
@@ -95,7 +95,7 @@ async def permit_joining(
 
 def load_api(server) -> None:
     """Load the api command handlers."""
-    async_register_command(server, start_network)
-    async_register_command(server, stop_network)
-    async_register_command(server, get_devices)
-    async_register_command(server, permit_joining)
+    register_api_command(server, start_network)
+    register_api_command(server, stop_network)
+    register_api_command(server, get_devices)
+    register_api_command(server, permit_joining)

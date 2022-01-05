@@ -8,7 +8,7 @@ import voluptuous
 import websockets
 
 from zhawss.const import COMMAND, MESSAGE_ID, APICommands
-from zhawss.websocket.api import async_register_command, decorators
+from zhawss.websocket.api import decorators, register_api_command
 from zhawss.websocket.client import ClientManager
 from zhawss.websocket.types import ClientType
 from zhawss.zigbee.api import load_api as load_zigbee_controller_api
@@ -39,14 +39,14 @@ class Server:
         """Return the zigbee application controller."""
         return self._client_manager
 
-    async def start_server(self) -> Awaitable:
+    async def start_server(self) -> Awaitable[None]:
         """Stop the websocket server."""
         async with websockets.serve(
             self._client_manager.add_client, "", 8001, logger=_LOGGER
         ):
             await self._waiter
 
-    async def stop_server(self) -> None:
+    async def stop_server(self) -> Awaitable[None]:
         """Stop the websocket server."""
         if self._controller.is_running:
             await self._controller.stop_network()
@@ -54,7 +54,7 @@ class Server:
 
     def _register_api_commands(self) -> None:
         """Load server API commands."""
-        async_register_command(self, stop_server)
+        register_api_command(self, stop_server)
         load_zigbee_controller_api(self)
 
 
@@ -66,7 +66,7 @@ class Server:
 )
 async def stop_server(
     server: Server, client: ClientType, message: dict[str, Any]
-) -> None:
+) -> Awaitable[None]:
     """Stop the Zigbee network."""
     await server.stop_server()
     client.send_result_success(message[MESSAGE_ID], {})

@@ -1,7 +1,7 @@
 """Controller for zha web socket server."""
 import asyncio
 import logging
-from typing import Any, List
+from typing import Any, Awaitable, List
 
 from bellows.zigbee.application import ControllerApplication
 from serial.serialutil import SerialException
@@ -34,7 +34,7 @@ class Controller:
             and self.application_controller.is_controller_running
         )
 
-    async def start_network(self, configuration) -> None:
+    async def start_network(self, configuration) -> Awaitable[None]:
         """Start the Zigbee network."""
         if configuration.get(CONF_ENABLE_QUIRKS):
             setup_quirks(configuration)
@@ -54,14 +54,14 @@ class Controller:
             )
         self.load_devices()
 
-    def load_devices(self):
+    def load_devices(self) -> None:
         """Load devices."""
         self._devices = [
-            Device(zigpy_device)
+            Device(zigpy_device, self)
             for zigpy_device in self.application_controller.devices.values()
         ]
 
-    async def stop_network(self) -> None:
+    async def stop_network(self) -> Awaitable[None]:
         """Stop the Zigbee network."""
         await self.application_controller.pre_shutdown()
 

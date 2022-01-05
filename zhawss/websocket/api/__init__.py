@@ -9,7 +9,7 @@ from zhawss.websocket.api.types import WebSocketCommandHandler
 from zhawss.websocket.types import ServerType
 
 
-def async_register_command(
+def register_api_command(
     server: ServerType,
     command_or_handler: Union[str, WebSocketCommandHandler],
     handler: Union[WebSocketCommandHandler, None] = None,

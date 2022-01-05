@@ -89,7 +89,7 @@ class Client:
         except (TypeError) as exception:
             _LOGGER.error("Couldn't serialize data: %s", data, exc_info=exception)
 
-    async def _handle_incoming_message(self, message) -> Awaitable:
+    async def _handle_incoming_message(self, message) -> Awaitable[None]:
         """Handle an incoming message."""
         _LOGGER.info("Message received: %s", message)
         handlers: dict[str, Awaitable] = self._client_manager.server.data[WEBSOCKET_API]
@@ -119,7 +119,7 @@ class Client:
                 "Error invoking handler: {}".format(msg[COMMAND]), exc_info=err
             )
 
-    async def listen(self) -> None:
+    async def listen(self) -> Awaitable[None]:
         async for message in self._websocket:
             asyncio.create_task(self._handle_incoming_message(message))
 
@@ -137,7 +137,7 @@ class ClientManager:
         """Return the server this ClientManager belongs to."""
         return self._server
 
-    async def add_client(self, websocket) -> None:
+    async def add_client(self, websocket) -> Awaitable[None]:
         """Adds a new client to the client manager."""
         client: Client = Client(websocket, self)
         self._clients.append(client)

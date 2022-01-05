@@ -2,7 +2,7 @@
 
 
 import asyncio
-from typing import Any
+from typing import Any, Awaitable
 
 import zigpy
 from zigpy.typing import EndpointType as ZigpyEndpointType
@@ -136,15 +136,17 @@ class Endpoint:
                 cluster_handler = cluster_handler_class(cluster, self)
                 self.client_cluster_handlers[cluster_handler.id] = cluster_handler
 
-    async def async_initialize(self, from_cache: bool = False) -> None:
+    async def async_initialize(self, from_cache: bool = False) -> Awaitable[None]:
         """Initialize claimed cluster handlers."""
         await self._execute_handler_tasks("async_initialize", from_cache)
 
-    async def async_configure(self) -> None:
+    async def async_configure(self) -> Awaitable[None]:
         """Configure claimed cluster handlers."""
         await self._execute_handler_tasks("async_configure")
 
-    async def _execute_handler_tasks(self, func_name: str, *args: Any) -> None:
+    async def _execute_handler_tasks(
+        self, func_name: str, *args: Any
+    ) -> Awaitable[None]:
         """Add a throttled cluster handler task and swallow exceptions."""
 
         async def _throttle(coro):

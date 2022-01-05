@@ -5,19 +5,21 @@ import asyncio
 from enum import Enum
 import logging
 import time
-from typing import Any
+from typing import Any, Awaitable, Dict
 
 from zigpy import types
 from zigpy.device import Device as ZigpyDevice
 import zigpy.exceptions
 from zigpy.profiles import PROFILES
 import zigpy.quirks
+from zigpy.types.named import EUI64
 from zigpy.zcl.clusters.general import Groups
 import zigpy.zdo.types as zdo_types
 
 from zhawss.util import LogMixin
 from zhawss.zigbee.cluster import ZDOClusterHandler
 from zhawss.zigbee.endpoint import Endpoint
+from zhawss.zigbee.types import ControllerType
 
 _LOGGER = logging.getLogger(__name__)
 _UPDATE_ALIVE_INTERVAL = (60, 90)
@@ -91,18 +93,21 @@ class Device(LogMixin):
     def __init__(
         self,
         zigpy_device: ZigpyDevice,
+        controller: ControllerType,
         #       zha_gateway: zha_typing.ZhaGatewayType,
     ) -> None:
         """Initialize the gateway."""
-        #        self.hass = hass
-        self._zigpy_device = zigpy_device
+        self._controller: ControllerType = controller
+        self._zigpy_device: ZigpyDevice = zigpy_device
         #       self._zha_gateway = zha_gateway
-        self._available = False
+        self._available: bool = False
         #       self._available_signal = f"{self.name}_{self.ieee}_{SIGNAL_AVAILABLE}"
-        self._checkins_missed_count = 0
+        self._checkins_missed_count: int = 0
         self.unsubs = []
-        self.quirk_applied = isinstance(self._zigpy_device, zigpy.quirks.CustomDevice)
-        self.quirk_class = (
+        self.quirk_applied: bool = isinstance(
+            self._zigpy_device, zigpy.quirks.CustomDevice
+        )
+        self.quirk_class: str = (
             f"{self._zigpy_device.__class__.__module__}."
             f"{self._zigpy_device.__class__.__name__}"
         )
@@ -134,13 +139,12 @@ class Device(LogMixin):
             )
         )
         """
-        self._ha_device_id = None
-        self.status = DeviceStatus.CREATED
+        self.status: DeviceStatus = DeviceStatus.CREATED
         # self._channels = channels.Channels(self)
 
-        self.semaphore = asyncio.Semaphore(3)
-        self._zdo_handler = ZDOClusterHandler(self)
-        self._endpoints = {}
+        self.semaphore: asyncio.Semaphore = asyncio.Semaphore(3)
+        self._zdo_handler: ZDOClusterHandler = ZDOClusterHandler(self)
+        self._endpoints: Dict[int, Endpoint] = {}
         for ep_id, endpoint in zigpy_device.endpoints.items():
             if ep_id != 0:
                 self._endpoints[ep_id] = Endpoint.new(endpoint, self)
@@ -151,24 +155,24 @@ class Device(LogMixin):
         return self._zigpy_device
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Return device name."""
         return f"{self.manufacturer} {self.model}"
 
     @property
-    def ieee(self):
+    def ieee(self) -> EUI64:
         """Return ieee address for device."""
         return self._zigpy_device.ieee
 
     @property
-    def manufacturer(self):
+    def manufacturer(self) -> str:
         """Return manufacturer for device."""
         if self._zigpy_device.manufacturer is None:
             return UNKNOWN_MANUFACTURER
         return self._zigpy_device.manufacturer
 
     @property
-    def model(self):
+    def model(self) -> str:
         """Return model for device."""
         if self._zigpy_device.model is None:
             return UNKNOWN_MODEL
@@ -183,17 +187,17 @@ class Device(LogMixin):
         return self._zigpy_device.node_desc.manufacturer_code
 
     @property
-    def nwk(self):
+    def nwk(self) -> int:
         """Return nwk for device."""
         return self._zigpy_device.nwk
 
     @property
-    def lqi(self):
+    def lqi(self) -> int:
         """Return lqi for device."""
         return self._zigpy_device.lqi
 
     @property
-    def rssi(self):
+    def rssi(self) -> int:
         """Return rssi for device."""
         return self._zigpy_device.rssi
 
@@ -219,7 +223,7 @@ class Device(LogMixin):
         return self._zigpy_device.node_desc.logical_type.name
 
     @property
-    def power_source(self):
+    def power_source(self) -> int:
         """Return the power source for the device."""
         return (
             POWER_MAINS_POWERED if self.is_mains_powered else POWER_BATTERY_OR_UNKNOWN
@@ -250,23 +254,21 @@ class Device(LogMixin):
         return self._zigpy_device.node_desc.is_end_device
 
     @property
-    def is_groupable(self):
+    def is_groupable(self) -> bool:
         """Return true if this device has a group cluster."""
         return self.is_coordinator or (
             self.available and self.async_get_groupable_endpoints()
         )
 
     @property
-    def skip_configuration(self):
+    def skip_configuration(self) -> bool:
         """Return true if the device should not issue configuration related commands."""
         return self._zigpy_device.skip_configuration
 
-    """ TODO
     @property
-    def gateway(self):
-        #Return the gateway for this device.
-        return self._zha_gateway
-    """
+    def controller(self) -> ControllerType:
+        # Return the controller for this device.
+        return self._controller
 
     @property
     def device_automation_triggers(self):
@@ -288,7 +290,7 @@ class Device(LogMixin):
         return self._available_signal
 
     @property
-    def available(self):
+    def available(self) -> bool:
         """Return True if device is available."""
         return self._available
 
@@ -320,7 +322,7 @@ class Device(LogMixin):
         )
     """
 
-    async def _check_available(self, *_):
+    async def _check_available(self, *_) -> Awaitable[None]:
         # don't flip the availability state of the coordinator
         if self.is_coordinator:
             return
@@ -386,7 +388,7 @@ class Device(LogMixin):
         """
 
     @property
-    def device_info(self):
+    def device_info(self) -> Dict[str, str]:
         """Return a device description for device."""
         ieee = str(self.ieee)
         time_struct = time.localtime(self.last_seen)
@@ -409,7 +411,7 @@ class Device(LogMixin):
             ATTR_SIGNATURE: self.zigbee_signature,
         }
 
-    async def async_configure(self):
+    async def async_configure(self) -> Awaitable[None]:
         """Configure the device."""
         """ TODO
         should_identify = async_get_zha_config_value(
@@ -449,7 +451,7 @@ class Device(LogMixin):
             )
         """
 
-    async def async_initialize(self, from_cache=False):
+    async def async_initialize(self, from_cache=False) -> Awaitable[None]:
         """Initialize cluster handlers."""
         self.debug("started initialization")
         await self._zdo_handler.async_initialize(from_cache)
@@ -469,7 +471,7 @@ class Device(LogMixin):
         for unsubscribe in self.unsubs:
             unsubscribe()
 
-    def async_update_last_seen(self, last_seen):
+    def async_update_last_seen(self, last_seen) -> None:
         """Set last seen on the zigpy device."""
         if self._zigpy_device.last_seen is None and last_seen is not None:
             self._zigpy_device.last_seen = last_seen
@@ -643,7 +645,7 @@ class Device(LogMixin):
         )
         return response
 
-    async def async_add_to_group(self, group_id):
+    async def async_add_to_group(self, group_id) -> Awaitable[None]:
         """Add this device to the provided zigbee group."""
         try:
             await self._zigpy_device.add_to_group(group_id)
@@ -655,7 +657,7 @@ class Device(LogMixin):
                 str(ex),
             )
 
-    async def async_remove_from_group(self, group_id):
+    async def async_remove_from_group(self, group_id) -> Awaitable[None]:
         """Remove this device from the provided zigbee group."""
         try:
             await self._zigpy_device.remove_from_group(group_id)
@@ -667,7 +669,9 @@ class Device(LogMixin):
                 str(ex),
             )
 
-    async def async_add_endpoint_to_group(self, endpoint_id, group_id):
+    async def async_add_endpoint_to_group(
+        self, endpoint_id, group_id
+    ) -> Awaitable[None]:
         """Add the device endpoint to the provided zigbee group."""
         try:
             await self._zigpy_device.endpoints[int(endpoint_id)].add_to_group(group_id)
@@ -680,7 +684,9 @@ class Device(LogMixin):
                 str(ex),
             )
 
-    async def async_remove_endpoint_from_group(self, endpoint_id, group_id):
+    async def async_remove_endpoint_from_group(
+        self, endpoint_id, group_id
+    ) -> Awaitable[None]:
         """Remove the device endpoint from the provided zigbee group."""
         try:
             await self._zigpy_device.endpoints[int(endpoint_id)].remove_from_group(
@@ -695,13 +701,15 @@ class Device(LogMixin):
                 str(ex),
             )
 
-    async def async_bind_to_group(self, group_id, cluster_bindings):
+    async def async_bind_to_group(self, group_id, cluster_bindings) -> Awaitable[None]:
         """Directly bind this device to a group for the given clusters."""
         await self._async_group_binding_operation(
             group_id, zdo_types.ZDOCmd.Bind_req, cluster_bindings
         )
 
-    async def async_unbind_from_group(self, group_id, cluster_bindings):
+    async def async_unbind_from_group(
+        self, group_id, cluster_bindings
+    ) -> Awaitable[None]:
         """Unbind this device from a group for the given clusters."""
         await self._async_group_binding_operation(
             group_id, zdo_types.ZDOCmd.Unbind_req, cluster_bindings
@@ -709,7 +717,7 @@ class Device(LogMixin):
 
     async def _async_group_binding_operation(
         self, group_id, operation, cluster_bindings
-    ):
+    ) -> Awaitable[None]:
         """Create or remove a direct zigbee binding between a device and a group."""
 
         zdo = self._zigpy_device.zdo
@@ -759,7 +767,7 @@ class Device(LogMixin):
                 fmt = f"{log_msg[1]} completed: %s"
             zdo.debug(fmt, *(log_msg[2] + (outcome,)))
 
-    def log(self, level, msg, *args):
+    def log(self, level, msg, *args) -> None:
         """Log a message."""
         msg = f"[%s](%s): {msg}"
         args = (self.nwk, self.model) + args
