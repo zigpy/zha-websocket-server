@@ -1,4 +1,4 @@
-"""General channels module for Zigbee Home Automation."""
+"""General cluster handlers module for zhawss."""
 from __future__ import annotations
 
 import asyncio
@@ -22,22 +22,22 @@ from zhawss.zigbee.cluster.util import parse_and_log_command
 from zhawss.zigbee.types import EndpointType
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.Alarms.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.Alarms.cluster_id)
 class Alarms(ClusterHandler):
-    """Alarms channel."""
+    """Alarms cluster handler."""
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.AnalogInput.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.AnalogInput.cluster_id)
 class AnalogInput(ClusterHandler):
-    """Analog Input channel."""
+    """Analog Input cluster handler."""
 
     REPORT_CONFIG = [{"attr": "present_value", "config": REPORT_CONFIG_DEFAULT}]
 
 
 @registries.BINDABLE_CLUSTERS.register(general.AnalogOutput.cluster_id)
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.AnalogOutput.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.AnalogOutput.cluster_id)
 class AnalogOutput(ClusterHandler):
-    """Analog Output channel."""
+    """Analog Output cluster handler."""
 
     REPORT_CONFIG = ({"attr": "present_value", "config": REPORT_CONFIG_DEFAULT},)
     ZCL_INIT_ATTRS = {
@@ -104,22 +104,24 @@ class AnalogOutput(ClusterHandler):
         return False
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.AnalogValue.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.AnalogValue.cluster_id)
 class AnalogValue(ClusterHandler):
-    """Analog Value channel."""
+    """Analog Value cluster handler."""
 
     REPORT_CONFIG = [{"attr": "present_value", "config": REPORT_CONFIG_DEFAULT}]
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.ApplianceControl.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
+    general.ApplianceControl.cluster_id
+)
 class ApplianceContorl(ClusterHandler):
-    """Appliance Control channel."""
+    """Appliance Control cluster handler."""
 
 
-@registries.CHANNEL_ONLY_CLUSTERS.register(general.Basic.cluster_id)
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.Basic.cluster_id)
-class BasicChannel(ClusterHandler):
-    """Channel to interact with the basic cluster."""
+@registries.HANDLER_ONLY_CLUSTERS.register(general.Basic.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.Basic.cluster_id)
+class BasicClusterHandler(ClusterHandler):
+    """Cluster handler to interact with the basic cluster."""
 
     UNKNOWN = 0
     BATTERY = 3
@@ -136,54 +138,56 @@ class BasicChannel(ClusterHandler):
     }
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.BinaryInput.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.BinaryInput.cluster_id)
 class BinaryInput(ClusterHandler):
-    """Binary Input channel."""
+    """Binary Input cluster handler."""
 
     REPORT_CONFIG = [{"attr": "present_value", "config": REPORT_CONFIG_DEFAULT}]
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.BinaryOutput.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.BinaryOutput.cluster_id)
 class BinaryOutput(ClusterHandler):
-    """Binary Output channel."""
+    """Binary Output cluster handler."""
 
     REPORT_CONFIG = [{"attr": "present_value", "config": REPORT_CONFIG_DEFAULT}]
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.BinaryValue.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.BinaryValue.cluster_id)
 class BinaryValue(ClusterHandler):
-    """Binary Value channel."""
+    """Binary Value cluster handler."""
 
     REPORT_CONFIG = [{"attr": "present_value", "config": REPORT_CONFIG_DEFAULT}]
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.Commissioning.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.Commissioning.cluster_id)
 class Commissioning(ClusterHandler):
-    """Commissioning channel."""
+    """Commissioning cluster handler."""
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.DeviceTemperature.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
+    general.DeviceTemperature.cluster_id
+)
 class DeviceTemperature(ClusterHandler):
-    """Device Temperature channel."""
+    """Device Temperature cluster handler."""
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.GreenPowerProxy.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.GreenPowerProxy.cluster_id)
 class GreenPowerProxy(ClusterHandler):
-    """Green Power Proxy channel."""
+    """Green Power Proxy cluster handler."""
 
     BIND: bool = False
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.Groups.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.Groups.cluster_id)
 class Groups(ClusterHandler):
-    """Groups channel."""
+    """Groups cluster handler."""
 
     BIND: bool = False
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.Identify.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.Identify.cluster_id)
 class Identify(ClusterHandler):
-    """Identify channel."""
+    """Identify cluster handler."""
 
     BIND: bool = False
 
@@ -195,15 +199,15 @@ class Identify(ClusterHandler):
             self.async_send_signal(f"{self.unique_id}_{cmd}", args[0])
 
 
-@registries.CLIENT_CHANNELS_REGISTRY.register(general.LevelControl.cluster_id)
-class LevelControlClientChannel(ClientClusterHandler):
-    """LevelControl client cluster."""
+@registries.CLIENT_CLUSTER_HANDLER_REGISTRY.register(general.LevelControl.cluster_id)
+class LevelControlClientClusterHandler(ClientClusterHandler):
+    """LevelControl client cluster handler."""
 
 
 @registries.BINDABLE_CLUSTERS.register(general.LevelControl.cluster_id)
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.LevelControl.cluster_id)
-class LevelControlChannel(ClusterHandler):
-    """Channel for the LevelControl Zigbee cluster."""
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.LevelControl.cluster_id)
+class LevelControlClusterHandler(ClusterHandler):
+    """Cluster handler for the LevelControl Zigbee cluster."""
 
     CURRENT_LEVEL = 0
     REPORT_CONFIG = ({"attr": "current_level", "config": REPORT_CONFIG_ASAP},)
@@ -247,42 +251,44 @@ class LevelControlChannel(ClusterHandler):
         # self.async_send_signal(f"{self.unique_id}_{command}", level)
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.MultistateInput.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.MultistateInput.cluster_id)
 class MultistateInput(ClusterHandler):
-    """Multistate Input channel."""
+    """Multistate Input cluster handler."""
 
     REPORT_CONFIG = [{"attr": "present_value", "config": REPORT_CONFIG_DEFAULT}]
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.MultistateOutput.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
+    general.MultistateOutput.cluster_id
+)
 class MultistateOutput(ClusterHandler):
-    """Multistate Output channel."""
+    """Multistate Output cluster handler."""
 
     REPORT_CONFIG = [{"attr": "present_value", "config": REPORT_CONFIG_DEFAULT}]
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.MultistateValue.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.MultistateValue.cluster_id)
 class MultistateValue(ClusterHandler):
-    """Multistate Value channel."""
+    """Multistate Value cluster handler."""
 
     REPORT_CONFIG = [{"attr": "present_value", "config": REPORT_CONFIG_DEFAULT}]
 
 
-@registries.CLIENT_CHANNELS_REGISTRY.register(general.OnOff.cluster_id)
-class OnOffClientChannel(ClientClusterHandler):
-    """OnOff client channel."""
+@registries.CLIENT_CLUSTER_HANDLER_REGISTRY.register(general.OnOff.cluster_id)
+class OnOffClientClusterHandler(ClientClusterHandler):
+    """OnOff client cluster handler."""
 
 
 @registries.BINDABLE_CLUSTERS.register(general.OnOff.cluster_id)
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.OnOff.cluster_id)
-class OnOffChannel(ClusterHandler):
-    """Channel for the OnOff Zigbee cluster."""
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.OnOff.cluster_id)
+class OnOffClusterHandler(ClusterHandler):
+    """Cluster handler for the OnOff Zigbee cluster."""
 
     ON_OFF = 0
     REPORT_CONFIG = ({"attr": "on_off", "config": REPORT_CONFIG_IMMEDIATE},)
 
     def __init__(self, cluster: ZigpyClusterType, endpoint: EndpointType) -> None:
-        """Initialize OnOffChannel."""
+        """Initialize OnOffClusterHandler."""
         super().__init__(cluster, endpoint)
         self._state = None
         self._off_listener = None
@@ -336,12 +342,12 @@ class OnOffChannel(ClusterHandler):
             """
             self._state = bool(value)
 
-    async def async_initialize_channel_specific(self, from_cache: bool) -> None:
-        """Initialize channel."""
+    async def async_initialize_handler_specific(self, from_cache: bool) -> None:
+        """Initialize cluster handler."""
         self._state = self.on_off
 
     async def async_update(self):
-        """Initialize channel."""
+        """Initialize cluster handler."""
         if self.cluster.is_client:
             return
         from_cache = not self._ch_pool.is_mains_powered
@@ -352,15 +358,17 @@ class OnOffChannel(ClusterHandler):
         await super().async_update()
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.OnOffConfiguration.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
+    general.OnOffConfiguration.cluster_id
+)
 class OnOffConfiguration(ClusterHandler):
-    """OnOff Configuration channel."""
+    """OnOff Configuration cluster handler."""
 
 
-@registries.CLIENT_CHANNELS_REGISTRY.register(general.Ota.cluster_id)
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.Ota.cluster_id)
+@registries.CLIENT_CLUSTER_HANDLER_REGISTRY.register(general.Ota.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.Ota.cluster_id)
 class Ota(ClusterHandler):
-    """OTA Channel."""
+    """OTA cluster handler."""
 
     BIND: bool = False
 
@@ -377,15 +385,15 @@ class Ota(ClusterHandler):
             pass
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.Partition.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.Partition.cluster_id)
 class Partition(ClusterHandler):
-    """Partition channel."""
+    """Partition cluster handler."""
 
 
-@registries.CHANNEL_ONLY_CLUSTERS.register(general.PollControl.cluster_id)
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.PollControl.cluster_id)
+@registries.HANDLER_ONLY_CLUSTERS.register(general.PollControl.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.PollControl.cluster_id)
 class PollControl(ClusterHandler):
-    """Poll Control channel."""
+    """Poll Control cluster handler."""
 
     CHECKIN_INTERVAL = 55 * 60 * 4  # 55min
     CHECKIN_FAST_POLL_TIMEOUT = 2 * 4  # 2s
@@ -394,8 +402,8 @@ class PollControl(ClusterHandler):
         4476,
     }  # IKEA
 
-    async def async_configure_channel_specific(self) -> None:
-        """Configure channel: set check-in interval."""
+    async def async_configure_handler_specific(self) -> None:
+        """Configure cluster handler: set check-in interval."""
         try:
             res = await self.cluster.write_attributes(
                 {"checkin_interval": self.CHECKIN_INTERVAL}
@@ -426,17 +434,19 @@ class PollControl(ClusterHandler):
         self._IGNORED_MANUFACTURER_ID.add(manufacturer_code)
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.PowerConfiguration.cluster_id)
-class PowerConfigurationChannel(ClusterHandler):
-    """Channel for the zigbee power configuration cluster."""
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
+    general.PowerConfiguration.cluster_id
+)
+class PowerConfigurationClusterHandler(ClusterHandler):
+    """Cluster handler for the zigbee power configuration cluster."""
 
     REPORT_CONFIG = (
         {"attr": "battery_voltage", "config": REPORT_CONFIG_BATTERY_SAVE},
         {"attr": "battery_percentage_remaining", "config": REPORT_CONFIG_BATTERY_SAVE},
     )
 
-    def async_initialize_channel_specific(self, from_cache: bool) -> Coroutine:
-        """Initialize channel specific attrs."""
+    def async_initialize_handler_specific(self, from_cache: bool) -> Coroutine:
+        """Initialize cluster handler specific attrs."""
         attributes = [
             "battery_size",
             "battery_quantity",
@@ -444,26 +454,26 @@ class PowerConfigurationChannel(ClusterHandler):
         return self.get_attributes(attributes, from_cache=from_cache)
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.PowerProfile.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.PowerProfile.cluster_id)
 class PowerProfile(ClusterHandler):
-    """Power Profile channel."""
+    """Power Profile cluster handler."""
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.RSSILocation.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.RSSILocation.cluster_id)
 class RSSILocation(ClusterHandler):
-    """RSSI Location channel."""
+    """RSSI Location cluster handler."""
 
 
-@registries.CLIENT_CHANNELS_REGISTRY.register(general.Scenes.cluster_id)
-class ScenesClientChannel(ClientClusterHandler):
-    """Scenes channel."""
+@registries.CLIENT_CLUSTER_HANDLER_REGISTRY.register(general.Scenes.cluster_id)
+class ScenesClientClusterHandler(ClientClusterHandler):
+    """Scenes cluster handler."""
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.Scenes.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.Scenes.cluster_id)
 class Scenes(ClusterHandler):
-    """Scenes channel."""
+    """Scenes cluster handler."""
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(general.Time.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(general.Time.cluster_id)
 class Time(ClusterHandler):
-    """Time channel."""
+    """Time cluster handler."""

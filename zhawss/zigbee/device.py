@@ -450,7 +450,7 @@ class Device(LogMixin):
         """
 
     async def async_initialize(self, from_cache=False):
-        """Initialize channels."""
+        """Initialize cluster handlers."""
         self.debug("started initialization")
         await self._zdo_handler.async_initialize(from_cache)
         self._zdo_handler.debug("'async_initialize' stage succeeded")

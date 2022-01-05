@@ -25,7 +25,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class ClusterHandlerStatus(Enum):
-    """Status of a channel."""
+    """Status of a cluster handler."""
 
     CREATED = 1
     CONFIGURED = 2
@@ -33,18 +33,18 @@ class ClusterHandlerStatus(Enum):
 
 
 class ClusterHandler(LogMixin):
-    """Base channel for a Zigbee cluster handler."""
+    """Base cluster handler for a Zigbee cluster handler."""
 
     REPORT_CONFIG: tuple[dict[int | str, tuple[int, int, int | float]]] = ()
     BIND: bool = True
 
-    # Dict of attributes to read on channel initialization.
+    # Dict of attributes to read on cluster handler initialization.
     # Dict keys -- attribute ID or names, with bool value indicating whether a cached
     # attribute read is acceptable.
     ZCL_INIT_ATTRS: dict[int | str, bool] = {}
 
     def __init__(self, cluster: ZigpyCluster, endpoint: EndpointType) -> None:
-        """Initialize ZigbeeChannel."""
+        """Initialize ClusterHandler."""
         self._generic_id = f"channel_0x{cluster.cluster_id:04x}"
         self._endpoint = endpoint
         self._cluster = cluster
@@ -63,22 +63,22 @@ class ClusterHandler(LogMixin):
 
     @property
     def id(self) -> str:
-        """Return channel id unique for this device only."""
+        """Return cluster handler id."""
         return self._id
 
     @property
     def generic_id(self):
-        """Return the generic id for this channel."""
+        """Return the generic id for this cluster handler."""
         return self._generic_id
 
     @property
     def unique_id(self):
-        """Return the unique id for this channel."""
+        """Return the unique id for this cluster handler."""
         return self._unique_id
 
     @property
     def cluster(self):
-        """Return the zigpy cluster for this channel."""
+        """Return the zigpy cluster for this cluster handler."""
         return self._cluster
 
     @property
@@ -88,7 +88,7 @@ class ClusterHandler(LogMixin):
 
     @property
     def status(self):
-        """Return the status of the channel."""
+        """Return the status of the cluster handler."""
         return self._status
 
     def __hash__(self) -> int:
@@ -251,22 +251,22 @@ class ClusterHandler(LogMixin):
                 await self.bind()
             if self.cluster.is_server:
                 await self.configure_reporting()
-            ch_specific_cfg = getattr(self, "async_configure_channel_specific", None)
+            ch_specific_cfg = getattr(self, "async_configure_handler_specific", None)
             if ch_specific_cfg:
                 await ch_specific_cfg()
-            self.debug("finished channel configuration")
+            self.debug("finished cluster handler configuration")
         else:
-            self.debug("skipping channel configuration")
+            self.debug("skipping cluster handler configuration")
         self._status = ClusterHandlerStatus.CONFIGURED
 
     @retryable_request(delays=(1, 1, 3))
     async def async_initialize(self, from_cache: bool) -> None:
-        """Initialize channel."""
+        """Initialize cluster handler."""
         if not from_cache and self._ch_pool.skip_configuration:
             self._status = ClusterHandlerStatus.INITIALIZED
             return
 
-        self.debug("initializing channel: from_cache: %s", from_cache)
+        self.debug("initializing cluster handler: from_cache: %s", from_cache)
         cached = [a for a, cached in self.ZCL_INIT_ATTRS.items() if cached]
         uncached = [a for a, cached in self.ZCL_INIT_ATTRS.items() if not cached]
         uncached.extend([cfg["attr"] for cfg in self.REPORT_CONFIG])
@@ -276,11 +276,11 @@ class ClusterHandler(LogMixin):
         if uncached:
             await self._get_attributes(True, uncached, from_cache=from_cache)
 
-        ch_specific_init = getattr(self, "async_initialize_channel_specific", None)
+        ch_specific_init = getattr(self, "async_initialize_handler_specific", None)
         if ch_specific_init:
             await ch_specific_init(from_cache=from_cache)
 
-        self.debug("finished channel initialization")
+        self.debug("finished cluster handler initialization")
         self._status = ClusterHandlerStatus.INITIALIZED
 
     def cluster_command(self, tsn, command_id, args):
@@ -385,10 +385,10 @@ class ClusterHandler(LogMixin):
 
 
 class ZDOClusterHandler(LogMixin):
-    """Channel for ZDO events."""
+    """Cluster handler for ZDO events."""
 
     def __init__(self, device):
-        """Initialize ZDOChannel."""
+        """Initialize ZDOClusterHandler."""
         self.name = CLUSTER_HANDLER_ZDO
         self._cluster = device.device.endpoints[0]
         self._device = device
@@ -398,17 +398,17 @@ class ZDOClusterHandler(LogMixin):
 
     @property
     def unique_id(self):
-        """Return the unique id for this channel."""
+        """Return the unique id for this cluster handler."""
         return self._unique_id
 
     @property
     def cluster(self):
-        """Return the aigpy cluster for this channel."""
+        """Return the aigpy cluster for this cluster handler."""
         return self._cluster
 
     @property
     def status(self):
-        """Return the status of the channel."""
+        """Return the status of the cluster handler."""
         return self._status
 
     def device_announce(self, zigpy_device):
@@ -418,11 +418,11 @@ class ZDOClusterHandler(LogMixin):
         """Permit handler."""
 
     async def async_initialize(self, from_cache):
-        """Initialize channel."""
+        """Initialize cluster handler."""
         self._status = ClusterHandlerStatus.INITIALIZED
 
     async def async_configure(self):
-        """Configure channel."""
+        """Configure cluster handler."""
         self._status = ClusterHandlerStatus.CONFIGURED
 
     def log(self, level, msg, *args):

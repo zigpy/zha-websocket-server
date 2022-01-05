@@ -1,4 +1,4 @@
-"""Manufacturer specific channels module for Zigbee Home Automation."""
+"""Manufacturer specific cluster handlers module for Zigbee Home Automation."""
 from zhawss.zigbee import registries
 from zhawss.zigbee.cluster import ClusterHandler
 from zhawss.zigbee.cluster.const import (
@@ -8,9 +8,11 @@ from zhawss.zigbee.cluster.const import (
 )
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(registries.SMARTTHINGS_HUMIDITY_CLUSTER)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
+    registries.SMARTTHINGS_HUMIDITY_CLUSTER
+)
 class SmartThingsHumidity(ClusterHandler):
-    """Smart Things Humidity channel."""
+    """Smart Things Humidity cluster handler."""
 
     REPORT_CONFIG = [
         {
@@ -20,35 +22,35 @@ class SmartThingsHumidity(ClusterHandler):
     ]
 
 
-@registries.CHANNEL_ONLY_CLUSTERS.register(0xFD00)
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(0xFD00)
+@registries.HANDLER_ONLY_CLUSTERS.register(0xFD00)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(0xFD00)
 class OsramButton(ClusterHandler):
-    """Osram button channel."""
+    """Osram button cluster handler."""
 
     REPORT_CONFIG = []
 
 
-@registries.CHANNEL_ONLY_CLUSTERS.register(registries.PHILLIPS_REMOTE_CLUSTER)
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(registries.PHILLIPS_REMOTE_CLUSTER)
+@registries.HANDLER_ONLY_CLUSTERS.register(registries.PHILLIPS_REMOTE_CLUSTER)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(registries.PHILLIPS_REMOTE_CLUSTER)
 class PhillipsRemote(ClusterHandler):
-    """Phillips remote channel."""
+    """Phillips remote cluster handler."""
 
     REPORT_CONFIG = []
 
 
-@registries.CHANNEL_ONLY_CLUSTERS.register(0xFCC0)
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(0xFCC0)
+@registries.HANDLER_ONLY_CLUSTERS.register(0xFCC0)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(0xFCC0)
 class OppleRemote(ClusterHandler):
-    """Opple button channel."""
+    """Opple button cluster handler."""
 
     REPORT_CONFIG = []
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(
     registries.SMARTTHINGS_ACCELERATION_CLUSTER
 )
 class SmartThingsAcceleration(ClusterHandler):
-    """Smart Things Acceleration channel."""
+    """Smart Things Acceleration cluster handler."""
 
     REPORT_CONFIG = [
         {"attr": "acceleration", "config": REPORT_CONFIG_ASAP},

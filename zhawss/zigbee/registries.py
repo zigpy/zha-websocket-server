@@ -106,7 +106,7 @@ SINGLE_OUTPUT_CLUSTER_DEVICE_CLASS = {
 }
 
 BINDABLE_CLUSTERS = SetRegistry()
-CHANNEL_ONLY_CLUSTERS = SetRegistry()
+HANDLER_ONLY_CLUSTERS = SetRegistry()
 
 DEVICE_CLASS = {
     zigpy.profiles.zha.PROFILE_ID: {
@@ -139,8 +139,8 @@ DEVICE_CLASS = {
 }
 DEVICE_CLASS = collections.defaultdict(dict, DEVICE_CLASS)
 
-CLIENT_CHANNELS_REGISTRY = DictRegistry()
-ZIGBEE_CHANNEL_REGISTRY = DictRegistry()
+CLIENT_CLUSTER_HANDLER_REGISTRY = DictRegistry()
+ZIGBEE_CLUSTER_HANDLER_REGISTRY = DictRegistry()
 
 
 def set_or_callable(value):
@@ -156,9 +156,9 @@ def set_or_callable(value):
 
 @attr.s(frozen=True)
 class MatchRule:
-    """Match a ZHA Entity to a channel name or generic id."""
+    """Match a ZHA Entity to a cluster handler name or generic id."""
 
-    channel_names: set[str] | str = attr.ib(
+    cluster_handler_names: set[str] | str = attr.ib(
         factory=frozenset, converter=set_or_callable
     )
     generic_ids: set[str] | str = attr.ib(factory=frozenset, converter=set_or_callable)
@@ -168,7 +168,7 @@ class MatchRule:
     models: Callable | set[str] | str = attr.ib(
         factory=frozenset, converter=set_or_callable
     )
-    aux_channels: Callable | set[str] | str = attr.ib(
+    aux_cluster_handlers: Callable | set[str] | str = attr.ib(
         factory=frozenset, converter=set_or_callable
     )
 
@@ -180,9 +180,9 @@ class MatchRule:
         rules have a priority over manufacturer matching rules and rules matching a
         single model/manufacturer get a better priority over rules matching multiple
         models/manufacturers. And any model or manufacturers matching rules get better
-        priority over rules matching only channels.
-        But in case of a channel name/channel id matching, we give rules matching
-        multiple channels a better priority over rules matching a single channel.
+        priority over rules matching only cluster handlers.
+        But in case of a cluster handler name/handler id matching, we give rules matching
+        multiple handlers a better priority over rules matching a single cluster handler.
         """
         weight = 0
         if self.models:
@@ -193,46 +193,52 @@ class MatchRule:
                 1 if callable(self.manufacturers) else len(self.manufacturers)
             )
 
-        weight += 10 * len(self.channel_names)
+        weight += 10 * len(self.cluster_handler_names)
         weight += 5 * len(self.generic_ids)
-        weight += 1 * len(self.aux_channels)
+        weight += 1 * len(self.aux_cluster_handlers)
         return weight
 
-    def claim_channels(
-        self, channel_pool: list[ClusterHandlerType]
+    def claim_cluster_handlers(
+        self, endpoint: list[ClusterHandlerType]
     ) -> list[ClusterHandlerType]:
-        """Return a list of channels this rule matches + aux channels."""
+        """Return a list of cluster handlers this rule matches + aux cluster handlers."""
         claimed = []
-        if isinstance(self.channel_names, frozenset):
-            claimed.extend([ch for ch in channel_pool if ch.name in self.channel_names])
-        if isinstance(self.generic_ids, frozenset):
+        if isinstance(self.cluster_handler_names, frozenset):
             claimed.extend(
-                [ch for ch in channel_pool if ch.generic_id in self.generic_ids]
+                [ch for ch in endpoint if ch.name in self.cluster_handler_names]
             )
-        if isinstance(self.aux_channels, frozenset):
-            claimed.extend([ch for ch in channel_pool if ch.name in self.aux_channels])
+        if isinstance(self.generic_ids, frozenset):
+            claimed.extend([ch for ch in endpoint if ch.generic_id in self.generic_ids])
+        if isinstance(self.aux_cluster_handlers, frozenset):
+            claimed.extend(
+                [ch for ch in endpoint if ch.name in self.aux_cluster_handlers]
+            )
         return claimed
 
-    def strict_matched(self, manufacturer: str, model: str, channels: list) -> bool:
+    def strict_matched(
+        self, manufacturer: str, model: str, cluster_handlers: list
+    ) -> bool:
         """Return True if this device matches the criteria."""
-        return all(self._matched(manufacturer, model, channels))
+        return all(self._matched(manufacturer, model, cluster_handlers))
 
-    def loose_matched(self, manufacturer: str, model: str, channels: list) -> bool:
+    def loose_matched(
+        self, manufacturer: str, model: str, cluster_handlers: list
+    ) -> bool:
         """Return True if this device matches the criteria."""
-        return any(self._matched(manufacturer, model, channels))
+        return any(self._matched(manufacturer, model, cluster_handlers))
 
-    def _matched(self, manufacturer: str, model: str, channels: list) -> list:
+    def _matched(self, manufacturer: str, model: str, cluster_handlers: list) -> list:
         """Return a list of field matches."""
         if not any(attr.asdict(self).values()):
             return [False]
 
         matches = []
-        if self.channel_names:
-            channel_names = {ch.name for ch in channels}
-            matches.append(self.channel_names.issubset(channel_names))
+        if self.cluster_handler_names:
+            cluster_handler_names = {ch.name for ch in cluster_handlers}
+            matches.append(self.cluster_handler_names.issubset(cluster_handler_names))
 
         if self.generic_ids:
-            all_generic_ids = {ch.generic_id for ch in channels}
+            all_generic_ids = {ch.generic_id for ch in cluster_handlers}
             matches.append(self.generic_ids.issubset(all_generic_ids))
 
         if self.manufacturers:
@@ -251,15 +257,15 @@ class MatchRule:
 
 
 @dataclasses.dataclass
-class EntityClassAndChannels:
-    """Container for entity class and corresponding channels."""
+class EntityClassAndClusterHandlers:
+    """Container for entity class and corresponding cluster handlers."""
 
     entity_class: CALLABLE_T
-    claimed_channel: list[ClusterHandlerType]
+    claimed_cluster_handler: list[ClusterHandlerType]
 
 
 class ZHAEntityRegistry:
-    """Channel to ZHA Entity mapping."""
+    """Cluster handler to ZHA Entity mapping."""
 
     def __init__(self):
         """Initialize Registry instance."""
@@ -281,14 +287,14 @@ class ZHAEntityRegistry:
         component: str,
         manufacturer: str,
         model: str,
-        channels: list[ClusterHandlerType],
+        cluster_handlers: list[ClusterHandlerType],
         default: CALLABLE_T = None,
     ) -> tuple[CALLABLE_T, list[ClusterHandlerType]]:
-        """Match a ZHA Channels to a ZHA Entity class."""
+        """Match cluster handlers to a ZHA Entity class."""
         matches = self._strict_registry[component]
         for match in sorted(matches, key=lambda x: x.weight, reverse=True):
-            if match.strict_matched(manufacturer, model, channels):
-                claimed = match.claim_channels(channels)
+            if match.strict_matched(manufacturer, model, cluster_handlers):
+                claimed = match.claim_cluster_handlers(cluster_handlers)
                 return self._strict_registry[component][match], claimed
 
         return default, []
@@ -297,20 +303,26 @@ class ZHAEntityRegistry:
         self,
         manufacturer: str,
         model: str,
-        channels: list[ClusterHandlerType],
-    ) -> tuple[dict[str, list[EntityClassAndChannels]], list[ClusterHandlerType]]:
-        """Match ZHA Channels to potentially multiple ZHA Entity classes."""
-        result: dict[str, list[EntityClassAndChannels]] = collections.defaultdict(list)
+        cluster_handlers: list[ClusterHandlerType],
+    ) -> tuple[
+        dict[str, list[EntityClassAndClusterHandlers]], list[ClusterHandlerType]
+    ]:
+        """Match ZHA cluster handlers to potentially multiple ZHA Entity classes."""
+        result: dict[
+            str, list[EntityClassAndClusterHandlers]
+        ] = collections.defaultdict(list)
         all_claimed: set[ClusterHandlerType] = set()
         for component, stop_match_groups in self._multi_entity_registry.items():
             for stop_match_grp, matches in stop_match_groups.items():
                 sorted_matches = sorted(matches, key=lambda x: x.weight, reverse=True)
                 for match in sorted_matches:
-                    if match.strict_matched(manufacturer, model, channels):
-                        claimed = match.claim_channels(channels)
+                    if match.strict_matched(manufacturer, model, cluster_handlers):
+                        claimed = match.claim_cluster_handlers(cluster_handlers)
                         for ent_class in stop_match_groups[stop_match_grp][match]:
-                            ent_n_channels = EntityClassAndChannels(ent_class, claimed)
-                            result[component].append(ent_n_channels)
+                            ent_n_cluster_handlers = EntityClassAndClusterHandlers(
+                                ent_class, claimed
+                            )
+                            result[component].append(ent_n_cluster_handlers)
                         all_claimed |= set(claimed)
                         if stop_match_grp:
                             break
@@ -324,16 +336,20 @@ class ZHAEntityRegistry:
     def strict_match(
         self,
         component: str,
-        channel_names: set[str] | str = None,
+        cluster_handler_names: set[str] | str = None,
         generic_ids: set[str] | str = None,
         manufacturers: Callable | set[str] | str = None,
         models: Callable | set[str] | str = None,
-        aux_channels: Callable | set[str] | str = None,
+        aux_cluster_handlers: Callable | set[str] | str = None,
     ) -> Callable[[CALLABLE_T], CALLABLE_T]:
         """Decorate a strict match rule."""
 
         rule = MatchRule(
-            channel_names, generic_ids, manufacturers, models, aux_channels
+            cluster_handler_names,
+            generic_ids,
+            manufacturers,
+            models,
+            aux_cluster_handlers,
         )
 
         def decorator(zha_ent: CALLABLE_T) -> CALLABLE_T:
@@ -349,21 +365,21 @@ class ZHAEntityRegistry:
     def multipass_match(
         self,
         component: str,
-        channel_names: set[str] | str = None,
+        cluster_handler_names: set[str] | str = None,
         generic_ids: set[str] | str = None,
         manufacturers: Callable | set[str] | str = None,
         models: Callable | set[str] | str = None,
-        aux_channels: Callable | set[str] | str = None,
+        aux_cluster_handlers: Callable | set[str] | str = None,
         stop_on_match_group: int | str | None = None,
     ) -> Callable[[CALLABLE_T], CALLABLE_T]:
         """Decorate a loose match rule."""
 
         rule = MatchRule(
-            channel_names,
+            cluster_handler_names,
             generic_ids,
             manufacturers,
             models,
-            aux_channels,
+            aux_cluster_handlers,
         )
 
         def decorator(zha_entity: CALLABLE_T) -> CALLABLE_T:
@@ -371,7 +387,7 @@ class ZHAEntityRegistry:
 
             All non empty fields of a match rule must match.
             """
-            # group the rules by channels
+            # group the rules by cluster handlers
             self._multi_entity_registry[component][stop_on_match_group][rule].append(
                 zha_entity
             )

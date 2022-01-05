@@ -1,4 +1,4 @@
-"""Lighting channels module for Zigbee Home Automation."""
+"""Lighting cluster handlers module for Zigbee Home Automation."""
 from __future__ import annotations
 
 from contextlib import suppress
@@ -10,20 +10,20 @@ from zhawss.zigbee.cluster import ClientClusterHandler, ClusterHandler
 from zhawss.zigbee.cluster.const import REPORT_CONFIG_DEFAULT
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(lighting.Ballast.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(lighting.Ballast.cluster_id)
 class Ballast(ClusterHandler):
-    """Ballast channel."""
+    """Ballast cluster handler."""
 
 
-@registries.CLIENT_CHANNELS_REGISTRY.register(lighting.Color.cluster_id)
-class ColorClientChannel(ClientClusterHandler):
-    """Color client channel."""
+@registries.CLIENT_CLUSTER_HANDLER_REGISTRY.register(lighting.Color.cluster_id)
+class ColorClientClusterHandler(ClientClusterHandler):
+    """Color client cluster handler."""
 
 
 @registries.BINDABLE_CLUSTERS.register(lighting.Color.cluster_id)
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(lighting.Color.cluster_id)
-class ColorChannel(ClusterHandler):
-    """Color channel."""
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(lighting.Color.cluster_id)
+class ColorClusterHandler(ClusterHandler):
+    """Color cluster handler."""
 
     CAPABILITIES_COLOR_XY = 0x08
     CAPABILITIES_COLOR_TEMP = 0x10
@@ -73,10 +73,10 @@ class ColorChannel(ClusterHandler):
 
     @property
     def min_mireds(self) -> int:
-        """Return the coldest color_temp that this channel supports."""
+        """Return the coldest color_temp that this cluster handler supports."""
         return self.cluster.get("color_temp_physical_min", self.MIN_MIREDS)
 
     @property
     def max_mireds(self) -> int:
-        """Return the warmest color_temp that this channel supports."""
+        """Return the warmest color_temp that this cluster handler supports."""
         return self.cluster.get("color_temp_physical_max", self.MAX_MIREDS)

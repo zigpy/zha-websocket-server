@@ -1,5 +1,5 @@
 """
-HVAC channels module for Zigbee Home Automation.
+HVAC cluster handlers module for Zigbee Home Automation.
 
 For more details about this component, please refer to the documentation at
 https://home-assistant.io/integrations/zha/
@@ -27,14 +27,14 @@ REPORT_CONFIG_CLIMATE_DEMAND = (REPORT_CONFIG_MIN_INT, REPORT_CONFIG_MAX_INT, 5)
 REPORT_CONFIG_CLIMATE_DISCRETE = (REPORT_CONFIG_MIN_INT, REPORT_CONFIG_MAX_INT, 1)
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(hvac.Dehumidification.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(hvac.Dehumidification.cluster_id)
 class Dehumidification(ClusterHandler):
-    """Dehumidification channel."""
+    """Dehumidification cluster handler."""
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(hvac.Fan.cluster_id)
-class FanChannel(ClusterHandler):
-    """Fan channel."""
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(hvac.Fan.cluster_id)
+class FanClusterHandler(ClusterHandler):
+    """Fan cluster handler."""
 
     _value_attribute = 0
 
@@ -79,14 +79,14 @@ class FanChannel(ClusterHandler):
             pass
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(hvac.Pump.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(hvac.Pump.cluster_id)
 class Pump(ClusterHandler):
-    """Pump channel."""
+    """Pump cluster handler."""
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(hvac.Thermostat.cluster_id)
-class ThermostatChannel(ClusterHandler):
-    """Thermostat channel."""
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(hvac.Thermostat.cluster_id)
+class ThermostatClusterHandler(ClusterHandler):
+    """Thermostat cluster handler."""
 
     REPORT_CONFIG = (
         {"attr": "local_temp", "config": REPORT_CONFIG_CLIMATE},
@@ -306,6 +306,6 @@ class ThermostatChannel(ClusterHandler):
         return all(record.status == Status.SUCCESS for record in res[0])
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(hvac.UserInterface.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(hvac.UserInterface.cluster_id)
 class UserInterface(ClusterHandler):
-    """User interface (thermostat) channel."""
+    """User interface (thermostat) cluster handler."""

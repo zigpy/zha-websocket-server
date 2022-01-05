@@ -7,14 +7,14 @@ from random import uniform
 import zigpy.exceptions
 
 
-def decorate_command(channel, command):
+def decorate_command(cluster_handler, command):
     """Wrap a cluster command to make it safe."""
 
     @wraps(command)
     async def wrapper(*args, **kwds):
         try:
             result = await command(*args, **kwds)
-            channel.debug(
+            cluster_handler.debug(
                 "executed '%s' command with args: '%s' kwargs: '%s' result: %s",
                 command.__name__,
                 args,
@@ -24,7 +24,7 @@ def decorate_command(channel, command):
             return result
 
         except (zigpy.exceptions.ZigbeeException, asyncio.TimeoutError) as ex:
-            channel.debug(
+            cluster_handler.debug(
                 "command failed: '%s' args: '%s' kwargs '%s' exception: '%s'",
                 command.__name__,
                 args,
@@ -47,18 +47,18 @@ def retryable_request(
 
     def decorator(func):
         @wraps(func)
-        async def wrapper(channel, *args, **kwargs):
+        async def wrapper(cluster_handler, *args, **kwargs):
 
             exceptions = (zigpy.exceptions.ZigbeeException, asyncio.TimeoutError)
             try_count, errors = 1, []
             for delay in itertools.chain(delays, [None]):
                 try:
-                    return await func(channel, *args, **kwargs)
+                    return await func(cluster_handler, *args, **kwargs)
                 except exceptions as ex:
                     errors.append(ex)
                     if delay:
                         delay = uniform(delay * 0.75, delay * 1.25)
-                        channel.debug(
+                        cluster_handler.debug(
                             (
                                 "%s: retryable request #%d failed: %s. "
                                 "Retrying in %ss"
@@ -71,7 +71,7 @@ def retryable_request(
                         try_count += 1
                         await asyncio.sleep(delay)
                     else:
-                        channel.warning(
+                        cluster_handler.warning(
                             "%s: all attempts have failed: %s", func.__name__, errors
                         )
                         if raise_:

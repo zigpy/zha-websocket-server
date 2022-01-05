@@ -1,4 +1,4 @@
-"""Lightlink channels module for Zigbee Home Automation."""
+"""Lightlink cluster handlers module for Zigbee Home Automation."""
 import asyncio
 
 import zigpy.exceptions
@@ -8,10 +8,10 @@ from zhawss.zigbee import registries
 from zhawss.zigbee.cluster import ClusterHandler, ClusterHandlerStatus
 
 
-@registries.CHANNEL_ONLY_CLUSTERS.register(lightlink.LightLink.cluster_id)
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(lightlink.LightLink.cluster_id)
+@registries.HANDLER_ONLY_CLUSTERS.register(lightlink.LightLink.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(lightlink.LightLink.cluster_id)
 class LightLink(ClusterHandler):
-    """Lightlink channel."""
+    """Lightlink cluster handler."""
 
     BIND: bool = False
 

@@ -1,4 +1,4 @@
-"""Closures channels module for Zigbee Home Automation."""
+"""Closures cluster handlers module for zhawss."""
 from zigpy.zcl.clusters import closures
 
 from zhawss.zigbee import registries
@@ -6,9 +6,9 @@ from zhawss.zigbee.cluster import ClientClusterHandler, ClusterHandler
 from zhawss.zigbee.cluster.const import REPORT_CONFIG_IMMEDIATE
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(closures.DoorLock.cluster_id)
-class DoorLockChannel(ClusterHandler):
-    """Door lock channel."""
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(closures.DoorLock.cluster_id)
+class DoorLockClusterHandler(ClusterHandler):
+    """Door lock cluster handler."""
 
     _value_attribute = 0
     REPORT_CONFIG = ({"attr": "lock_state", "config": REPORT_CONFIG_IMMEDIATE},)
@@ -105,19 +105,19 @@ class DoorLockChannel(ClusterHandler):
         return result
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(closures.Shade.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(closures.Shade.cluster_id)
 class Shade(ClusterHandler):
-    """Shade channel."""
+    """Shade cluster handler."""
 
 
-@registries.CLIENT_CHANNELS_REGISTRY.register(closures.WindowCovering.cluster_id)
+@registries.CLIENT_CLUSTER_HANDLER_REGISTRY.register(closures.WindowCovering.cluster_id)
 class WindowCoveringClient(ClientClusterHandler):
-    """Window client channel."""
+    """Window client cluster handler."""
 
 
-@registries.ZIGBEE_CHANNEL_REGISTRY.register(closures.WindowCovering.cluster_id)
+@registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.register(closures.WindowCovering.cluster_id)
 class WindowCovering(ClusterHandler):
-    """Window channel."""
+    """Window cluster handler."""
 
     _value_attribute = 8
     REPORT_CONFIG = (

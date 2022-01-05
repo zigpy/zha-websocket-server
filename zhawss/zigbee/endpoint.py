@@ -98,7 +98,7 @@ class Endpoint:
     def add_all_cluster_handlers(self) -> None:
         """Create and add cluster handlers for all input clusters."""
         for cluster_id, cluster in self.zigpy_endpoint.in_clusters.items():
-            cluster_handler_class = registries.ZIGBEE_CHANNEL_REGISTRY.get(
+            cluster_handler_class = registries.ZIGBEE_CLUSTER_HANDLER_REGISTRY.get(
                 cluster_id, ClusterHandler
             )
             # really ugly hack to deal with xiaomi using the door lock cluster
@@ -130,7 +130,7 @@ class Endpoint:
         for (
             cluster_id,
             cluster_handler_class,
-        ) in registries.CLIENT_CHANNELS_REGISTRY.items():
+        ) in registries.CLIENT_CLUSTER_HANDLER_REGISTRY.items():
             cluster = self.zigpy_endpoint.out_clusters.get(cluster_id)
             if cluster is not None:
                 cluster_handler = cluster_handler_class(cluster, self)
