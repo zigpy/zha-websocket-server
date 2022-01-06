@@ -28,7 +28,7 @@ class EnumSelect(PlatformEntity):
     def to_json(self) -> dict:
         """Return a JSON representation of the select."""
         json = super().to_json()
-        json["enum"] = self._enum.name
+        json["enum"] = self._enum.__name__
         json["options"] = self._enum._member_names_
         return json
 

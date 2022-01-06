@@ -127,5 +127,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-zigbee.db
+*.db
 .DS_Store
