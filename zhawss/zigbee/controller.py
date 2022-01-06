@@ -8,6 +8,7 @@ from serial.serialutil import SerialException
 from zhaquirks import setup as setup_quirks
 from zigpy.endpoint import Endpoint
 from zigpy.group import Group
+from zigpy.typing import DeviceType as ZigpyDeviceType
 
 from zhawss.const import CONF_ENABLE_QUIRKS, CONF_RADIO_TYPE
 from zhawss.platforms import discovery
@@ -98,20 +99,20 @@ class Controller:
         """Get Zigbee groups."""
 
     # TODO connect the following methods to the client manager broadcast somehow
-    def device_joined(self, device: Device) -> None:
+    def device_joined(self, device: ZigpyDeviceType) -> None:
         """Handle device joined.
 
         At this point, no information about the device is known other than its
         address
         """
 
-    def raw_device_initialized(self, device: Device) -> None:
+    def raw_device_initialized(self, device: ZigpyDeviceType) -> None:
         """Handle a device initialization without quirks loaded."""
 
-    def device_initialized(self, device: Device) -> None:
+    def device_initialized(self, device: ZigpyDeviceType) -> None:
         """Handle device joined and basic information discovered."""
 
-    def device_left(self, device: Device) -> None:
+    def device_left(self, device: ZigpyDeviceType) -> None:
         """Handle device leaving the network."""
 
     def group_member_removed(self, zigpy_group: Group, endpoint: Endpoint) -> None:
