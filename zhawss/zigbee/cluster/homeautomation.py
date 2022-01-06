@@ -97,7 +97,7 @@ class ElectricalMeasurementClusterHandler(ClusterHandler):
         if result:
             for attr, value in result.items():
                 """TODO
-                self.async_send_signal(
+                self.send_event(
                     f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}",
                     self.cluster.attridx.get(attr, attr),
                     attr,

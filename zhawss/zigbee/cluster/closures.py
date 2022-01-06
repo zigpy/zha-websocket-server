@@ -21,7 +21,7 @@ class DoorLockClusterHandler(ClusterHandler):
         if result is not None:
             pass
         """ TODO
-            self.async_send_signal(
+            self.send_event(
                 f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}", 0, "lock_state", result
             )
         """
@@ -54,7 +54,7 @@ class DoorLockClusterHandler(ClusterHandler):
         )
         if attrid == self._value_attribute:
             """TODO
-            self.async_send_signal(
+            self.send_event(
                 f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}", attrid, attr_name, value
             )
             """
@@ -138,7 +138,7 @@ class WindowCovering(ClusterHandler):
         self.debug("read current position: %s", result)
         if result is not None:
             """TODO
-            self.async_send_signal(
+            self.send_event(
                 f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}",
                 8,
                 "current_position_lift_percentage",
@@ -155,7 +155,7 @@ class WindowCovering(ClusterHandler):
         )
         if attrid == self._value_attribute:
             """TODO
-            self.async_send_signal(
+            self.send_event(
                 f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}", attrid, attr_name, value
             )
             """

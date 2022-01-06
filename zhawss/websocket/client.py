@@ -147,6 +147,11 @@ class ClientManager:
         """Broadcast a message to all connected clients."""
         for client in self._clients:
             if client.is_connected:
+                _LOGGER.info(
+                    "Broadcasting message: %s to client: %s",
+                    message,
+                    client._websocket.id,
+                )
                 client.send_event(message)
             else:
                 client.disconnect()

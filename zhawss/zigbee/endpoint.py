@@ -191,11 +191,10 @@ class Endpoint:
             (entity_class, (unique_id, cluster_handlers, self, self.device))
         )
 
-    """ TODO
-    def async_send_signal(self, signal: str, *args: Any) -> None:
-        #Send a signal through hass dispatcher
-        self._channels.async_send_signal(signal, *args)
-    """
+    def send_event(self, signal: dict[str, Any]) -> None:
+        """Broadcast an event from this endpoint."""
+        signal["endpoint_id"] = self.id
+        self.device.send_event(signal)
 
     def claim_cluster_handlers(
         self, cluster_handlers: list[ClusterHandlerType]

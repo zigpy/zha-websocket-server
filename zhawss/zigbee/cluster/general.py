@@ -192,7 +192,7 @@ class Identify(ClusterHandler):
         cmd = parse_and_log_command(self, tsn, command_id, args)
 
         if cmd == "trigger_effect":
-            self.async_send_signal(f"{self.unique_id}_{cmd}", args[0])
+            self.send_event(f"{self.unique_id}_{cmd}", args[0])
 
 
 @registries.CLIENT_CLUSTER_HANDLER_REGISTRY.register(general.LevelControl.cluster_id)
@@ -244,7 +244,7 @@ class LevelControlClusterHandler(ClusterHandler):
 
     def dispatch_level_change(self, command, level) -> None:
         """Dispatch level change."""
-        # self.async_send_signal(f"{self.unique_id}_{command}", level)
+        # self.send_event(f"{self.unique_id}_{command}", level)
 
 
 @registries.CLUSTER_HANDLER_REGISTRY.register(general.MultistateInput.cluster_id)
@@ -330,7 +330,7 @@ class OnOffClusterHandler(ClusterHandler):
         """Handle attribute updates on this cluster."""
         if attrid == self.ON_OFF:
             """TODO
-            self.async_send_signal(
+            self.send_event(
                 f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}", attrid, "on_off", value
             )
             """
@@ -374,7 +374,7 @@ class Ota(ClusterHandler):
         # TODO signal_id = self._ch_pool.unique_id.split("-")[0]
         if cmd_name == "query_next_image":
             """TODO
-            self.async_send_signal(SIGNAL_UPDATE_DEVICE.format(signal_id), args[3])
+            self.send_event(SIGNAL_UPDATE_DEVICE.format(signal_id), args[3])
             """
             pass
 

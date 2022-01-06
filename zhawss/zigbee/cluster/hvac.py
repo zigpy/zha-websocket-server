@@ -72,7 +72,7 @@ class FanClusterHandler(ClusterHandler):
         )
         if attr_name == "fan_mode":
             """TODO
-            self.async_send_signal(
+            self.send_event(
                 f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}", attrid, attr_name, value
             )
             """
@@ -232,7 +232,7 @@ class ThermostatClusterHandler(ClusterHandler):
             "Attribute report '%s'[%s] = %s", self.cluster.name, attr_name, value
         )
         """ TODO
-        self.async_send_signal(
+        self.send_event(
             f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}",
             AttributeUpdateRecord(attrid, attr_name, value),
         )

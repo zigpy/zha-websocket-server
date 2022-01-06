@@ -123,9 +123,9 @@ class IasAce(ClusterHandler):
         if self.invalid_tries >= self.max_invalid_tries:
             self.alarm_status = AceCluster.AlarmStatus.Emergency
             self.armed_state = AceCluster.PanelStatus.In_Alarm
-            self.async_send_signal(f"{self.unique_id}_{SIGNAL_ALARM_TRIGGERED}")
+            self.send_event(f"{self.unique_id}_{SIGNAL_ALARM_TRIGGERED}")
         else:
-            self.async_send_signal(f"{self.unique_id}_{SIGNAL_ARMED_STATE_CHANGED}")
+            self.send_event(f"{self.unique_id}_{SIGNAL_ARMED_STATE_CHANGED}")
         self._send_panel_status_changed()
 
     def _disarm(self, code: str) -> None:
@@ -233,7 +233,7 @@ class IasAce(ClusterHandler):
         """Set the specified alarm status."""
         self.alarm_status = status
         self.armed_state = AceCluster.PanelStatus.In_Alarm
-        self.async_send_signal(f"{self.unique_id}_{SIGNAL_ALARM_TRIGGERED}")
+        self.send_event(f"{self.unique_id}_{SIGNAL_ALARM_TRIGGERED}")
         self._send_panel_status_changed()
 
     def _get_zone_id_map(self):
@@ -363,7 +363,7 @@ class IASZoneClusterHandler(ClusterHandler):
         if command_id == 0:
             state = args[0] & 3
             """ TODO
-            self.async_send_signal(
+            self.send_event(
                 f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}", 2, "zone_status", state
             )
             """
@@ -412,7 +412,7 @@ class IASZoneClusterHandler(ClusterHandler):
         if attrid == 2:
             value = value & 3
             """ TODO
-            self.async_send_signal(
+            self.send_event(
                 f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}",
                 attrid,
                 self.cluster.attributes.get(attrid, [attrid])[0],

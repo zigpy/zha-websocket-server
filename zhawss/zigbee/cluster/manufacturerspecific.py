@@ -61,7 +61,7 @@ class SmartThingsAcceleration(ClusterHandler):
         """Handle attribute updates on this cluster."""
         if attrid == self.value_attribute:
             """TODO
-            self.async_send_signal(
+            self.send_event(
                 f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}",
                 attrid,
                 self._cluster.attributes.get(attrid, [UNKNOWN])[0],

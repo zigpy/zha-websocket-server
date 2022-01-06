@@ -23,6 +23,8 @@ from zhawss.zigbee.types import DeviceType, EndpointType
 
 _LOGGER = logging.getLogger(__name__)
 
+SIGNAL_ATTR_UPDATED = "attribute_updated"
+
 
 class ClusterHandlerStatus(Enum):
     """Status of a cluster handler."""
@@ -95,9 +97,13 @@ class ClusterHandler(LogMixin):
         """Make this a hashable."""
         return hash(self._unique_id)
 
-    def async_send_signal(self, signal: str, *args: Any) -> None:
-        """Send a signal through hass dispatcher."""
-        self._ch_pool.async_send_signal(signal, *args)
+    def send_event(self, signal: dict[str, Any]) -> None:
+        """Broadcast an event from this cluster handler."""
+        signal["cluster_handler_unique_id"] = self.unique_id
+        signal["cluster_id"] = self.cluster.cluster_id
+        signal["endpoint_attribute"] = self.cluster.ep_attribute
+        signal["cluster_name"] = self.cluster.name
+        self._endpoint.send_event(signal)
 
     async def bind(self) -> Awaitable[None]:
         """Bind a zigbee cluster.
@@ -288,14 +294,14 @@ class ClusterHandler(LogMixin):
 
     def attribute_updated(self, attrid, value) -> None:
         """Handle attribute updates on this cluster."""
-        """ TODO
-        self.async_send_signal(
-            f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}",
-            attrid,
-            self.cluster.attributes.get(attrid, [attrid])[0],
-            value,
+        self.send_event(
+            {
+                "event": SIGNAL_ATTR_UPDATED,
+                "attribute_id": attrid,
+                "attribute_name": self.cluster.attributes.get(attrid, [attrid])[0],
+                "attribute_value": value,
+            }
         )
-        """
 
     def zdo_command(self, *args, **kwargs) -> None:
         """Handle ZDO commands on this cluster."""
