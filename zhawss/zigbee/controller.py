@@ -73,13 +73,16 @@ class Controller:
             Device(zigpy_device, self)
             for zigpy_device in self._application_controller.devices.values()
         ]
+        self.create_platform_entities()
+
+    def create_platform_entities(self) -> None:
+        """Create platform entities."""
 
         for platform in discovery.PLATFORMS:
             for platform_entity_class, args in self.server.data[platform]:
                 platform_entity = platform_entity_class.create_platform_entity(*args)
                 if platform_entity:
-                    _LOGGER.info("Platform entity data: %s", platform_entity.to_json())
-                    platform_entity.device.platform_entities.append(platform_entity)
+                    _LOGGER.debug("Platform entity data: %s", platform_entity.to_json())
             self.server.data[platform].clear()
 
     async def stop_network(self) -> Awaitable[None]:

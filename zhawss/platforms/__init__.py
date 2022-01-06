@@ -47,6 +47,7 @@ class PlatformEntity:
             self.cluster_handlers[cluster_handler.name] = cluster_handler
         self._device: DeviceType = device
         self._endpoint = endpoint
+        self._device.platform_entities.append(self)
 
     @property
     def device(self):
