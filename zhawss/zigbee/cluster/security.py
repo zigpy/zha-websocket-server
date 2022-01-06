@@ -121,7 +121,7 @@ class IasAce(ClusterHandler):
         )
 
         zigbee_reply = self.arm_map[mode](code)
-        self._ch_pool.hass.async_create_task(zigbee_reply)
+        asyncio.create_task(zigbee_reply)
 
         if self.invalid_tries >= self.max_invalid_tries:
             self.alarm_status = AceCluster.AlarmStatus.Emergency
@@ -253,7 +253,7 @@ class IasAce(ClusterHandler):
             AceCluster.AudibleNotification.Default_Sound,
             self.alarm_status,
         )
-        self._ch_pool.hass.async_create_task(response)
+        asyncio.create_task(response)
 
     def _send_panel_status_changed(self) -> None:
         """Handle the IAS ACE panel status changed command."""
@@ -263,7 +263,7 @@ class IasAce(ClusterHandler):
             AceCluster.AudibleNotification.Default_Sound,
             self.alarm_status,
         )
-        self._ch_pool.hass.async_create_task(response)
+        asyncio.create_task(response)
 
     def _get_bypassed_zone_list(self):
         """Handle the IAS ACE bypassed zone list command."""
@@ -374,7 +374,7 @@ class IASZoneClusterHandler(ClusterHandler):
     async def async_configure(self) -> Awaitable[None]:
         """Configure IAS device."""
         await self.get_attribute_value("zone_type", from_cache=False)
-        if self._ch_pool.skip_configuration:
+        if self._endpoint.device.skip_configuration:
             self.debug("skipping IASZoneClusterHandler configuration")
             return
 

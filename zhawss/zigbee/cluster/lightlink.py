@@ -19,11 +19,11 @@ class LightLink(ClusterHandler):
     async def async_configure(self) -> Awaitable[None]:
         """Add Coordinator to LightLink group ."""
 
-        if self._ch_pool.skip_configuration:
+        if self._endpoint.device.skip_configuration:
             self._status = ClusterHandlerStatus.CONFIGURED
             return
 
-        application = self._ch_pool.endpoint.device.application
+        application = self._endpoint.device.controller.application_controller
         try:
             coordinator = application.get_device(application.ieee)
         except KeyError:

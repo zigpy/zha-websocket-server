@@ -449,8 +449,10 @@ class Device(LogMixin):
         )
         """
         self.debug("completed configuration")
+        """TODO
         entry = self.gateway.zha_storage.async_create_or_update_device(self)
         self.debug("stored in registry: %s", entry)
+        """
 
         """ TODO
         if (

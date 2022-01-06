@@ -1,23 +1,34 @@
 """Controller for zha web socket server."""
 import asyncio
+from enum import Enum
 import logging
-from typing import Any, Awaitable, List
+import time
+from typing import Any, Awaitable, Dict
 
 from bellows.zigbee.application import ControllerApplication
 from serial.serialutil import SerialException
 from zhaquirks import setup as setup_quirks
 from zigpy.endpoint import Endpoint
 from zigpy.group import Group
+from zigpy.types.named import EUI64
 from zigpy.typing import DeviceType as ZigpyDeviceType
 
 from zhawss.const import CONF_ENABLE_QUIRKS, CONF_RADIO_TYPE
 from zhawss.platforms import discovery
 from zhawss.websocket.types import ServerType
-from zhawss.zigbee.device import Device
+from zhawss.zigbee.device import Device, DeviceStatus
 from zhawss.zigbee.radio import RadioType
-from zhawss.zigbee.types import DeviceType
 
 _LOGGER = logging.getLogger(__name__)
+
+
+class DevicePairingStatus(Enum):
+    """Status of a device."""
+
+    PAIRED = 1
+    INTERVIEW_COMPLETE = 2
+    CONFIGURED = 3
+    INITIALIZED = 4
 
 
 class Controller:
@@ -28,7 +39,7 @@ class Controller:
         self._application_controller: ControllerApplication = None
         self._server: ServerType = server
         self.radio_description: str = None
-        self._devices: List[DeviceType] = []
+        self._devices: Dict[EUI64, Device] = {}
 
     @property
     def is_running(self) -> bool:
@@ -67,13 +78,14 @@ class Controller:
                 exc_info=exception,
             )
         self.load_devices()
+        self.application_controller.add_listener(self)
 
     def load_devices(self) -> None:
         """Load devices."""
-        self._devices = [
-            Device(zigpy_device, self)
+        self._devices = {
+            zigpy_device.ieee: Device(zigpy_device, self)
             for zigpy_device in self._application_controller.devices.values()
-        ]
+        }
         self.create_platform_entities()
 
     def create_platform_entities(self) -> None:
@@ -93,7 +105,7 @@ class Controller:
     def get_devices(self) -> list[Any]:
         """Get Zigbee devices."""
         # temporary to test response
-        return [device.zha_device_info for device in self._devices]
+        return [device.zha_device_info for device in self._devices.values()]
 
     def get_groups(self):
         """Get Zigbee groups."""
@@ -105,15 +117,52 @@ class Controller:
         At this point, no information about the device is known other than its
         address
         """
+        _LOGGER.info("Device %s - %s joined", device.ieee, device.nwk)
+        self.server.client_manager.broadcast(
+            {
+                "message_type": "event",
+                "event_type": "device_joined",
+                "ieee": device.ieee,
+                "nwk": device.nwk,
+                "pairing_status": DevicePairingStatus.PAIRED.name,
+            }
+        )
 
     def raw_device_initialized(self, device: ZigpyDeviceType) -> None:
         """Handle a device initialization without quirks loaded."""
+        _LOGGER.info("Device %s - %s raw device initialized", device.ieee, device.nwk)
+        self.server.client_manager.broadcast(
+            {
+                "message_type": "event",
+                "event_type": "raw_device_initialized",
+                "ieee": device.ieee,
+                "nwk": device.nwk,
+                "pairing_status": DevicePairingStatus.INTERVIEW_COMPLETE.name,
+                "model": device.model if device.model else "unknown_model",
+                "manufacturer": device.manufacturer
+                if device.manufacturer
+                else "unknown_manufacturer",
+                "signature": device.get_signature(),
+            }
+        )
 
     def device_initialized(self, device: ZigpyDeviceType) -> None:
         """Handle device joined and basic information discovered."""
+        _LOGGER.info("Device %s - %s initialized", device.ieee, device.nwk)
+        asyncio.create_task(self.async_device_initialized(device))
 
     def device_left(self, device: ZigpyDeviceType) -> None:
         """Handle device leaving the network."""
+        _LOGGER.info("Device %s - %s left", device.ieee, device.nwk)
+
+    def device_removed(self, device: ZigpyDeviceType):
+        """Handle device being removed from the network."""
+        device = self._devices.pop(device.ieee, None)
+        if device is not None:
+            device_info = device.zha_device_info
+            device_info["message_type"] = "event"
+            device_info["event_type"] = "device_removed"
+            self.server.client_manager.broadcast(device_info)
 
     def group_member_removed(self, zigpy_group: Group, endpoint: Endpoint) -> None:
         """Handle zigpy group member removed event."""
@@ -126,3 +175,75 @@ class Controller:
 
     def group_removed(self, zigpy_group: Group) -> None:
         """Handle zigpy group removed event."""
+
+    async def async_device_initialized(self, device: ZigpyDeviceType):
+        """Handle device joined and basic information discovered (async)."""
+        zha_device = self.get_or_create_device(device)
+        # This is an active device so set a last seen if it is none
+        if zha_device.last_seen is None:
+            zha_device.async_update_last_seen(time.time())
+        _LOGGER.debug(
+            "device - %s:%s entering async_device_initialized - is_new_join: %s",
+            device.nwk,
+            device.ieee,
+            zha_device.status is not DeviceStatus.INITIALIZED,
+        )
+
+        if zha_device.status is DeviceStatus.INITIALIZED:
+            # ZHA already has an initialized device so either the device was assigned a
+            # new nwk or device was physically reset and added again without being removed
+            _LOGGER.debug(
+                "device - %s:%s has been reset and re-added or its nwk address changed",
+                device.nwk,
+                device.ieee,
+            )
+            await self._async_device_rejoined(zha_device)
+        else:
+            _LOGGER.debug(
+                "device - %s:%s has joined the ZHA zigbee network",
+                device.nwk,
+                device.ieee,
+            )
+            await self._async_device_joined(zha_device)
+
+        device_info = zha_device.zha_device_info
+        device_info["pairing_status"] = DevicePairingStatus.INITIALIZED.name
+        device_info["message_type"] = "event"
+        device_info["event_type"] = "device_fully_initialized"
+
+        self.server.client_manager.broadcast(device_info)
+
+    def get_or_create_device(self, zigpy_device: ZigpyDeviceType):
+        """Get or create a device."""
+        if (device := self._devices.get(zigpy_device.ieee)) is None:
+            device = Device(zigpy_device, self)
+            self._devices[zigpy_device.ieee] = device
+        return device
+
+    async def _async_device_joined(self, device: Device) -> None:
+        device.available = True
+        device_info = device.device_info
+        await device.async_configure()
+        device_info["pairing_status"] = DevicePairingStatus.CONFIGURED.name
+        device_info["message_type"] = "event"
+        device_info["event_type"] = "device_fully_initialized"
+        self.server.client_manager.broadcast(device_info)
+        await device.async_initialize(from_cache=False)
+        self.create_platform_entities()
+
+    async def _async_device_rejoined(self, device: Device):
+        _LOGGER.debug(
+            "skipping discovery for previously discovered device - %s:%s",
+            device.nwk,
+            device.ieee,
+        )
+        # we don't have to do this on a nwk swap but we don't have a way to tell currently
+        await device.async_configure()
+        device_info = device.device_info
+        device_info["pairing_status"] = DevicePairingStatus.CONFIGURED.name
+        device_info["message_type"] = "event"
+        device_info["event_type"] = "device_fully_initialized"
+        self.server.client_manager.broadcast(device_info)
+        # force async_initialize() to fire so don't explicitly call it
+        device.available = False
+        device.update_available(True)

@@ -16,6 +16,7 @@ class APICommands(StrEnum):
     # Zigbee API commands
     GET_DEVICES = "get_devices"
     PERMIT_JOINING = "permit_joining"
+    REMOVE_DEVICE = "remove_device"
     START_NETWORK = "start_network"
     STOP_NETWORK = "stop_network"
 

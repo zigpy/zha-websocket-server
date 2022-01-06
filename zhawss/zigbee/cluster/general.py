@@ -346,7 +346,7 @@ class OnOffClusterHandler(ClusterHandler):
         """Initialize cluster handler."""
         if self.cluster.is_client:
             return
-        from_cache = not self._ch_pool.is_mains_powered
+        from_cache = not self._endpoint.device.is_mains_powered
         self.debug("attempting to update onoff state - from cache: %s", from_cache)
         state = await self.get_attribute_value(self.ON_OFF, from_cache=from_cache)
         if state is not None:
@@ -419,7 +419,7 @@ class PollControl(ClusterHandler):
     async def check_in_response(self, tsn: int) -> Awaitable[None]:
         """Respond to checkin command."""
         await self.checkin_response(True, self.CHECKIN_FAST_POLL_TIMEOUT, tsn=tsn)
-        if self._ch_pool.manufacturer_code not in self._IGNORED_MANUFACTURER_ID:
+        if self._endpoint.device.manufacturer_code not in self._IGNORED_MANUFACTURER_ID:
             await self.set_long_poll_interval(self.LONG_POLL)
         await self.fast_poll_stop()
 

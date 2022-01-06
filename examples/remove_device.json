@@ -1,0 +1,5 @@
+{
+  "command": "remove_device",
+  "ieee": "00:0d:6f:00:0f:3a:e3:69",
+  "message_id": 11
+}

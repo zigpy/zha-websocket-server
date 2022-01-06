@@ -6,6 +6,7 @@ from typing import Any, Awaitable
 import voluptuous as vol
 from zigpy.config import CONF_DEVICE, CONF_DEVICE_PATH
 from zigpy.device import Device
+from zigpy.types.named import EUI64
 
 from zhawss.const import (
     COMMAND,
@@ -93,9 +94,26 @@ async def permit_joining(
     client.send_result_success(message[MESSAGE_ID], {DURATION: message[DURATION]})
 
 
+@decorators.async_response
+@decorators.websocket_command(
+    {
+        vol.Required(COMMAND): str(APICommands.REMOVE_DEVICE),
+        vol.Required("ieee"): str,
+    }
+)
+async def remove_device(
+    server: ServerType, client: ClientType, message: dict[str, Any]
+) -> Awaitable[None]:
+    """Permit joining devices to the Zigbee network."""
+    await server.controller.application_controller.remove(
+        EUI64.convert(message["ieee"])
+    )
+
+
 def load_api(server) -> None:
     """Load the api command handlers."""
     register_api_command(server, start_network)
     register_api_command(server, stop_network)
     register_api_command(server, get_devices)
     register_api_command(server, permit_joining)
+    register_api_command(server, remove_device)

@@ -157,8 +157,11 @@ class ClusterHandler(ListenableMixin, LogMixin):
         """
         event_data = {}
         kwargs = {}
-        if self.cluster.cluster_id >= 0xFC00 and self._ch_pool.manufacturer_code:
-            kwargs["manufacturer"] = self._ch_pool.manufacturer_code
+        if (
+            self.cluster.cluster_id >= 0xFC00
+            and self._endpoint.device.manufacturer_code
+        ):
+            kwargs["manufacturer"] = self._endpoint.device.manufacturer_code
 
         for attr_report in self.REPORT_CONFIG:
             attr, config = attr_report["attr"], attr_report["config"]
@@ -254,7 +257,7 @@ class ClusterHandler(ListenableMixin, LogMixin):
 
     async def async_configure(self) -> Awaitable[None]:
         """Set cluster binding and attribute reporting."""
-        if not self._ch_pool.skip_configuration:
+        if not self._endpoint.device.skip_configuration:
             if self.BIND:
                 await self.bind()
             if self.cluster.is_server:
@@ -270,7 +273,7 @@ class ClusterHandler(ListenableMixin, LogMixin):
     @retryable_request(delays=(1, 1, 3))
     async def async_initialize(self, from_cache: bool) -> Awaitable[None]:
         """Initialize cluster handler."""
-        if not from_cache and self._ch_pool.skip_configuration:
+        if not from_cache and self._endpoint.device.skip_configuration:
             self._status = ClusterHandlerStatus.INITIALIZED
             return
 
@@ -336,14 +339,14 @@ class ClusterHandler(ListenableMixin, LogMixin):
     async def get_attribute_value(self, attribute, from_cache=True) -> Awaitable[Any]:
         """Get the value for an attribute."""
         manufacturer = None
-        manufacturer_code = self._ch_pool.manufacturer_code
+        manufacturer_code = self._endpoint.device.manufacturer_code
         if self.cluster.cluster_id >= 0xFC00 and manufacturer_code:
             manufacturer = manufacturer_code
         result = await safe_read(
             self._cluster,
             [attribute],
             allow_cache=from_cache,
-            only_cache=from_cache and not self._ch_pool.is_mains_powered,
+            only_cache=from_cache and not self._endpoint.device.is_mains_powered,
             manufacturer=manufacturer,
         )
         return result.get(attribute)
@@ -356,7 +359,7 @@ class ClusterHandler(ListenableMixin, LogMixin):
     ) -> dict[int | str, Any]:
         """Get the values for a list of attributes."""
         manufacturer = None
-        manufacturer_code = self._ch_pool.manufacturer_code
+        manufacturer_code = self._endpoint.device.manufacturer_code
         if self.cluster.cluster_id >= 0xFC00 and manufacturer_code:
             manufacturer = manufacturer_code
         chunk = attributes[:CLUSTER_READS_PER_REQ]
@@ -367,7 +370,8 @@ class ClusterHandler(ListenableMixin, LogMixin):
                 read, _ = await self.cluster.read_attributes(
                     attributes,
                     allow_cache=from_cache,
-                    only_cache=from_cache and not self._ch_pool.is_mains_powered,
+                    only_cache=from_cache
+                    and not self._endpoint.device.is_mains_powered,
                     manufacturer=manufacturer,
                 )
                 result.update(read)
@@ -407,7 +411,7 @@ class ClusterHandler(ListenableMixin, LogMixin):
     def log(self, level, msg, *args) -> None:
         """Log a message."""
         msg = f"[%s:%s]: {msg}"
-        args = (self._ch_pool.nwk, self._id) + args
+        args = (self._endpoint.device.nwk, self._id) + args
         _LOGGER.log(level, msg, *args)
 
     def __getattr__(self, name):
