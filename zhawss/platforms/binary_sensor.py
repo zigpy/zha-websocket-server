@@ -133,3 +133,9 @@ class IASZone(BinarySensor):
         value = await self._cluster_handler.get_attribute_value("zone_status")
         if value is not None:
             self._state = value & 3
+
+    def to_json(self) -> dict:
+        """Return a JSON representation of the binary sensor."""
+        json = super().to_json()
+        json["zone_type"] = self._cluster_handler.cluster.get("zone_type")
+        return json
