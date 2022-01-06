@@ -56,7 +56,7 @@ class BinarySensor(PlatformEntity):
         self.send_event(
             {
                 "state": self._state,
-                "event": "platform_entity_state_updated",
+                "event": "platform_entity_state_changed",
                 "event_type": "platform_entity_event",
             }
         )
