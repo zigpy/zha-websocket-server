@@ -5,7 +5,7 @@ import asyncio
 from enum import Enum
 import logging
 import time
-from typing import Any, Awaitable, Dict
+from typing import Any, Awaitable, Dict, List
 
 from zigpy import types
 from zigpy.device import Device as ZigpyDevice
@@ -16,6 +16,7 @@ from zigpy.types.named import EUI64
 from zigpy.zcl.clusters.general import Groups
 import zigpy.zdo.types as zdo_types
 
+from zhawss.platforms import PlatformEntity
 from zhawss.util import LogMixin
 from zhawss.zigbee.cluster import ZDOClusterHandler
 from zhawss.zigbee.endpoint import Endpoint
@@ -148,6 +149,7 @@ class Device(LogMixin):
         for ep_id, endpoint in zigpy_device.endpoints.items():
             if ep_id != 0:
                 self._endpoints[ep_id] = Endpoint.new(endpoint, self)
+        self._platform_entities: List[PlatformEntity] = []
 
     @property
     def device(self) -> ZigpyDevice:
@@ -311,6 +313,11 @@ class Device(LogMixin):
                 ]
             },
         }
+
+    @property
+    def platform_entities(self) -> List[PlatformEntity]:
+        """Return the platform entities for this device."""
+        return self._platform_entities
 
     """ TODO
     def async_update_sw_build_id(self, sw_version: int):
@@ -481,7 +488,9 @@ class Device(LogMixin):
         """Get ZHA device information."""
         device_info = {}
         device_info.update(self.device_info)
-        device_info["entities"] = []
+        device_info["entities"] = [
+            platform_entity.to_json() for platform_entity in self.platform_entities
+        ]
 
         # Return the neighbor information
         device_info[ATTR_NEIGHBORS] = [

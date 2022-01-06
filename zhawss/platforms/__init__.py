@@ -32,18 +32,33 @@ class PlatformEntity:
         device: DeviceType,
     ):
         """Initialize the platform entity."""
-        self._cluster_handlers: List[ClusterHandlerType] = cluster_handlers
         self._unique_id: str = unique_id
         ieeetail = "".join([f"{o:02x}" for o in device.ieee[:4]])
         ch_names = ", ".join(sorted(ch.name for ch in cluster_handlers))
         self._name: str = f"{device.name} {ieeetail} {ch_names}"
         if self.unique_id_suffix:
             self._name += f" {self.unique_id_suffix}"
+        self._cluster_handlers: List[ClusterHandlerType] = cluster_handlers
         self.cluster_handlers: dict[str, ClusterHandlerType] = {}
         for cluster_handler in cluster_handlers:
             self.cluster_handlers[cluster_handler.name] = cluster_handler
         self._device: DeviceType = device
         self._endpoint = endpoint
+
+    @property
+    def device(self):
+        """Return the device."""
+        return self._device
+
+    @property
+    def endpoint(self) -> EndpointType:
+        """Return the endpoint."""
+        return self._endpoint
+
+    @property
+    def unique_id(self) -> str:
+        """Return the unique id."""
+        return self._unique_id
 
     @classmethod
     def create_platform_entity(

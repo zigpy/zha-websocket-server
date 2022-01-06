@@ -8,6 +8,7 @@ import voluptuous
 import websockets
 
 from zhawss.const import COMMAND, MESSAGE_ID, APICommands
+from zhawss.platforms import discovery
 from zhawss.platforms.discovery import PLATFORMS
 from zhawss.websocket.api import decorators, register_api_command
 from zhawss.websocket.client import ClientManager
@@ -31,6 +32,7 @@ class Server:
         for platform in PLATFORMS:
             self.data.setdefault(platform, [])
         self._register_api_commands()
+        discovery.PROBE.initialize(self)
 
     @property
     def controller(self) -> ControllerType:

@@ -28,7 +28,6 @@ class Controller:
         self._server: ServerType = server
         self.radio_description: str = None
         self._devices: List[DeviceType] = []
-        discovery.PROBE.initialize(self)
 
     @property
     def is_running(self) -> bool:
@@ -80,6 +79,8 @@ class Controller:
                 platform_entity = platform_entity_class.create_platform_entity(*args)
                 if platform_entity:
                     _LOGGER.info("Platform entity data: %s", platform_entity.to_json())
+                    platform_entity.device.platform_entities.append(platform_entity)
+            self.server.data[platform].clear()
 
     async def stop_network(self) -> Awaitable[None]:
         """Stop the Zigbee network."""
