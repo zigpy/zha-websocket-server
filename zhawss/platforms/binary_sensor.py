@@ -38,7 +38,8 @@ class BinarySensor(PlatformEntity):
         super().__init__(unique_id, cluster_handlers, endpoint, device)
         self._cluster_handler: ClusterHandlerType = cluster_handlers[0]
         self._cluster_handler.add_listener(self)
-        self._state: bool = False
+        value = self._cluster_handler.cluster.get("zone_status")
+        self._state: bool = value & 3 if value is not None else False
 
     @property
     def is_on(self) -> bool:
