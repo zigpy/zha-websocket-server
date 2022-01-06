@@ -2,7 +2,7 @@
 
 import abc
 import functools
-from typing import Any, List, Union
+from typing import Any, Awaitable, List, Union
 
 from zhawss.platforms import PlatformEntity
 from zhawss.platforms.registries import PLATFORM_ENTITIES, Platform
@@ -35,7 +35,7 @@ class Button(PlatformEntity):
     def get_args(self) -> list[Any]:
         """Return the arguments to use in the command."""
 
-    async def async_press(self) -> None:
+    async def async_press(self) -> Awaitable[None]:
         """Send out a update command."""
         command = getattr(self._cluster_handler, self._command_name)
         arguments = self.get_args()
