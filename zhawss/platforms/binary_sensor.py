@@ -1,6 +1,7 @@
 """Binary Sensor module for zhawss."""
 
 import functools
+from typing import List
 
 from zhawss.platforms import PlatformEntity
 from zhawss.platforms.registries import PLATFORM_ENTITIES, Platform
@@ -11,6 +12,8 @@ from zhawss.zigbee.cluster.const import (
     CLUSTER_HANDLER_ON_OFF,
     CLUSTER_HANDLER_ZONE,
 )
+from zhawss.zigbee.cluster.types import ClusterHandlerType
+from zhawss.zigbee.types import DeviceType, EndpointType
 
 STRICT_MATCH = functools.partial(PLATFORM_ENTITIES.strict_match, Platform.BINARY_SENSOR)
 MULTI_MATCH = functools.partial(
@@ -23,6 +26,43 @@ class BinarySensor(PlatformEntity):
 
     SENSOR_ATTR = None
     PLATFORM = Platform.BINARY_SENSOR
+
+    def __init__(
+        self,
+        unique_id: str,
+        cluster_handlers: List[ClusterHandlerType],
+        endpoint: EndpointType,
+        device: DeviceType,
+    ):
+        """Initialize the binary sensor."""
+        super().__init__(unique_id, cluster_handlers, endpoint, device)
+        self._cluster_handler: ClusterHandlerType = cluster_handlers[0]
+        self._cluster_handler.add_listener(self)
+        self._state: bool = False
+
+    @property
+    def is_on(self) -> bool:
+        """Return True if the binary sensor is on."""
+        if self._state is None:
+            return False
+        return self._state
+
+    def attribute_updated(self, attr_id, attr_name, value):
+        """Set the state."""
+        if self.SENSOR_ATTR is None or self.SENSOR_ATTR != attr_name:
+            return
+        self._state = bool(value)
+        self.send_event(
+            {"state": self._state, "event": "platform_entity_state_updated"}
+        )
+
+    async def async_update(self):
+        """Attempt to retrieve on off state from the binary sensor."""
+        await super().async_update()
+        attribute = getattr(self._cluster_handler, "value_attribute", "on_off")
+        attr_value = await self._cluster_handler.get_attribute_value(attribute)
+        if attr_value is not None:
+            self._state = attr_value
 
     def to_json(self) -> dict:
         """Return a JSON representation of the binary sensor."""
@@ -82,3 +122,10 @@ class IASZone(BinarySensor):
     """ZHA IAS BinarySensor."""
 
     SENSOR_ATTR = "zone_status"
+
+    async def async_update(self):
+        """Attempt to retrieve on off state from the binary sensor."""
+        await super().async_update()
+        value = await self._cluster_handler.get_attribute_value("zone_status")
+        if value is not None:
+            self._state = value & 3

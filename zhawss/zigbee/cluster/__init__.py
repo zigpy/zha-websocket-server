@@ -8,6 +8,7 @@ import logging
 from typing import Any, Awaitable, Dict
 
 import zigpy.exceptions
+from zigpy.util import ListenableMixin
 from zigpy.zcl import Cluster as ZigpyCluster
 from zigpy.zcl.foundation import Status
 
@@ -34,7 +35,7 @@ class ClusterHandlerStatus(Enum):
     INITIALIZED = 3
 
 
-class ClusterHandler(LogMixin):
+class ClusterHandler(ListenableMixin, LogMixin):
     """Base cluster handler for a Zigbee cluster handler."""
 
     REPORT_CONFIG: tuple[dict[int | str, tuple[int, int, int | float]]] = ()
@@ -62,6 +63,7 @@ class ClusterHandler(LogMixin):
         self._status: ClusterHandlerStatus = ClusterHandlerStatus.CREATED
         self._cluster.add_listener(self)
         self.data_cache: Dict[str, Any] = {}
+        self._listeners = {}
 
     @property
     def id(self) -> str:
@@ -291,6 +293,7 @@ class ClusterHandler(LogMixin):
 
     def cluster_command(self, tsn, command_id, args) -> None:
         """Handle commands received to this cluster."""
+        _LOGGER.info("received command %s args %s", command_id, args)
 
     def attribute_updated(self, attrid, value) -> None:
         """Handle attribute updates on this cluster."""
@@ -301,6 +304,13 @@ class ClusterHandler(LogMixin):
                 "attribute_name": self.cluster.attributes.get(attrid, [attrid])[0],
                 "attribute_value": value,
             }
+        )
+
+        self.listener_event(
+            SIGNAL_ATTR_UPDATED,
+            attrid,
+            self.cluster.attributes.get(attrid, [attrid])[0],
+            value,
         )
 
     def zdo_command(self, *args, **kwargs) -> None:

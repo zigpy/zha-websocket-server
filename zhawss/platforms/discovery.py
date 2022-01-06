@@ -28,7 +28,20 @@ from zhawss.platforms.registries import (
     Platform,
 )
 from zhawss.websocket.types import ServerType
-from zhawss.zigbee.cluster import ClusterHandler
+from zhawss.zigbee.cluster import (  # noqa: F401
+    ClusterHandler,
+    closures,
+    general,
+    homeautomation,
+    hvac,
+    lighting,
+    lightlink,
+    manufacturerspecific,
+    measurement,
+    protocol,
+    security,
+    smartenergy,
+)
 from zhawss.zigbee.cluster.types import ClusterHandlerType
 from zhawss.zigbee.registries import CLUSTER_HANDLER_REGISTRY, HANDLER_ONLY_CLUSTERS
 from zhawss.zigbee.types import EndpointType

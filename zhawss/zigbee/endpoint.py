@@ -2,6 +2,7 @@
 
 
 import asyncio
+import logging
 from typing import Any, Awaitable
 
 import zigpy
@@ -24,6 +25,8 @@ ATTR_DEVICE_TYPE = "device_type"
 ATTR_PROFILE_ID = "profile_id"
 ATTR_IN_CLUSTERS = "in_clusters"
 ATTR_OUT_CLUSTERS = "out_clusters"
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class Endpoint:
@@ -108,6 +111,11 @@ class Endpoint:
         for cluster_id, cluster in self.zigpy_endpoint.in_clusters.items():
             cluster_handler_class = registries.CLUSTER_HANDLER_REGISTRY.get(
                 cluster_id, ClusterHandler
+            )
+            _LOGGER.info(
+                "Creating cluster handler for cluster id: %s class: %s",
+                cluster_id,
+                cluster_handler_class,
             )
             # really ugly hack to deal with xiaomi using the door lock cluster
             # incorrectly.

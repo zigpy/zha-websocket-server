@@ -7,6 +7,7 @@ https://home-assistant.io/integrations/zha/
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import Awaitable
 
 from zigpy.exceptions import ZigbeeException
@@ -58,6 +59,8 @@ WARNING_DEVICE_STROBE_VERY_HIGH = 0x03
 
 WARNING_DEVICE_SQUAWK_MODE_ARMED = 0
 WARNING_DEVICE_SQUAWK_MODE_DISARMED = 1
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @registries.CLUSTER_HANDLER_REGISTRY.register(AceCluster.cluster_id)
@@ -360,14 +363,9 @@ class IASZoneClusterHandler(ClusterHandler):
 
     def cluster_command(self, tsn, command_id, args) -> None:
         """Handle commands received to this cluster."""
+        _LOGGER.info("received cluster_command: %s args: %s", command_id, args)
         if command_id == 0:
-            state = args[0] & 3
-            """ TODO
-            self.send_event(
-                f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}", 2, "zone_status", state
-            )
-            """
-            self.debug("Updated alarm state: %s", state)
+            self.attribute_updated(2, args[0])
         elif command_id == 1:
             self.debug("Enroll requested")
             res = self._cluster.enroll_response(0, 0)
@@ -411,12 +409,4 @@ class IASZoneClusterHandler(ClusterHandler):
         """Handle attribute updates on this cluster."""
         if attrid == 2:
             value = value & 3
-            """ TODO
-            self.send_event(
-                f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}",
-                attrid,
-                self.cluster.attributes.get(attrid, [attrid])[0],
-                value,
-            )
-            """
-            pass
+            super().attribute_updated(attrid, value)

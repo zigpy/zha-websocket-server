@@ -331,7 +331,7 @@ class Device(LogMixin):
 
     def send_event(self, signal: dict[str, Any]) -> None:
         """Broadcast an event from this device."""
-        signal["ieee"] = str(self.ieee)
+        signal["device"] = {"ieee": str(self.ieee)}
         self.controller.server.client_manager.broadcast(signal)
 
     async def _check_available(self, *_) -> Awaitable[None]:

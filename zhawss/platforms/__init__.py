@@ -1,12 +1,15 @@
 """Platform module for zhawss."""
 
 
-from typing import List, Union
+import logging
+from typing import Any, List, Union
 
 from zhawss.platforms.registries import Platform
 from zhawss.platforms.types import PlatformEntityType
 from zhawss.zigbee.cluster.types import ClusterHandlerType
 from zhawss.zigbee.types import DeviceType, EndpointType
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class PlatformEntity:
@@ -59,6 +62,19 @@ class PlatformEntity:
     def unique_id(self) -> str:
         """Return the unique id."""
         return self._unique_id
+
+    def send_event(self, signal: dict[str, Any]) -> None:
+        """Broadcast an event from this platform entity."""
+        signal["platform_entity"] = {
+            "name": self._name,
+            "unique_id": self._unique_id,
+            "platform": self.PLATFORM.name,
+        }
+        signal["endpoint"] = {
+            "id": self._endpoint.id,
+        }
+        _LOGGER.info("Sending event from platform entity: %s", signal)
+        self.device.send_event(signal)
 
     @classmethod
     def create_platform_entity(
