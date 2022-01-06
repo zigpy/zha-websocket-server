@@ -47,13 +47,17 @@ class BinarySensor(PlatformEntity):
             return False
         return self._state
 
-    def attribute_updated(self, attr_id, attr_name, value):
+    def cluster_handler_attribute_updated(self, attr_id, attr_name, value):
         """Set the state."""
         if self.SENSOR_ATTR is None or self.SENSOR_ATTR != attr_name:
             return
         self._state = bool(value)
         self.send_event(
-            {"state": self._state, "event": "platform_entity_state_updated"}
+            {
+                "state": self._state,
+                "event": "platform_entity_state_updated",
+                "event_type": "platform_entity_event",
+            }
         )
 
     async def async_update(self):

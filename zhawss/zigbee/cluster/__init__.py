@@ -300,6 +300,7 @@ class ClusterHandler(ListenableMixin, LogMixin):
         self.send_event(
             {
                 "event": SIGNAL_ATTR_UPDATED,
+                "event_type": "raw_zcl",
                 "attribute_id": attrid,
                 "attribute_name": self.cluster.attributes.get(attrid, [attrid])[0],
                 "attribute_value": value,
@@ -307,7 +308,7 @@ class ClusterHandler(ListenableMixin, LogMixin):
         )
 
         self.listener_event(
-            SIGNAL_ATTR_UPDATED,
+            f"cluster_handler_{SIGNAL_ATTR_UPDATED}",
             attrid,
             self.cluster.attributes.get(attrid, [attrid])[0],
             value,
