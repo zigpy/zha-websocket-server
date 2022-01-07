@@ -137,5 +137,8 @@ class PlatformEntity:
             if hasattr(cluster_handler, "async_update")
         ]
         if tasks:
+            previous_state = self.get_state()
             await asyncio.gather(*tasks)
-            self.send_state_changed_event()
+            state = self.get_state()
+            if state != previous_state:
+                self.send_state_changed_event()

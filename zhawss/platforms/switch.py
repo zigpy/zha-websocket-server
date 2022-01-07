@@ -84,7 +84,9 @@ class Switch(BaseSwitch):
         """Attempt to retrieve on off state from the switch."""
         await super().async_update()
         if self._on_off_cluster_handler:
+            prev_state = self._state
             state = await self._on_off_cluster_handler.get_attribute_value("on_off")
             if state is not None:
                 self._state = state
-                self.send_state_changed_event()
+                if prev_state != self._state:
+                    self.send_state_changed_event()

@@ -14,7 +14,7 @@ from zigpy.zcl.clusters import hvac
 from zigpy.zcl.foundation import Status
 
 from zhawss.zigbee import registries
-from zhawss.zigbee.cluster import ClusterHandler
+from zhawss.zigbee.cluster import SIGNAL_ATTR_UPDATED, ClusterHandler
 from zhawss.zigbee.cluster.const import (
     REPORT_CONFIG_MAX_INT,
     REPORT_CONFIG_MIN_INT,
@@ -71,12 +71,9 @@ class FanClusterHandler(ClusterHandler):
             "Attribute report '%s'[%s] = %s", self.cluster.name, attr_name, value
         )
         if attr_name == "fan_mode":
-            """TODO
-            self.send_event(
-                f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}", attrid, attr_name, value
+            self.listener_event(
+                f"cluster_handler_{SIGNAL_ATTR_UPDATED}", attrid, attr_name, value
             )
-            """
-            pass
 
 
 @registries.CLUSTER_HANDLER_REGISTRY.register(hvac.Pump.cluster_id)

@@ -61,11 +61,13 @@ class BinarySensor(PlatformEntity):
     async def async_update(self):
         """Attempt to retrieve on off state from the binary sensor."""
         await super().async_update()
+        previous_state = self._state
         attribute = getattr(self._cluster_handler, "value_attribute", "on_off")
         attr_value = await self._cluster_handler.get_attribute_value(attribute)
         if attr_value is not None:
             self._state = attr_value
-            self.send_state_changed_event()
+            if previous_state != self._state:
+                self.send_state_changed_event()
 
     def to_json(self) -> dict:
         """Return a JSON representation of the binary sensor."""
@@ -129,10 +131,12 @@ class IASZone(BinarySensor):
     async def async_update(self):
         """Attempt to retrieve on off state from the binary sensor."""
         await super().async_update()
+        previous_state = self._state
         value = await self._cluster_handler.get_attribute_value("zone_status")
         if value is not None:
             self._state = value & 3
-            self.send_state_changed_event()
+            if previous_state != self._state:
+                self.send_state_changed_event()
 
     def to_json(self) -> dict:
         """Return a JSON representation of the binary sensor."""

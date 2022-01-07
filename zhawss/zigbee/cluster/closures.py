@@ -4,7 +4,11 @@ from typing import Awaitable
 from zigpy.zcl.clusters import closures
 
 from zhawss.zigbee import registries
-from zhawss.zigbee.cluster import ClientClusterHandler, ClusterHandler
+from zhawss.zigbee.cluster import (
+    SIGNAL_ATTR_UPDATED,
+    ClientClusterHandler,
+    ClusterHandler,
+)
 from zhawss.zigbee.cluster.const import REPORT_CONFIG_IMMEDIATE
 
 
@@ -19,12 +23,9 @@ class DoorLockClusterHandler(ClusterHandler):
         """Retrieve latest state."""
         result = await self.get_attribute_value("lock_state", from_cache=True)
         if result is not None:
-            pass
-        """ TODO
-            self.send_event(
-                f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}", 0, "lock_state", result
+            self.listener_event(
+                f"cluster_handler_{SIGNAL_ATTR_UPDATED}", 0, "lock_state", result
             )
-        """
 
     def cluster_command(self, tsn, command_id, args) -> None:
         """Handle a cluster command received on this cluster."""
@@ -137,15 +138,12 @@ class WindowCovering(ClusterHandler):
         )
         self.debug("read current position: %s", result)
         if result is not None:
-            """TODO
-            self.send_event(
-                f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}",
+            self.listener_event(
+                f"cluster_handler_{SIGNAL_ATTR_UPDATED}",
                 8,
                 "current_position_lift_percentage",
                 result,
             )
-            """
-            pass
 
     def attribute_updated(self, attrid, value) -> None:
         """Handle attribute update from window_covering cluster."""
@@ -154,9 +152,6 @@ class WindowCovering(ClusterHandler):
             "Attribute report '%s'[%s] = %s", self.cluster.name, attr_name, value
         )
         if attrid == self._value_attribute:
-            """TODO
-            self.send_event(
-                f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}", attrid, attr_name, value
+            self.listener_event(
+                f"cluster_handler_{SIGNAL_ATTR_UPDATED}", attrid, attr_name, value
             )
-            """
-            pass

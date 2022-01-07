@@ -7,7 +7,7 @@ from typing import Awaitable
 from zigpy.zcl.clusters import homeautomation
 
 from zhawss.zigbee import registries
-from zhawss.zigbee.cluster import ClusterHandler
+from zhawss.zigbee.cluster import SIGNAL_ATTR_UPDATED, ClusterHandler
 from zhawss.zigbee.cluster.const import (
     CLUSTER_HANDLER_ELECTRICAL_MEASUREMENT,
     REPORT_CONFIG_DEFAULT,
@@ -96,15 +96,12 @@ class ElectricalMeasurementClusterHandler(ClusterHandler):
         result = await self.get_attributes(attrs, from_cache=False)
         if result:
             for attr, value in result.items():
-                """TODO
-                self.send_event(
-                    f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}",
+                self.listener_event(
+                    f"cluster_handler_{SIGNAL_ATTR_UPDATED}",
                     self.cluster.attridx.get(attr, attr),
                     attr,
                     value,
                 )
-                """
-                pass
 
     @property
     def ac_current_divisor(self) -> int:
