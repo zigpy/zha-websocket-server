@@ -2,8 +2,9 @@
 
 
 import abc
+import asyncio
 import logging
-from typing import Any, Dict, List, Union
+from typing import Any, Awaitable, Dict, List, Union
 
 from zhawss.platforms.registries import Platform
 from zhawss.platforms.types import PlatformEntityType
@@ -50,6 +51,20 @@ class PlatformEntity:
         self._endpoint = endpoint
         self._device.platform_entities.append(self)
 
+    @classmethod
+    def create_platform_entity(
+        cls,
+        unique_id: str,
+        cluster_handlers: List[ClusterHandlerType],
+        endpoint: EndpointType,
+        device: DeviceType,
+        **kwargs,
+    ) -> Union[PlatformEntityType, None]:
+        """Entity Factory.
+        Return a platform entity if it is a supported configuration, otherwise return None
+        """
+        return cls(unique_id, cluster_handlers, endpoint, device, **kwargs)
+
     @property
     def device(self):
         """Return the device."""
@@ -64,6 +79,16 @@ class PlatformEntity:
     def unique_id(self) -> str:
         """Return the unique id."""
         return self._unique_id
+
+    @property
+    def should_poll(self) -> bool:
+        """Return True if we need to poll for state changes."""
+        return False
+
+    @property
+    def available(self) -> bool:
+        """Return true if the device this entity belongs to is available."""
+        return self.device.available
 
     def send_event(self, signal: dict[str, Any]) -> None:
         """Broadcast an event from this platform entity."""
@@ -92,20 +117,6 @@ class PlatformEntity:
             }
         )
 
-    @classmethod
-    def create_platform_entity(
-        cls,
-        unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
-        **kwargs,
-    ) -> Union[PlatformEntityType, None]:
-        """Entity Factory.
-        Return a platform entity if it is a supported configuration, otherwise return None
-        """
-        return cls(unique_id, cluster_handlers, endpoint, device, **kwargs)
-
     def to_json(self) -> dict:
         """Return a JSON representation of the platform entity."""
         return {
@@ -117,3 +128,14 @@ class PlatformEntity:
             "platform": self.PLATFORM.name,
             "class_name": self.__class__.__name__,
         }
+
+    async def async_update(self) -> Awaitable[None]:
+        """Retrieve latest state."""
+        tasks = [
+            cluster_handler.async_update()
+            for cluster_handler in self.cluster_handlers.values()
+            if hasattr(cluster_handler, "async_update")
+        ]
+        if tasks:
+            await asyncio.gather(*tasks)
+            self.send_state_changed_event()

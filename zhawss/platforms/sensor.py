@@ -1,7 +1,9 @@
 """Sensor platform for zhawss."""
 
 import functools
-from typing import List, Union
+import logging
+import numbers
+from typing import Any, List, Union
 
 from zhawss.platforms import PlatformEntity
 from zhawss.platforms.registries import PLATFORM_ENTITIES, Platform
@@ -25,6 +27,31 @@ from zhawss.zigbee.types import DeviceType, EndpointType
 
 MULTI_MATCH = functools.partial(PLATFORM_ENTITIES.multipass_match, Platform.SENSOR)
 CLUSTER_HANDLER_ST_HUMIDITY_CLUSTER = f"channel_0x{SMARTTHINGS_HUMIDITY_CLUSTER:04x}"
+
+_LOGGER = logging.getLogger(__name__)
+
+BATTERY_SIZES = {
+    0: "No battery",
+    1: "Built in",
+    2: "Other",
+    3: "AA",
+    4: "AAA",
+    5: "C",
+    6: "D",
+    7: "CR2",
+    8: "CR123A",
+    9: "CR2450",
+    10: "CR2032",
+    11: "CR1632",
+    255: "Unknown",
+}
+
+CURRENT_HVAC_OFF = "off"
+CURRENT_HVAC_HEAT = "heating"
+CURRENT_HVAC_COOL = "cooling"
+CURRENT_HVAC_DRY = "drying"
+CURRENT_HVAC_IDLE = "idle"
+CURRENT_HVAC_FAN = "fan"
 
 
 class Sensor(PlatformEntity):
@@ -54,6 +81,38 @@ class Sensor(PlatformEntity):
             return None
 
         return cls(unique_id, cluster_handlers, endpoint, device, **kwargs)
+
+    def __init__(
+        self,
+        unique_id: str,
+        cluster_handlers: List[ClusterHandlerType],
+        endpoint: EndpointType,
+        device: DeviceType,
+    ):
+        """Initialize the sensor."""
+        super().__init__(unique_id, cluster_handlers, endpoint, device)
+        self._cluster_handler: ClusterHandlerType = cluster_handlers[0]
+        self._cluster_handler.add_listener(self)
+
+    def get_state(self) -> Any:
+        """Return the state for this sensor."""
+        assert self.SENSOR_ATTR is not None
+        raw_state = self._cluster_handler.cluster.get(self.SENSOR_ATTR)
+        if raw_state is None:
+            return None
+        return self.formatter(raw_state)
+
+    def formatter(self, value: int) -> Union[int, float]:
+        """Numeric pass-through formatter."""
+        if self._decimals > 0:
+            return round(
+                float(value * self._multiplier) / self._divisor, self._decimals
+            )
+        return round(float(value * self._multiplier) / self._divisor)
+
+    def cluster_handler_attribute_updated(self, attr_id, attr_name, value):
+        """handle attribute updates from the cluster handler."""
+        self.send_state_changed_event()
 
     def to_json(self) -> dict:
         """Return a JSON representation of the sensor."""
@@ -112,18 +171,75 @@ class Battery(Sensor):
 
         return cls(unique_id, cluster_handlers, endpoint, device, **kwargs)
 
+    @staticmethod
+    def formatter(value: int) -> int:
+        """Return the state of the entity."""
+        # per zcl specs battery percent is reported at 200% ¯\_(ツ)_/¯
+        if not isinstance(value, numbers.Number) or value == -1:
+            return value
+        value = round(value / 2)
+        return value
+
+    def get_state(self) -> dict[str, Any]:
+        """Return the state for battery sensors."""
+        state = {"state": super().get_state()}
+        battery_size = self._cluster_handler.cluster.get("battery_size")
+        if battery_size is not None:
+            state["battery_size"] = BATTERY_SIZES.get(battery_size, "Unknown")
+        battery_quantity = self._cluster_handler.cluster.get("battery_quantity")
+        if battery_quantity is not None:
+            state["battery_quantity"] = battery_quantity
+        battery_voltage = self._cluster_handler.cluster.get("battery_voltage")
+        if battery_voltage is not None:
+            state["battery_voltage"] = round(battery_voltage / 10, 2)
+        return state
+
 
 @MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_ELECTRICAL_MEASUREMENT)
 class ElectricalMeasurement(Sensor):
     """Active power measurement."""
 
     SENSOR_ATTR = "active_power"
+    _div_mul_prefix = "ac_power"
     """TODO
     _attr_device_class: SensorDeviceClass = SensorDeviceClass.POWER
     _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
     _unit = POWER_WATT
-    _div_mul_prefix = "ac_power"
     """
+
+    @property
+    def should_poll(self) -> bool:
+        """Return True if we need to poll for state changes."""
+        return True
+
+    def get_state(self) -> dict[str, Any]:
+        """Return the state for this sensor."""
+        state = {"state": super().get_state()}
+        if self._cluster_handler.measurement_type is not None:
+            state["measurement_type"] = self._cluster_handler.measurement_type
+
+        max_attr_name = f"{self.SENSOR_ATTR}_max"
+        if (max_v := self._cluster_handler.cluster.get(max_attr_name)) is not None:
+            state[max_attr_name] = str(self.formatter(max_v))
+
+        return state
+
+    def formatter(self, value: int) -> Union[int, float]:
+        """Return 'normalized' value."""
+        multiplier = getattr(
+            self._cluster_handler, f"{self._div_mul_prefix}_multiplier"
+        )
+        divisor = getattr(self._cluster_handler, f"{self._div_mul_prefix}_divisor")
+        value = float(value * multiplier) / divisor
+        if value < 100 and divisor > 1:
+            return round(value, self._decimals)
+        return round(value)
+
+    async def async_update(self) -> None:
+        """Retrieve latest state."""
+        if not self.available:
+            return
+        await super().async_update()
 
 
 @MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_ELECTRICAL_MEASUREMENT)
@@ -133,11 +249,16 @@ class ElectricalMeasurementApparentPower(
     """Apparent power measurement."""
 
     SENSOR_ATTR = "apparent_power"
+    _div_mul_prefix = "ac_power"
     """TODO
     _attr_device_class: SensorDeviceClass = SensorDeviceClass.APPARENT_POWER
     _unit = POWER_VOLT_AMPERE
-    _div_mul_prefix = "ac_power"
     """
+
+    @property
+    def should_poll(self) -> bool:
+        """Poll indirectly by ElectricalMeasurementSensor."""
+        return False
 
 
 @MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_ELECTRICAL_MEASUREMENT)
@@ -145,11 +266,16 @@ class ElectricalMeasurementRMSCurrent(ElectricalMeasurement, id_suffix="rms_curr
     """RMS current measurement."""
 
     SENSOR_ATTR = "rms_current"
+    _div_mul_prefix = "ac_current"
     """TODO
     _attr_device_class: SensorDeviceClass = SensorDeviceClass.CURRENT
     _unit = ELECTRIC_CURRENT_AMPERE
-    _div_mul_prefix = "ac_current"
     """
+
+    @property
+    def should_poll(self) -> bool:
+        """Poll indirectly by ElectricalMeasurementSensor."""
+        return False
 
 
 @MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_ELECTRICAL_MEASUREMENT)
@@ -157,11 +283,16 @@ class ElectricalMeasurementRMSVoltage(ElectricalMeasurement, id_suffix="rms_volt
     """RMS Voltage measurement."""
 
     SENSOR_ATTR = "rms_voltage"
+    _div_mul_prefix = "ac_voltage"
     """TODO
     _attr_device_class: SensorDeviceClass = SensorDeviceClass.CURRENT
     _unit = ELECTRIC_POTENTIAL_VOLT
-    _div_mul_prefix = "ac_voltage"
     """
+
+    @property
+    def should_poll(self) -> bool:
+        """Poll indirectly by ElectricalMeasurementSensor."""
+        return False
 
 
 @MULTI_MATCH(
@@ -176,10 +307,10 @@ class Humidity(Sensor):
     """Humidity sensor."""
 
     SENSOR_ATTR = "measured_value"
+    _divisor = 100
     """TODO
     _attr_device_class: SensorDeviceClass = SensorDeviceClass.HUMIDITY
     _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _divisor = 100
     _unit = PERCENTAGE
     """
 
@@ -189,10 +320,10 @@ class SoilMoisture(Sensor):
     """Soil Moisture sensor."""
 
     SENSOR_ATTR = "measured_value"
+    _divisor = 100
     """TODO
     _attr_device_class: SensorDeviceClass = SensorDeviceClass.HUMIDITY
     _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _divisor = 100
     _unit = PERCENTAGE
     """
 
@@ -202,10 +333,10 @@ class LeafWetness(Sensor):
     """Leaf Wetness sensor."""
 
     SENSOR_ATTR = "measured_value"
+    _divisor = 100
     """TODO
     _attr_device_class: SensorDeviceClass = SensorDeviceClass.HUMIDITY
     _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _divisor = 100
     _unit = PERCENTAGE
     """
 
@@ -221,6 +352,11 @@ class Illuminance(Sensor):
     _unit = LIGHT_LUX
     """
 
+    @staticmethod
+    def formatter(value: int) -> float:
+        """Convert illumination data."""
+        return round(pow(10, ((value - 1) / 10000)), 1)
+
 
 @MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_SMARTENERGY_METERING)
 class SmartEnergyMetering(Sensor):
@@ -231,6 +367,26 @@ class SmartEnergyMetering(Sensor):
     _attr_device_class: SensorDeviceClass = SensorDeviceClass.POWER
     _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
     """
+
+    def formatter(self, value: int) -> Union[int, float]:
+        """Pass through channel formatter."""
+        return self._cluster_handler.demand_formatter(value)
+
+    """TODO
+    @property
+    def native_unit_of_measurement(self) -> str:
+        #Return Unit of measurement.
+        return self.unit_of_measure_map.get(self._cluster_handler.unit_of_measurement)
+    """
+
+    def get_state(self) -> dict[str, Any]:
+        """Return state for this sensor."""
+        state = {"state": super().get_state()}
+        if self._cluster_handler.device_type is not None:
+            state["device_type"] = self._cluster_handler.device_type
+        if (status := self._cluster_handler.status) is not None:
+            state["status"] = str(status)[len(status.__class__.__name__) + 1 :]
+        return state
 
 
 @MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_SMARTENERGY_METERING)
@@ -243,16 +399,27 @@ class SmartEnergySummation(SmartEnergyMetering, id_suffix="summation_delivered")
     _attr_state_class: SensorStateClass = SensorStateClass.TOTAL_INCREASING
     """
 
+    def formatter(self, value: int) -> Union[int, float]:
+        """Numeric pass-through formatter."""
+        if self._cluster_handler.unit_of_measurement != 0:
+            return self._cluster_handler.summa_formatter(value)
+
+        cooked = (
+            float(self._cluster_handler.multiplier * value)
+            / self._cluster_handler.divisor
+        )
+        return round(cooked, 3)
+
 
 @MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_PRESSURE)
 class Pressure(Sensor):
     """Pressure sensor."""
 
     SENSOR_ATTR = "measured_value"
+    _decimals = 0
     """TODO
     _attr_device_class: SensorDeviceClass = SensorDeviceClass.PRESSURE
     _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _decimals = 0
     _unit = PRESSURE_HPA
     """
 
@@ -262,10 +429,10 @@ class Temperature(Sensor):
     """Temperature Sensor."""
 
     SENSOR_ATTR = "measured_value"
+    _divisor = 100
     """TODO
     _attr_device_class: SensorDeviceClass = SensorDeviceClass.TEMPERATURE
     _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _divisor = 100
     _unit = TEMP_CELSIUS
     """
 
@@ -275,11 +442,11 @@ class CarbonDioxideConcentration(Sensor):
     """Carbon Dioxide Concentration sensor."""
 
     SENSOR_ATTR = "measured_value"
+    _decimals = 0
+    _multiplier = 1e6
     """TODO
     _attr_device_class: SensorDeviceClass = SensorDeviceClass.CO2
     _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _decimals = 0
-    _multiplier = 1e6
     _unit = CONCENTRATION_PARTS_PER_MILLION
     """
 
@@ -289,11 +456,11 @@ class CarbonMonoxideConcentration(Sensor):
     """Carbon Monoxide Concentration sensor."""
 
     SENSOR_ATTR = "measured_value"
+    _decimals = 0
+    _multiplier = 1e6
     """TODO
     _attr_device_class: SensorDeviceClass = SensorDeviceClass.CO
     _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _decimals = 0
-    _multiplier = 1e6
     _unit = CONCENTRATION_PARTS_PER_MILLION
     """
 
@@ -304,11 +471,11 @@ class VOCLevel(Sensor):
     """VOC Level sensor."""
 
     SENSOR_ATTR = "measured_value"
+    _decimals = 0
+    _multiplier = 1e6
     """TODO
     _attr_device_class: SensorDeviceClass = SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS
     _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _decimals = 0
-    _multiplier = 1e6
     _unit = CONCENTRATION_MICROGRAMS_PER_CUBIC_METER
     """
 
@@ -322,11 +489,11 @@ class PPBVOCLevel(Sensor):
     """VOC Level sensor."""
 
     SENSOR_ATTR = "measured_value"
+    _decimals = 0
+    _multiplier = 1
     """TODO
     _attr_device_class: SensorDeviceClass = SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS
     _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _decimals = 0
-    _multiplier = 1
     _unit = CONCENTRATION_PARTS_PER_BILLION
     """
 
@@ -336,10 +503,10 @@ class FormaldehydeConcentration(Sensor):
     """Formaldehyde Concentration sensor."""
 
     SENSOR_ATTR = "measured_value"
-    """TODO
-    _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
     _decimals = 0
     _multiplier = 1e6
+    """TODO
+    _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
     _unit = CONCENTRATION_PARTS_PER_MILLION
     """
 
@@ -366,6 +533,67 @@ class ThermostatHVACAction(Sensor, id_suffix="hvac_action"):
 
         return cls(unique_id, cluster_handlers, endpoint, device, **kwargs)
 
+    @property
+    def _rm_rs_action(self) -> Union[str, None]:
+        """Return the current HVAC action based on running mode and running state."""
+
+        if (running_state := self._cluster_handler.running_state) is None:
+            return None
+
+        rs_heat = (
+            self._cluster_handler.RunningState.Heat_State_On
+            | self._cluster_handler.RunningState.Heat_2nd_Stage_On
+        )
+        if running_state & rs_heat:
+            return CURRENT_HVAC_HEAT
+
+        rs_cool = (
+            self._cluster_handler.RunningState.Cool_State_On
+            | self._cluster_handler.RunningState.Cool_2nd_Stage_On
+        )
+        if running_state & rs_cool:
+            return CURRENT_HVAC_COOL
+
+        running_state = self._cluster_handler.running_state
+        if running_state and running_state & (
+            self._cluster_handler.RunningState.Fan_State_On
+            | self._cluster_handler.RunningState.Fan_2nd_Stage_On
+            | self._cluster_handler.RunningState.Fan_3rd_Stage_On
+        ):
+            return CURRENT_HVAC_FAN
+
+        running_state = self._cluster_handler.running_state
+        if running_state and running_state & self._cluster_handler.RunningState.Idle:
+            return CURRENT_HVAC_IDLE
+
+        if self._cluster_handler.system_mode != self._cluster_handler.SystemMode.Off:
+            return CURRENT_HVAC_IDLE
+        return CURRENT_HVAC_OFF
+
+    @property
+    def _pi_demand_action(self) -> Union[str, None]:
+        """Return the current HVAC action based on pi_demands."""
+
+        heating_demand = self._cluster_handler.pi_heating_demand
+        if heating_demand is not None and heating_demand > 0:
+            return CURRENT_HVAC_HEAT
+        cooling_demand = self._cluster_handler.pi_cooling_demand
+        if cooling_demand is not None and cooling_demand > 0:
+            return CURRENT_HVAC_COOL
+
+        if self._cluster_handler.system_mode != self._cluster_handler.SystemMode.Off:
+            return CURRENT_HVAC_IDLE
+        return CURRENT_HVAC_OFF
+
+    def get_state(self) -> Union[str, None]:
+        """Return the current HVAC action."""
+        if (
+            self._cluster_handler.pi_heating_demand is None
+            and self._cluster_handler.pi_cooling_demand is None
+        ):
+            return self._rm_rs_action
+        return self._pi_demand_action
+
 
 @MULTI_MATCH(
     cluster_handler_names={CLUSTER_HANDLER_THERMOSTAT},
@@ -374,6 +602,30 @@ class ThermostatHVACAction(Sensor, id_suffix="hvac_action"):
 )
 class SinopeHVACAction(ThermostatHVACAction):
     """Sinope Thermostat HVAC action sensor."""
+
+    @property
+    def _rm_rs_action(self) -> Union[str, None]:
+        """Return the current HVAC action based on running mode and running state."""
+
+        running_mode = self._cluster_handler.running_mode
+        if running_mode == self._cluster_handler.RunningMode.Heat:
+            return CURRENT_HVAC_HEAT
+        if running_mode == self._cluster_handler.RunningMode.Cool:
+            return CURRENT_HVAC_COOL
+
+        running_state = self._cluster_handler.running_state
+        if running_state and running_state & (
+            self._cluster_handler.RunningState.Fan_State_On
+            | self._cluster_handler.RunningState.Fan_2nd_Stage_On
+            | self._cluster_handler.RunningState.Fan_3rd_Stage_On
+        ):
+            return CURRENT_HVAC_FAN
+        if (
+            self._cluster_handler.system_mode != self._cluster_handler.SystemMode.Off
+            and running_mode == self._cluster_handler.SystemMode.Off
+        ):
+            return CURRENT_HVAC_IDLE
+        return CURRENT_HVAC_OFF
 
 
 @MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_BASIC)
@@ -403,6 +655,15 @@ class RSSISensor(Sensor, id_suffix="rssi"):
         if PLATFORM_ENTITIES.prevent_entity_creation(Platform.SENSOR, device.ieee, key):
             return None
         return cls(unique_id, cluster_handlers, endpoint, device, **kwargs)
+
+    def get_state(self) -> int:
+        """Return the state of the sensor."""
+        return getattr(self.device.device, self.unique_id_suffix)
+
+    @property
+    def should_poll(self) -> bool:
+        """Poll the sensor for current state."""
+        return True
 
 
 @MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_BASIC)

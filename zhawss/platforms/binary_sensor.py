@@ -52,7 +52,7 @@ class BinarySensor(PlatformEntity):
         return self.is_on
 
     def cluster_handler_attribute_updated(self, attr_id, attr_name, value):
-        """Set the state."""
+        """handle attribute updates from the cluster handler."""
         if self.SENSOR_ATTR is None or self.SENSOR_ATTR != attr_name:
             return
         self._state = bool(value)
