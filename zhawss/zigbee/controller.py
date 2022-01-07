@@ -110,7 +110,6 @@ class Controller:
     def get_groups(self):
         """Get Zigbee groups."""
 
-    # TODO connect the following methods to the client manager broadcast somehow
     def device_joined(self, device: ZigpyDeviceType) -> None:
         """Handle device joined.
 
