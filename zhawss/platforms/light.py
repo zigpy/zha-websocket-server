@@ -1,11 +1,14 @@
 """Light platform for zhawss."""
 
+import asyncio
 import enum
 import functools
+import random
 from typing import Any, List, Union
 
 from zigpy.zcl.foundation import Status
 
+from zhawss.decorators import periodic
 from zhawss.platforms import PlatformEntity
 from zhawss.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhawss.platforms.util import color as color_util
@@ -401,13 +404,16 @@ class Light(BaseLight):
 
         self._on_off_cluster_handler.add_listener(self)
         self._level_cluster_handler.add_listener(self)
-        # TODO refresh_interval = random.randint(*(x * 60 for x in self._REFRESH_INTERVAL))
 
-        """TODO
-        self._cancel_refresh_handle = async_track_time_interval(
-            self.hass, self._refresh, timedelta(seconds=refresh_interval)
-        )
-        """
+        refresh_interval = random.randint(*(x * 60 for x in self._REFRESH_INTERVAL))
+
+        @periodic(refresh_interval)
+        async def _refresh(self, time):
+            """Call async_get_state at an interval."""
+            await self.async_update()
+            self.send_state_changed_event()
+
+        self._cancel_refresh_handle = asyncio.create_task(_refresh())
 
         """TODO
         self.async_accept_signal(
@@ -476,11 +482,6 @@ class Light(BaseLight):
                     self._effect = EFFECT_COLORLOOP
                 else:
                     self._effect = None
-
-    async def _refresh(self, time):
-        """Call async_get_state at an interval."""
-        await self.async_update()
-        self.send_state_changed_event()
 
     """TODO
     async def _maybe_force_refresh(self, signal):

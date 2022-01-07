@@ -1,10 +1,12 @@
 """Sensor platform for zhawss."""
 
+import asyncio
 import functools
 import logging
 import numbers
 from typing import Any, List, Union
 
+from zhawss.decorators import periodic
 from zhawss.platforms import PlatformEntity
 from zhawss.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhawss.zigbee.cluster.const import (
@@ -93,6 +95,8 @@ class Sensor(PlatformEntity):
         super().__init__(unique_id, cluster_handlers, endpoint, device)
         self._cluster_handler: ClusterHandlerType = cluster_handlers[0]
         self._cluster_handler.add_listener(self)
+        if self.should_poll:
+            self.poller_task = asyncio.create_task(self._refresh())
 
     def get_state(self) -> Any:
         """Return the state for this sensor."""
@@ -113,6 +117,11 @@ class Sensor(PlatformEntity):
     def cluster_handler_attribute_updated(self, attr_id, attr_name, value):
         """handle attribute updates from the cluster handler."""
         self.send_state_changed_event()
+
+    @periodic(30)
+    async def _refresh(self):
+        """Refresh the sensor."""
+        await self.async_update()
 
     def to_json(self) -> dict:
         """Return a JSON representation of the sensor."""
