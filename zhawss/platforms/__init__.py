@@ -1,8 +1,9 @@
 """Platform module for zhawss."""
 
 
+import abc
 import logging
-from typing import Any, List, Union
+from typing import Any, Dict, List, Union
 
 from zhawss.platforms.registries import Platform
 from zhawss.platforms.types import PlatformEntityType
@@ -76,6 +77,20 @@ class PlatformEntity:
         }
         _LOGGER.info("Sending event from platform entity: %s", signal)
         self.device.send_event(signal)
+
+    @abc.abstractmethod
+    def get_state(self) -> Union[str, Dict, None]:
+        """Return the arguments to use in the command."""
+
+    def send_state_changed_event(self) -> None:
+        """Send the state of this platform entity."""
+        self.send_event(
+            {
+                "state": self.get_state(),
+                "event": "platform_entity_state_changed",
+                "event_type": "platform_entity_event",
+            }
+        )
 
     @classmethod
     def create_platform_entity(
