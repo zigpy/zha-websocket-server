@@ -11,7 +11,11 @@ from zigpy.zcl.clusters import general
 from zigpy.zcl.foundation import Status
 
 from zhawss.zigbee import registries
-from zhawss.zigbee.cluster import ClientClusterHandler, ClusterHandler
+from zhawss.zigbee.cluster import (
+    SIGNAL_ATTR_UPDATED,
+    ClientClusterHandler,
+    ClusterHandler,
+)
 from zhawss.zigbee.cluster.const import (
     REPORT_CONFIG_ASAP,
     REPORT_CONFIG_BATTERY_SAVE,
@@ -310,14 +314,10 @@ class OnOffClusterHandler(ClusterHandler):
                     self._off_listener = None
                 self.attribute_updated(self.ON_OFF, True)
                 if on_time > 0:
-                    """TODO
-                    self._off_listener = async_call_later(
-                        self._ch_pool.hass,
+                    self._off_listener = asyncio.get_running_loop().call_later(
                         (on_time / 10),  # value is in 10ths of a second
                         self.set_to_off,
                     )
-                    """
-                    pass
         elif cmd == "toggle":
             self.attribute_updated(self.ON_OFF, not bool(self._state))
 
@@ -329,11 +329,12 @@ class OnOffClusterHandler(ClusterHandler):
     def attribute_updated(self, attrid, value) -> None:
         """Handle attribute updates on this cluster."""
         if attrid == self.ON_OFF:
-            """TODO
-            self.send_event(
-                f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}", attrid, "on_off", value
+            self.listener_event(
+                f"cluster_handler_{SIGNAL_ATTR_UPDATED}",
+                attrid,
+                "on_off",
+                value,
             )
-            """
             self._state = bool(value)
 
     async def async_initialize_handler_specific(
