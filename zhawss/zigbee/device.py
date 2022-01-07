@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 from enum import Enum
 import logging
+import random
 import time
 from typing import Any, Awaitable, Dict, List
 
@@ -16,6 +17,7 @@ from zigpy.types.named import EUI64
 from zigpy.zcl.clusters.general import Groups
 import zigpy.zdo.types as zdo_types
 
+from zhawss.decorators import periodic
 from zhawss.platforms import PlatformEntity
 from zhawss.util import LogMixin
 from zhawss.zigbee.cluster import ZDOClusterHandler
@@ -80,6 +82,9 @@ CLUSTER_COMMANDS_SERVER = "server_commands"
 CLUSTER_TYPE_IN = "in"
 CLUSTER_TYPE_OUT = "out"
 
+CONF_DEFAULT_CONSIDER_UNAVAILABLE_MAINS = 60 * 60 * 2  # 2 hours
+CONF_DEFAULT_CONSIDER_UNAVAILABLE_BATTERY = 60 * 60 * 6  # 6 hours
+
 
 class DeviceStatus(Enum):
     """Status of a device."""
@@ -114,6 +119,7 @@ class Device(LogMixin):
         )
 
         if self.is_mains_powered:
+            self.consider_unavailable_time = CONF_DEFAULT_CONSIDER_UNAVAILABLE_MAINS
             """TODO
             self.consider_unavailable_time = async_get_zha_config_value(
                 self._zha_gateway.config_entry,
@@ -123,6 +129,7 @@ class Device(LogMixin):
             )
             """
         else:
+            self.consider_unavailable_time = CONF_DEFAULT_CONSIDER_UNAVAILABLE_BATTERY
             """TODO
             self.consider_unavailable_time = async_get_zha_config_value(
                 self._zha_gateway.config_entry,
@@ -132,24 +139,17 @@ class Device(LogMixin):
             )
             """
 
-        """ TODO
-        keep_alive_interval = random.randint(*_UPDATE_ALIVE_INTERVAL)
-        self.unsubs.append(
-            async_track_time_interval(
-                self.hass, self._check_available, timedelta(seconds=keep_alive_interval)
-            )
-        )
-        """
-        self.status: DeviceStatus = DeviceStatus.CREATED
-        # self._channels = channels.Channels(self)
-
+        self._platform_entities: List[PlatformEntity] = []
         self.semaphore: asyncio.Semaphore = asyncio.Semaphore(3)
         self._zdo_handler: ZDOClusterHandler = ZDOClusterHandler(self)
+        self.status: DeviceStatus = DeviceStatus.CREATED
+
         self._endpoints: Dict[int, Endpoint] = {}
         for ep_id, endpoint in zigpy_device.endpoints.items():
             if ep_id != 0:
                 self._endpoints[ep_id] = Endpoint.new(endpoint, self)
-        self._platform_entities: List[PlatformEntity] = []
+
+        self._check_alive_task = asyncio.create_task(self._check_available())
 
     @property
     def device(self) -> ZigpyDevice:
@@ -334,6 +334,7 @@ class Device(LogMixin):
         signal["device"] = {"ieee": str(self.ieee)}
         self.controller.server.client_manager.broadcast(signal)
 
+    @periodic(random.randint(*_UPDATE_ALIVE_INTERVAL))
     async def _check_available(self, *_) -> Awaitable[None]:
         # don't flip the availability state of the coordinator
         if self.is_coordinator:
@@ -378,7 +379,7 @@ class Device(LogMixin):
         self.available = available
         if availability_changed and available:
             # reinit channels then signal entities
-            # self.hass.async_create_task(self._async_became_available())
+            asyncio.create_task(self._async_became_available())
             return
         """ TODO
         if availability_changed and not available:
