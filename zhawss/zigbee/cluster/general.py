@@ -222,33 +222,27 @@ class LevelControlClusterHandler(ClusterHandler):
         cmd = parse_and_log_command(self, tsn, command_id, args)
 
         if cmd in ("move_to_level", "move_to_level_with_on_off"):
-            # self.dispatch_level_change(SIGNAL_SET_LEVEL, args[0])
-            pass
+            self.dispatch_level_change("set_level", args[0])
         elif cmd in ("move", "move_with_on_off"):
             # We should dim slowly -- for now, just step once
-            # TODO rate = args[1]
+            rate = args[1]
             if args[0] == 0xFF:
-                pass
-            #  TODO  rate = 10  # Should read default move rate
-            # TODO self.dispatch_level_change(SIGNAL_MOVE_LEVEL, -rate if args[0] else rate)
+                rate = 10  # Should read default move rate
+            self.dispatch_level_change("move_level", -rate if args[0] else rate)
         elif cmd in ("step", "step_with_on_off"):
             # Step (technically may change on/off)
-            """TODO
-            self.dispatch_level_change(
-                SIGNAL_MOVE_LEVEL, -args[1] if args[0] else args[1]
-            )
-            """
+            self.dispatch_level_change("move_level", -args[1] if args[0] else args[1])
 
     def attribute_updated(self, attrid, value) -> None:
         """Handle attribute updates on this cluster."""
         self.debug("received attribute: %s update with value: %s", attrid, value)
         if attrid == self.CURRENT_LEVEL:
-            # self.dispatch_level_change(SIGNAL_SET_LEVEL, value)
+            self.dispatch_level_change("set_level", value)
             pass
 
     def dispatch_level_change(self, command, level) -> None:
         """Dispatch level change."""
-        # self.send_event(f"{self.unique_id}_{command}", level)
+        self.listener_event(f"cluster_handler_{command}", level)
 
 
 @registries.CLUSTER_HANDLER_REGISTRY.register(general.MultistateInput.cluster_id)
