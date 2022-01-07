@@ -1,7 +1,7 @@
 """Binary Sensor module for zhawss."""
 
 import functools
-from typing import List
+from typing import Dict, List, Union
 
 from zhawss.platforms import PlatformEntity
 from zhawss.platforms.registries import PLATFORM_ENTITIES, Platform
@@ -48,18 +48,15 @@ class BinarySensor(PlatformEntity):
             return False
         return self._state
 
+    def get_state(self) -> Union[str, Dict, None]:
+        return self.is_on
+
     def cluster_handler_attribute_updated(self, attr_id, attr_name, value):
         """Set the state."""
         if self.SENSOR_ATTR is None or self.SENSOR_ATTR != attr_name:
             return
         self._state = bool(value)
-        self.send_event(
-            {
-                "state": self._state,
-                "event": "platform_entity_state_changed",
-                "event_type": "platform_entity_event",
-            }
-        )
+        self.send_state_changed_event()
 
     async def async_update(self):
         """Attempt to retrieve on off state from the binary sensor."""
@@ -68,6 +65,7 @@ class BinarySensor(PlatformEntity):
         attr_value = await self._cluster_handler.get_attribute_value(attribute)
         if attr_value is not None:
             self._state = attr_value
+            self.send_state_changed_event()
 
     def to_json(self) -> dict:
         """Return a JSON representation of the binary sensor."""
@@ -134,6 +132,7 @@ class IASZone(BinarySensor):
         value = await self._cluster_handler.get_attribute_value("zone_status")
         if value is not None:
             self._state = value & 3
+            self.send_state_changed_event()
 
     def to_json(self) -> dict:
         """Return a JSON representation of the binary sensor."""
