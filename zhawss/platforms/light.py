@@ -3,7 +3,6 @@
 import asyncio
 import enum
 import functools
-import random
 from typing import Any, List, Union
 
 from zigpy.zcl.foundation import Status
@@ -337,7 +336,7 @@ class BaseLight(PlatformEntity):
 class Light(BaseLight):
     """Representation of a light for zhawss."""
 
-    _REFRESH_INTERVAL = (45, 75)
+    _REFRESH_INTERVAL = (2700, 4500)
 
     def __init__(
         self,
@@ -405,10 +404,8 @@ class Light(BaseLight):
         self._on_off_cluster_handler.add_listener(self)
         self._level_cluster_handler.add_listener(self)
 
-        refresh_interval = random.randint(*(x * 60 for x in self._REFRESH_INTERVAL))
-
-        @periodic(refresh_interval)
-        async def _refresh(self, time):
+        @periodic(self._REFRESH_INTERVAL)
+        async def _refresh(self):
             """Call async_get_state at an interval."""
             await self.async_update()
             self.send_state_changed_event()
@@ -500,7 +497,7 @@ class Light(BaseLight):
 class HueLight(Light):
     """Representation of a HUE light which does not report attributes."""
 
-    _REFRESH_INTERVAL = (3, 5)
+    _REFRESH_INTERVAL = (180, 300)
 
 
 @STRICT_MATCH(

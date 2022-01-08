@@ -4,7 +4,6 @@ from __future__ import annotations
 import asyncio
 from enum import Enum
 import logging
-import random
 import time
 from typing import Any, Awaitable, Dict, List
 
@@ -334,8 +333,8 @@ class Device(LogMixin):
         signal["device"] = {"ieee": str(self.ieee)}
         self.controller.server.client_manager.broadcast(signal)
 
-    @periodic(random.randint(*_UPDATE_ALIVE_INTERVAL))
-    async def _check_available(self, *_) -> Awaitable[None]:
+    @periodic(_UPDATE_ALIVE_INTERVAL)
+    async def _check_available(self) -> Awaitable[None]:
         # don't flip the availability state of the coordinator
         if self.is_coordinator:
             return

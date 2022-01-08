@@ -61,6 +61,7 @@ class Sensor(PlatformEntity):
 
     PLATFORM = Platform.SENSOR
     SENSOR_ATTR: Union[int, str, None] = None
+    _REFRESH_INTERVAL = (30, 45)
     _decimals: int = 1
     _divisor: int = 1
     _multiplier: int = 1
@@ -118,7 +119,7 @@ class Sensor(PlatformEntity):
         """handle attribute updates from the cluster handler."""
         self.send_state_changed_event()
 
-    @periodic(30)
+    @periodic(_REFRESH_INTERVAL)
     async def _refresh(self):
         """Refresh the sensor."""
         await self.async_update()
