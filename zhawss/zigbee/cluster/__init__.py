@@ -392,7 +392,7 @@ class ClusterHandler(ListenableMixin, LogMixin):
 
     def to_json(self) -> dict:
         """Return JSON representation of this cluster handler."""
-        return {
+        json = {
             "class_name": self.__class__.__name__,
             "generic_id": self._generic_id,
             "endpoint_id": self._endpoint.id,
@@ -404,9 +404,13 @@ class ClusterHandler(ListenableMixin, LogMixin):
             },
             "id": self._id,
             "unique_id": self._unique_id,
-            # TODO "value_attribute": self.value_attribute,
             "status": self._status.name,
         }
+
+        if hasattr(self, "value_attribute"):
+            json["value_attribute"] = self.value_attribute
+
+        return json
 
     def log(self, level, msg, *args) -> None:
         """Log a message."""

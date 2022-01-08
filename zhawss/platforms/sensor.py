@@ -157,12 +157,6 @@ class Battery(Sensor):
     """Battery sensor of power configuration cluster."""
 
     SENSOR_ATTR = "battery_percentage_remaining"
-    """TODO
-    _attr_device_class: SensorDeviceClass = SensorDeviceClass.BATTERY
-    _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _unit = PERCENTAGE
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    """
 
     @classmethod
     def create_platform_entity(
@@ -211,11 +205,6 @@ class ElectricalMeasurement(Sensor):
 
     SENSOR_ATTR = "active_power"
     _div_mul_prefix = "ac_power"
-    """TODO
-    _attr_device_class: SensorDeviceClass = SensorDeviceClass.POWER
-    _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _unit = POWER_WATT
-    """
 
     @property
     def should_poll(self) -> bool:
@@ -260,10 +249,6 @@ class ElectricalMeasurementApparentPower(
 
     SENSOR_ATTR = "apparent_power"
     _div_mul_prefix = "ac_power"
-    """TODO
-    _attr_device_class: SensorDeviceClass = SensorDeviceClass.APPARENT_POWER
-    _unit = POWER_VOLT_AMPERE
-    """
 
     @property
     def should_poll(self) -> bool:
@@ -277,10 +262,6 @@ class ElectricalMeasurementRMSCurrent(ElectricalMeasurement, id_suffix="rms_curr
 
     SENSOR_ATTR = "rms_current"
     _div_mul_prefix = "ac_current"
-    """TODO
-    _attr_device_class: SensorDeviceClass = SensorDeviceClass.CURRENT
-    _unit = ELECTRIC_CURRENT_AMPERE
-    """
 
     @property
     def should_poll(self) -> bool:
@@ -294,10 +275,6 @@ class ElectricalMeasurementRMSVoltage(ElectricalMeasurement, id_suffix="rms_volt
 
     SENSOR_ATTR = "rms_voltage"
     _div_mul_prefix = "ac_voltage"
-    """TODO
-    _attr_device_class: SensorDeviceClass = SensorDeviceClass.CURRENT
-    _unit = ELECTRIC_POTENTIAL_VOLT
-    """
 
     @property
     def should_poll(self) -> bool:
@@ -318,11 +295,6 @@ class Humidity(Sensor):
 
     SENSOR_ATTR = "measured_value"
     _divisor = 100
-    """TODO
-    _attr_device_class: SensorDeviceClass = SensorDeviceClass.HUMIDITY
-    _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _unit = PERCENTAGE
-    """
 
 
 @MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_SOIL_MOISTURE)
@@ -331,11 +303,6 @@ class SoilMoisture(Sensor):
 
     SENSOR_ATTR = "measured_value"
     _divisor = 100
-    """TODO
-    _attr_device_class: SensorDeviceClass = SensorDeviceClass.HUMIDITY
-    _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _unit = PERCENTAGE
-    """
 
 
 @MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_LEAF_WETNESS)
@@ -344,11 +311,6 @@ class LeafWetness(Sensor):
 
     SENSOR_ATTR = "measured_value"
     _divisor = 100
-    """TODO
-    _attr_device_class: SensorDeviceClass = SensorDeviceClass.HUMIDITY
-    _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _unit = PERCENTAGE
-    """
 
 
 @MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_ILLUMINANCE)
@@ -356,11 +318,6 @@ class Illuminance(Sensor):
     """Illuminance Sensor."""
 
     SENSOR_ATTR = "measured_value"
-    """TODO
-    _attr_device_class: SensorDeviceClass = SensorDeviceClass.ILLUMINANCE
-    _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _unit = LIGHT_LUX
-    """
 
     @staticmethod
     def formatter(value: int) -> float:
@@ -373,10 +330,6 @@ class SmartEnergyMetering(Sensor):
     """Metering sensor."""
 
     SENSOR_ATTR: Union[int, str] = "instantaneous_demand"
-    """TODO
-    _attr_device_class: SensorDeviceClass = SensorDeviceClass.POWER
-    _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    """
 
     def formatter(self, value: int) -> Union[int, float]:
         """Pass through channel formatter."""
@@ -404,10 +357,6 @@ class SmartEnergySummation(SmartEnergyMetering, id_suffix="summation_delivered")
     """Smart Energy Metering summation sensor."""
 
     SENSOR_ATTR: Union[int, str] = "current_summ_delivered"
-    """TODO
-    _attr_device_class: SensorDeviceClass = SensorDeviceClass.ENERGY
-    _attr_state_class: SensorStateClass = SensorStateClass.TOTAL_INCREASING
-    """
 
     def formatter(self, value: int) -> Union[int, float]:
         """Numeric pass-through formatter."""
@@ -427,11 +376,6 @@ class Pressure(Sensor):
 
     SENSOR_ATTR = "measured_value"
     _decimals = 0
-    """TODO
-    _attr_device_class: SensorDeviceClass = SensorDeviceClass.PRESSURE
-    _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _unit = PRESSURE_HPA
-    """
 
 
 @MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_TEMPERATURE)
@@ -440,11 +384,6 @@ class Temperature(Sensor):
 
     SENSOR_ATTR = "measured_value"
     _divisor = 100
-    """TODO
-    _attr_device_class: SensorDeviceClass = SensorDeviceClass.TEMPERATURE
-    _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _unit = TEMP_CELSIUS
-    """
 
 
 @MULTI_MATCH(cluster_handler_names="carbon_dioxide_concentration")
@@ -454,11 +393,6 @@ class CarbonDioxideConcentration(Sensor):
     SENSOR_ATTR = "measured_value"
     _decimals = 0
     _multiplier = 1e6
-    """TODO
-    _attr_device_class: SensorDeviceClass = SensorDeviceClass.CO2
-    _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _unit = CONCENTRATION_PARTS_PER_MILLION
-    """
 
 
 @MULTI_MATCH(cluster_handler_names="carbon_monoxide_concentration")
@@ -468,11 +402,6 @@ class CarbonMonoxideConcentration(Sensor):
     SENSOR_ATTR = "measured_value"
     _decimals = 0
     _multiplier = 1e6
-    """TODO
-    _attr_device_class: SensorDeviceClass = SensorDeviceClass.CO
-    _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _unit = CONCENTRATION_PARTS_PER_MILLION
-    """
 
 
 @MULTI_MATCH(generic_ids="channel_0x042e", stop_on_match_group="voc_level")
@@ -483,11 +412,6 @@ class VOCLevel(Sensor):
     SENSOR_ATTR = "measured_value"
     _decimals = 0
     _multiplier = 1e6
-    """TODO
-    _attr_device_class: SensorDeviceClass = SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS
-    _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _unit = CONCENTRATION_MICROGRAMS_PER_CUBIC_METER
-    """
 
 
 @MULTI_MATCH(
@@ -501,11 +425,6 @@ class PPBVOCLevel(Sensor):
     SENSOR_ATTR = "measured_value"
     _decimals = 0
     _multiplier = 1
-    """TODO
-    _attr_device_class: SensorDeviceClass = SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS
-    _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _unit = CONCENTRATION_PARTS_PER_BILLION
-    """
 
 
 @MULTI_MATCH(cluster_handler_names="formaldehyde_concentration")
@@ -515,10 +434,6 @@ class FormaldehydeConcentration(Sensor):
     SENSOR_ATTR = "measured_value"
     _decimals = 0
     _multiplier = 1e6
-    """TODO
-    _attr_state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _unit = CONCENTRATION_PARTS_PER_MILLION
-    """
 
 
 @MULTI_MATCH(
@@ -641,13 +556,6 @@ class SinopeHVACAction(ThermostatHVACAction):
 @MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_BASIC)
 class RSSISensor(Sensor, id_suffix="rssi"):
     """RSSI sensor for a device."""
-
-    """TODO
-    _state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    _device_class: SensorDeviceClass = SensorDeviceClass.SIGNAL_STRENGTH
-    _attr_entity_category = ENTITY_CATEGORY_DIAGNOSTIC
-    _attr_entity_registry_enabled_default = False
-    """
 
     @classmethod
     def create_platform_entity(
