@@ -12,13 +12,11 @@ _LOGGER = logging.getLogger(__name__)
 if __name__ == "__main__":
     uvloop.install()
     fmt = "%(asctime)s %(levelname)s (%(threadName)s) [%(name)s] %(message)s"
-    datefmt = "%Y-%m-%d %H:%M:%S"
     colorfmt = f"%(log_color)s{fmt}%(reset)s"
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger().handlers[0].setFormatter(
         ColoredFormatter(
             colorfmt,
-            datefmt=datefmt,
             reset=True,
             log_colors={
                 "DEBUG": "cyan",
