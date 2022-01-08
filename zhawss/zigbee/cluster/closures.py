@@ -54,11 +54,9 @@ class DoorLockClusterHandler(ClusterHandler):
             "Attribute report '%s'[%s] = %s", self.cluster.name, attr_name, value
         )
         if attrid == self._value_attribute:
-            """TODO
-            self.send_event(
-                f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}", attrid, attr_name, value
+            self.listener_event(
+                f"cluster_handler_{SIGNAL_ATTR_UPDATED}", attrid, attr_name, value
             )
-            """
 
     async def async_set_user_code(
         self, code_slot: int, user_code: str
