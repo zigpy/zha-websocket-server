@@ -110,6 +110,7 @@ class IasAce(ClusterHandler):
         """Handle the IAS ACE arm command."""
         mode = AceCluster.ArmMode(arm_mode)
 
+        """TODO figure out events
         self.zha_send_event(
             self._cluster.server_commands.get(IAS_ACE_ARM)[NAME],
             {
@@ -119,6 +120,7 @@ class IasAce(ClusterHandler):
                 "zone_id": zone_id,
             },
         )
+        """
 
         zigbee_reply = self.arm_map[mode](code)
         asyncio.create_task(zigbee_reply)
@@ -126,9 +128,6 @@ class IasAce(ClusterHandler):
         if self.invalid_tries >= self.max_invalid_tries:
             self.alarm_status = AceCluster.AlarmStatus.Emergency
             self.armed_state = AceCluster.PanelStatus.In_Alarm
-            self.send_event(f"{self.unique_id}_{SIGNAL_ALARM_TRIGGERED}")
-        else:
-            self.send_event(f"{self.unique_id}_{SIGNAL_ARMED_STATE_CHANGED}")
         self._send_panel_status_changed()
 
     def _disarm(self, code: str) -> None:
@@ -206,10 +205,12 @@ class IasAce(ClusterHandler):
 
     def _bypass(self, zone_list, code) -> None:
         """Handle the IAS ACE bypass command."""
+        """TODO figure out events
         self.zha_send_event(
             self._cluster.server_commands.get(IAS_ACE_BYPASS)[NAME],
             {"zone_list": zone_list, "code": code},
         )
+        """
 
     def _emergency(self) -> None:
         """Handle the IAS ACE emergency command."""
@@ -236,7 +237,7 @@ class IasAce(ClusterHandler):
         """Set the specified alarm status."""
         self.alarm_status = status
         self.armed_state = AceCluster.PanelStatus.In_Alarm
-        self.send_event(f"{self.unique_id}_{SIGNAL_ALARM_TRIGGERED}")
+        self.listener_event("cluster_handler_state_changed")
         self._send_panel_status_changed()
 
     def _get_zone_id_map(self):
@@ -264,6 +265,7 @@ class IasAce(ClusterHandler):
             self.alarm_status,
         )
         asyncio.create_task(response)
+        self.listener_event("cluster_handler_state_changed")
 
     def _get_bypassed_zone_list(self):
         """Handle the IAS ACE bypassed zone list command."""
