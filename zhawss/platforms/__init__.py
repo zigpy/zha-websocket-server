@@ -24,7 +24,7 @@ class PlatformEntity(LogMixin):
     def __init_subclass__(cls, id_suffix: Union[str, None] = None, **kwargs) -> None:
         """Initialize subclass.
         :param id_suffix: suffix to add to the unique_id of the entity. Used for multi
-                          entities using the same channel/cluster id for the entity.
+                          entities using the same cluster handler/cluster id for the entity.
         """
         super().__init_subclass__(**kwargs)
         if id_suffix:
