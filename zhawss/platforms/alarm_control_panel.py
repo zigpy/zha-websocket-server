@@ -60,7 +60,7 @@ class ZHAAlarmControlPanel(PlatformEntity):
         endpoint: EndpointType,
         device: DeviceType,
     ):
-        """Initialize the binary sensor."""
+        """Initialize the alarm control panel."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
         self._cluster_handler: IasAceClusterHandler = cluster_handlers[0]
         self._cluster_handler.panel_code = "1234"
@@ -69,13 +69,13 @@ class ZHAAlarmControlPanel(PlatformEntity):
 
         """
         # TODO Once config / storage exist populate these values correctly
-        self._channel.panel_code = async_get_zha_config_value(
+        self._cluster_handler.panel_code = async_get_zha_config_value(
             cfg_entry, ZHA_ALARM_OPTIONS, CONF_ALARM_MASTER_CODE, "1234"
         )
-        self._channel.code_required_arm_actions = async_get_zha_config_value(
+        self._cluster_handler.code_required_arm_actions = async_get_zha_config_value(
             cfg_entry, ZHA_ALARM_OPTIONS, CONF_ALARM_ARM_REQUIRES_CODE, False
         )
-        self._channel.max_invalid_tries = async_get_zha_config_value(
+        self._cluster_handler.max_invalid_tries = async_get_zha_config_value(
             cfg_entry, ZHA_ALARM_OPTIONS, CONF_ALARM_FAILED_TRIES, 3
         )
         """
@@ -88,26 +88,26 @@ class ZHAAlarmControlPanel(PlatformEntity):
     @property
     def code_arm_required(self):
         """Whether the code is required for arm actions."""
-        return self._channel.code_required_arm_actions
+        return self._cluster_handler.code_required_arm_actions
 
     async def async_alarm_disarm(self, code=None):
         """Send disarm command."""
-        self._channel.arm(IasAce.ArmMode.Disarm, code, 0)
+        self._cluster_handler.arm(IasAce.ArmMode.Disarm, code, 0)
         self.send_state_changed_event()
 
     async def async_alarm_arm_home(self, code=None):
         """Send arm home command."""
-        self._channel.arm(IasAce.ArmMode.Arm_Day_Home_Only, code, 0)
+        self._cluster_handler.arm(IasAce.ArmMode.Arm_Day_Home_Only, code, 0)
         self.send_state_changed_event()
 
     async def async_alarm_arm_away(self, code=None):
         """Send arm away command."""
-        self._channel.arm(IasAce.ArmMode.Arm_All_Zones, code, 0)
+        self._cluster_handler.arm(IasAce.ArmMode.Arm_All_Zones, code, 0)
         self.send_state_changed_event()
 
     async def async_alarm_arm_night(self, code=None):
         """Send arm night command."""
-        self._channel.arm(IasAce.ArmMode.Arm_Night_Sleep_Only, code, 0)
+        self._cluster_handler.arm(IasAce.ArmMode.Arm_Night_Sleep_Only, code, 0)
         self.send_state_changed_event()
 
     async def async_alarm_trigger(self, code=None):
