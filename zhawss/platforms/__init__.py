@@ -102,7 +102,7 @@ class PlatformEntity(LogMixin):
             "id": self._endpoint.id,
         }
         _LOGGER.info("Sending event from platform entity: %s", signal)
-        self.device.send_event(signal)
+        self.device.send_event({"data": signal})
 
     @abc.abstractmethod
     def get_state(self) -> Union[str, Dict, None]:

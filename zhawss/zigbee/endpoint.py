@@ -201,7 +201,10 @@ class Endpoint:
 
     def send_event(self, signal: dict[str, Any]) -> None:
         """Broadcast an event from this endpoint."""
-        signal["endpoint_id"] = self.id
+        signal["data"]["endpoint"] = {
+            "id": self.id,
+        }
+        # signal["endpoint_id"] = self.id
         self.device.send_event(signal)
 
     def claim_cluster_handlers(

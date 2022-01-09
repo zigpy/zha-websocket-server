@@ -101,10 +101,21 @@ class ClusterHandler(ListenableMixin, LogMixin):
 
     def send_event(self, signal: dict[str, Any]) -> None:
         """Broadcast an event from this cluster handler."""
+        signal["data"]["cluster_handler"] = {
+            "cluster": {
+                "id": self.cluster.cluster_id,
+                "name": self.cluster.name,
+                "endpoint_attribute": self.cluster.ep_attribute,
+                "endpoint_id": self.cluster.endpoint.endpoint_id,
+            },
+            "unique_id": self.unique_id,
+        }
+        """
         signal["cluster_handler_unique_id"] = self.unique_id
         signal["cluster_id"] = self.cluster.cluster_id
         signal["endpoint_attribute"] = self.cluster.ep_attribute
         signal["cluster_name"] = self.cluster.name
+        """
         self._endpoint.send_event(signal)
 
     async def bind(self) -> Awaitable[None]:
@@ -302,11 +313,15 @@ class ClusterHandler(ListenableMixin, LogMixin):
         """Handle attribute updates on this cluster."""
         self.send_event(
             {
-                "event": SIGNAL_ATTR_UPDATED,
-                "event_type": "raw_zcl",
-                "attribute_id": attrid,
-                "attribute_name": self.cluster.attributes.get(attrid, [attrid])[0],
-                "attribute_value": value,
+                "data": {
+                    "event": SIGNAL_ATTR_UPDATED,
+                    "event_type": "raw_zcl",
+                    "attribute": {
+                        "id": attrid,
+                        "name": self.cluster.attributes.get(attrid, [attrid])[0],
+                        "value": value,
+                    },
+                },
             }
         )
 

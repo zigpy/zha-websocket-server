@@ -47,7 +47,9 @@ async def start_network(
 ) -> Awaitable[None]:
     """Start the Zigbee network."""
     await server.controller.start_network(message)
-    client.send_result_success(message[MESSAGE_ID], {})
+    client.send_result_success(
+        message[MESSAGE_ID], {COMMAND: APICommands.START_NETWORK}
+    )
 
 
 @decorators.async_response
