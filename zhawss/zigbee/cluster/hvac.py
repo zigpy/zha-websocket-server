@@ -228,12 +228,10 @@ class ThermostatClusterHandler(ClusterHandler):
         self.debug(
             "Attribute report '%s'[%s] = %s", self.cluster.name, attr_name, value
         )
-        """ TODO
-        self.send_event(
-            f"{self.unique_id}_{SIGNAL_ATTR_UPDATED}",
+        self.listener_event(
+            f"cluster_handler_{SIGNAL_ATTR_UPDATED}",
             AttributeUpdateRecord(attrid, attr_name, value),
         )
-        """
 
     async def async_set_operation_mode(self, mode) -> Awaitable[bool]:
         """Set Operation mode."""

@@ -8,13 +8,14 @@ from typing import Any, Awaitable, Dict, List, Union
 
 from zhawss.platforms.registries import Platform
 from zhawss.platforms.types import PlatformEntityType
+from zhawss.util import LogMixin
 from zhawss.zigbee.cluster.types import ClusterHandlerType
 from zhawss.zigbee.types import DeviceType, EndpointType
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class PlatformEntity:
+class PlatformEntity(LogMixin):
     """Class that represents an entity for a device platform."""
 
     PLATFORM: Platform = Platform.UNKNOWN
@@ -142,3 +143,9 @@ class PlatformEntity:
             state = self.get_state()
             if state != previous_state:
                 self.send_state_changed_event()
+
+    def log(self, level: int, msg: str, *args):
+        """Log a message."""
+        msg = f"%s: {msg}"
+        args = (self.unique_id,) + args
+        _LOGGER.log(level, msg, *args)
