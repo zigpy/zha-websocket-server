@@ -13,6 +13,7 @@ from zhawss.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhawss.platforms.util import color as color_util
 from zhawss.zigbee.cluster.const import (
     CLUSTER_HANDLER_COLOR,
+    CLUSTER_HANDLER_IDENTIFY,
     CLUSTER_HANDLER_LEVEL,
     CLUSTER_HANDLER_ON_OFF,
 )
@@ -97,6 +98,9 @@ class LightColorMode(enum.IntEnum):
     HS_COLOR = 0x00
     XY_COLOR = 0x01
     COLOR_TEMP = 0x02
+
+
+"""TODO implement to_json method"""
 
 
 class BaseLight(PlatformEntity):
@@ -351,7 +355,9 @@ class Light(BaseLight):
         self._state = bool(self._on_off_cluster_handler.on_off)
         self._level_cluster_handler = self.cluster_handlers.get(CLUSTER_HANDLER_LEVEL)
         self._color_cluster_handler = self.cluster_handlers.get(CLUSTER_HANDLER_COLOR)
-        self._identify_cluster_handler = self.zha_device.channels.identify_ch
+        self._identify_cluster_handler = self.cluster_handlers.get(
+            CLUSTER_HANDLER_IDENTIFY
+        )
         if self._color_cluster_handler:
             self._min_mireds: Union[int, None] = self._color_cluster_handler.min_mireds
             self._max_mireds: Union[int, None] = self._color_cluster_handler.max_mireds
@@ -433,19 +439,19 @@ class Light(BaseLight):
         if not self.available:
             return
         self.debug("polling current state")
-        if self._on_off_channel:
-            state = await self._on_off_channel.get_attribute_value(
+        if self._on_off_cluster_handler:
+            state = await self._on_off_cluster_handler.get_attribute_value(
                 "on_off", from_cache=False
             )
             if state is not None:
                 self._state = state
-        if self._level_channel:
-            level = await self._level_channel.get_attribute_value(
+        if self._level_cluster_handler:
+            level = await self._level_cluster_handler.get_attribute_value(
                 "current_level", from_cache=False
             )
             if level is not None:
                 self._brightness = level
-        if self._color_channel:
+        if self._color_cluster_handler:
             attributes = [
                 "color_mode",
                 "color_temperature",
@@ -454,7 +460,7 @@ class Light(BaseLight):
                 "color_loop_active",
             ]
 
-            results = await self._color_channel.get_attributes(
+            results = await self._color_cluster_handler.get_attributes(
                 attributes, from_cache=False
             )
 

@@ -48,7 +48,7 @@ class Cover(PlatformEntity):
     ):
         """Initialize the cover."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
-        self._cover_cluster_handler: ClusterHandlerType = self.cluster_channels.get(
+        self._cover_cluster_handler: ClusterHandlerType = self.cluster_handlers.get(
             CLUSTER_HANDLER_COVER
         )
         self._current_position = None
@@ -88,7 +88,7 @@ class Cover(PlatformEntity):
         return self._current_position
 
     def cluster_handler_attribute_updated(self, attr_id, attr_name, value):
-        """Handle position update from channel."""
+        """Handle position update from cluster handler."""
         _LOGGER.debug("setting position: %s", value)
         self._current_position = 100 - value
         if self._current_position == 0:
@@ -98,7 +98,7 @@ class Cover(PlatformEntity):
         self.send_state_changed_event()
 
     def async_update_state(self, state):
-        """Handle state update from channel."""
+        """Handle state update from cluster handler."""
         _LOGGER.debug("state=%s", state)
         self._state = state
         self.send_state_changed_event()
@@ -186,10 +186,10 @@ class Shade(PlatformEntity):
     ):
         """Initialize the cover."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
-        self._on_off_cluster_handler: ClusterHandlerType = self.cluster_channels[
+        self._on_off_cluster_handler: ClusterHandlerType = self.cluster_handlers[
             CLUSTER_HANDLER_ON_OFF
         ]
-        self._level_cluster_handler: ClusterHandlerType = self.cluster_channels[
+        self._level_cluster_handler: ClusterHandlerType = self.cluster_handlers[
             CLUSTER_HANDLER_LEVEL
         ]
         self._is_open: Union[bool, None] = self._on_off_cluster_handler.cluster.get(
@@ -214,12 +214,6 @@ class Shade(PlatformEntity):
         if self._is_open is None:
             return None
         return not self._is_open
-
-    def async_restore_last_state(self, last_state):
-        """Restore previous state."""
-        self._is_open = last_state.state == STATE_OPEN
-        if ATTR_CURRENT_POSITION in last_state.attributes:
-            self._position = last_state.attributes[ATTR_CURRENT_POSITION]
 
     def cluster_handler_attribute_updated(
         self, attr_id: int, attr_name: str, value: bool

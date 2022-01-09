@@ -151,6 +151,9 @@ ZCL_TEMP = 100
 _LOGGER = logging.getLogger(__name__)
 
 
+"""TODO implement to_json and get_state methods"""
+
+
 @MULTI_MATCH(
     cluster_handler_names=CLUSTER_HANDLER_THERMOSTAT,
     aux_cluster_handlers=CLUSTER_HANDLER_FAN,
@@ -169,7 +172,7 @@ class Thermostat(PlatformEntity):
         endpoint: EndpointType,
         device: DeviceType,
     ):
-        """Initialize the binary sensor."""
+        """Initialize the thermostat."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
         self._thermostat_cluster_handler: ClusterHandlerType = (
             self.cluster_handlers.get(CLUSTER_HANDLER_THERMOSTAT)
@@ -562,7 +565,7 @@ class SinopeTechnologiesThermostat(Thermostat):
         endpoint: EndpointType,
         device: DeviceType,
     ):
-        """Initialize the binary sensor."""
+        """Initialize the thermostat."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
         self._presets: List[Preset] = [Preset.AWAY, Preset.NONE]
         self._supported_flags |= SUPPORT_PRESET_MODE
@@ -678,7 +681,7 @@ class MoesThermostat(Thermostat):
         endpoint: EndpointType,
         device: DeviceType,
     ):
-        """Initialize the binary sensor."""
+        """Initialize the thermostat."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
         self._presets: List[Preset] = [
             Preset.NONE,
@@ -766,7 +769,7 @@ class BecaThermostat(Thermostat):
         endpoint: EndpointType,
         device: DeviceType,
     ):
-        """Initialize the binary sensor."""
+        """Initialize the thermostat."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
         self._presets: List[Preset] = [
             Preset.NONE,

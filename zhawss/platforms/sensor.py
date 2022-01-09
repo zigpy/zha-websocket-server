@@ -332,7 +332,7 @@ class SmartEnergyMetering(Sensor):
     SENSOR_ATTR: Union[int, str] = "instantaneous_demand"
 
     def formatter(self, value: int) -> Union[int, float]:
-        """Pass through channel formatter."""
+        """Pass through cluster handler formatter."""
         return self._cluster_handler.demand_formatter(value)
 
     """TODO

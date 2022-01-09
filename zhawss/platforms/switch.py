@@ -1,7 +1,7 @@
 """Switch platform for zhawss."""
 
 import functools
-from typing import Any, List
+from typing import Any, Dict, List, Union
 
 from zigpy.zcl.foundation import Status
 
@@ -41,7 +41,7 @@ class BaseSwitch(PlatformEntity):
 
     async def async_turn_on(self, **kwargs) -> None:
         """Turn the entity on."""
-        result = await self._on_off_channel.on()
+        result = await self._on_off_cluster_handler.on()
         if not isinstance(result, list) or result[1] is not Status.SUCCESS:
             return
         self._state = True
@@ -49,11 +49,16 @@ class BaseSwitch(PlatformEntity):
 
     async def async_turn_off(self, **kwargs) -> None:
         """Turn the entity off."""
-        result = await self._on_off_channel.off()
+        result = await self._on_off_cluster_handler.off()
         if not isinstance(result, list) or result[1] is not Status.SUCCESS:
             return
         self._state = False
         self.send_state_changed_event()
+
+    def get_state(self) -> Union[str, Dict, None]:
+        return {
+            "state": self.is_on,
+        }
 
 
 @STRICT_MATCH(cluster_handler_names=CLUSTER_HANDLER_ON_OFF)
