@@ -102,7 +102,7 @@ class Controller:
         """Stop the Zigbee network."""
         await self._application_controller.pre_shutdown()
 
-    def get_devices(self) -> list[Any]:
+    def get_devices(self) -> Dict[str, Any]:
         """Get Zigbee devices."""
         # temporary to test response
         return {
