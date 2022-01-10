@@ -2,7 +2,6 @@
 
 import orjson
 from pydantic import BaseModel as PydanticBaseModel
-from zigpy.types.named import EUI64
 
 
 def orjson_dumps(v, *, default):
@@ -16,6 +15,3 @@ class BaseModel(PydanticBaseModel):
     class Config:
         json_loads = orjson.loads
         json_dumps = orjson_dumps
-        json_encoders = {
-            EUI64: lambda v: str(v),
-        }

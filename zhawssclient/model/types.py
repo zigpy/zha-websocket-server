@@ -3,8 +3,6 @@
 
 from typing import Any, Dict, List, Union
 
-from zigpy.types.named import EUI64
-
 from zhawssclient.event import EventBase
 from zhawssclient.model import BaseModel
 
@@ -49,7 +47,7 @@ class BasePlatformEntity(BaseEventedModel):
     name: str
     unique_id: str
     platform: str
-    device_ieee: EUI64
+    device_ieee: str
     endpoint_id: int
     class_name: str
 
@@ -71,7 +69,7 @@ class DeviceSignature(BaseModel):
 class Device(BaseEventedModel):
     """Device model."""
 
-    ieee: EUI64
+    ieee: str
     nwk: int
     manufacturer: str
     model: str

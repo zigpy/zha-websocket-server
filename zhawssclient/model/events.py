@@ -3,7 +3,6 @@
 from typing import Annotated, Any, Literal, Union
 
 from pydantic.fields import Field
-from zigpy.types.named import EUI64
 
 from zhawssclient.model import BaseModel
 from zhawssclient.model.messages import BaseMessage
@@ -26,7 +25,7 @@ class MinimalEndpoint(BaseModel):
 class MinimalDevice(BaseModel):
     """Minimal device model."""
 
-    ieee: EUI64
+    ieee: str
 
 
 class Attribute(BaseModel):
