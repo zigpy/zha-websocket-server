@@ -194,7 +194,7 @@ class Client(EventBase):
             )
             return
         try:
-            self.emit(message.data.event_type, message.data)
+            self.emit(message.event_type, message)
         except Exception as err:
             _LOGGER.error("Error handling event: %s", err, exc_info=err)
 

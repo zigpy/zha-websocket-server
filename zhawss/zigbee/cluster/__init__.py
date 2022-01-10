@@ -101,7 +101,7 @@ class ClusterHandler(ListenableMixin, LogMixin):
 
     def send_event(self, signal: dict[str, Any]) -> None:
         """Broadcast an event from this cluster handler."""
-        signal["data"]["cluster_handler"] = {
+        signal["cluster_handler"] = {
             "cluster": {
                 "id": self.cluster.cluster_id,
                 "name": self.cluster.name,
@@ -313,14 +313,12 @@ class ClusterHandler(ListenableMixin, LogMixin):
         """Handle attribute updates on this cluster."""
         self.send_event(
             {
-                "data": {
-                    "event": SIGNAL_ATTR_UPDATED,
-                    "event_type": "raw_zcl",
-                    "attribute": {
-                        "id": attrid,
-                        "name": self.cluster.attributes.get(attrid, [attrid])[0],
-                        "value": value,
-                    },
+                "event": SIGNAL_ATTR_UPDATED,
+                "event_type": "raw_zcl",
+                "attribute": {
+                    "id": attrid,
+                    "name": self.cluster.attributes.get(attrid, [attrid])[0],
+                    "value": value,
                 },
             }
         )

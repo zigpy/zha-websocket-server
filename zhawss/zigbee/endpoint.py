@@ -201,7 +201,7 @@ class Endpoint:
 
     def send_event(self, signal: dict[str, Any]) -> None:
         """Broadcast an event from this endpoint."""
-        signal["data"]["endpoint"] = {
+        signal["endpoint"] = {
             "id": self.id,
         }
         # signal["endpoint_id"] = self.id

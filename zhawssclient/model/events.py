@@ -51,7 +51,13 @@ class MinimalClusterHandler(BaseModel):
     cluster: MinimalCluster
 
 
-class PlatformEntityEvent(BaseModel):
+class BaseEvent(BaseModel):
+    """Base event model."""
+
+    message_type: Literal["event"] = "event"
+
+
+class PlatformEntityEvent(BaseEvent):
     """Platform entity event."""
 
     event_type: Literal["platform_entity_event"]
@@ -62,7 +68,7 @@ class PlatformEntityEvent(BaseModel):
     state: Any
 
 
-class ZCLAttributeUpdatedEvent(BaseModel):
+class ZCLAttributeUpdatedEvent(BaseEvent):
     """ZCL attribute updated event."""
 
     event_type: Literal["raw_zcl"]
@@ -73,11 +79,7 @@ class ZCLAttributeUpdatedEvent(BaseModel):
     endpoint: MinimalEndpoint
 
 
-class Event(BaseModel):
-    """Event class."""
-
-    message_type: Literal["event"] = "event"
-    data: Annotated[
-        Union[PlatformEntityEvent, ZCLAttributeUpdatedEvent],
-        Field(discriminator="event"),  # noqa: F821
-    ] = None
+Events = Annotated[
+    Union[PlatformEntityEvent, ZCLAttributeUpdatedEvent],
+    Field(discriminator="event"),  # noqa: F821
+]
