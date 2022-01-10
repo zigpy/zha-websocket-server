@@ -1,10 +1,24 @@
-"""Models that represent types for the zhawssclient."""
+"""Models that represent types for the zhawssclient.
+
+Types are representations of the objects that exist in zhawss.
+"""
 
 
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from zhawssclient.event import EventBase
 from zhawssclient.model import BaseModel
+
+ControllerType = "Controller"
+ClientType = "Client"
+
+
+if TYPE_CHECKING:
+    from zhawssclient.client import Client
+    from zhawssclient.controller import Controller
+
+    ClientType = Client
+    ControllerType = Controller
 
 
 class BaseEventedModel(EventBase, BaseModel):
@@ -86,5 +100,5 @@ class Device(BaseEventedModel):
     signature: DeviceSignature
     entities: Dict[str, BasePlatformEntity]
     neighbors: List[Any]
-    controller: Optional[Any]
-    client: Optional[Any]
+    controller: Optional[ControllerType] = None
+    client: Optional[ClientType] = None

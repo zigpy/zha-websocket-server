@@ -1,4 +1,7 @@
-"""Event models for zhawss."""
+"""Event models for zhawss.
+
+Events are unprompted messages from the server -> client and they contain only the data that is necessary to handle the event.
+"""
 
 from typing import Annotated, Any, Literal, Union
 
