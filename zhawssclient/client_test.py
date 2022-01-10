@@ -13,10 +13,12 @@ async def main():
 
         response: GetDevicesResponse = await controller.get_devices()
 
-        print("Devices: %s", response)
+        print("Devices: ", response)
 
         for device in response.devices.values():
-            print("Device: %s", device)
+            print("Device: ", device)
+            for entity in device.entities.values():
+                print("Entity: ", entity)
 
 
 loop = asyncio.get_event_loop()
