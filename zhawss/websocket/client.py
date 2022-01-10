@@ -34,6 +34,8 @@ class Client:
         """Initialize the client."""
         self._websocket: WebSocketServerProtocol = websocket
         self._client_manager: ClientManagerType = client_manager
+        self._receive_events: bool = False
+        self._receive_raw_zcl_events: bool = False
 
     @property
     def is_connected(self) -> bool:
@@ -152,6 +154,7 @@ class ClientManager:
                     message,
                     client._websocket.id,
                 )
+                """TODO use the receive flags on the client to determine if the client should receive the message"""
                 client.send_event(message)
             else:
                 client.disconnect()

@@ -63,6 +63,7 @@ class BaseEvent(BaseModel):
 class PlatformEntityEvent(BaseEvent):
     """Platform entity event."""
 
+    """TODO use this as a base and create specific events for each entity type where state and attributes is fully modeled out"""
     event_type: Literal["platform_entity_event"]
     event: Literal["platform_entity_state_changed"]
     platform_entity: MinimalPlatformEntity
