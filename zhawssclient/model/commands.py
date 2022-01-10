@@ -4,17 +4,23 @@ from typing import Annotated, Dict, Literal, Union
 
 from pydantic.fields import Field
 
-from zhawssclient.model.messages import BaseOutgoingResponseMessage
+from zhawssclient.model import BaseModel
 from zhawssclient.model.types import Device
 
 
-class StartNetworkResponse(BaseOutgoingResponseMessage):
+class CommandResponse(BaseModel):
+    """Command response model."""
+
+    message_type: Literal["result"] = "result"
+
+
+class StartNetworkResponse(CommandResponse):
     """Get devices response."""
 
     command: Literal["start_network"] = "start_network"
 
 
-class GetDevicesResponse(BaseOutgoingResponseMessage):
+class GetDevicesResponse(CommandResponse):
     """Get devices response."""
 
     command: Literal["get_devices"] = "get_devices"

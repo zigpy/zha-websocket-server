@@ -5,7 +5,6 @@ from typing import Annotated, Any, Literal, Union
 from pydantic.fields import Field
 
 from zhawssclient.model import BaseModel
-from zhawssclient.model.messages import BaseMessage
 
 
 class MinimalPlatformEntity(BaseModel):
@@ -74,7 +73,7 @@ class ZCLAttributeUpdatedEvent(BaseModel):
     endpoint: MinimalEndpoint
 
 
-class Event(BaseMessage):
+class Event(BaseModel):
     """Event class."""
 
     message_type: Literal["event"] = "event"

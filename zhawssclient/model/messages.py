@@ -1,32 +1,22 @@
 """Models that represent messages in zhawss."""
-from typing import Any, Literal
+from typing import Annotated, Union
 
-from zhawss.const import MessageTypes
+from pydantic.fields import Field
+
 from zhawssclient.model import BaseModel
+from zhawssclient.model.commands import CommandResponse
+from zhawssclient.model.events import Event
+
+Messages = Annotated[
+    Union[CommandResponse, Event],
+    Field(discriminator="message_type"),  # noqa: F821
+]
 
 
-class BaseMessage(BaseModel):
-    """Message base class."""
+class Message(BaseModel):
+    """Response model."""
 
     message_type: str
-
-
-class BaseIncomingMessage(BaseMessage):
-    """Incoming message base class."""
-
-    command: str
     message_id: int
-
-
-class BaseOutgoingMessage(BaseMessage):
-    """Outgoing message base class."""
-
-    message_id: int
-    message_type: Literal["result"] = MessageTypes.RESULT
-
-
-class BaseOutgoingResponseMessage(BaseOutgoingMessage):
-    """Outgoing response message base class."""
-
-    command: str
-    data: Any
+    success: bool
+    data: Messages

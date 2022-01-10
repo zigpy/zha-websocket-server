@@ -8,6 +8,8 @@ import uuid
 
 from aiohttp import ClientSession, ClientWebSocketResponse, client_exceptions
 
+from zhawssclient.model.messages import Message
+
 SIZE_PARSE_JSON_EXECUTOR = 8192
 _LOGGER = logging.getLogger(__package__)
 
@@ -151,15 +153,17 @@ class Client:
         """
         _LOGGER.info("Received event: %s", msg)
 
-        if msg["message_type"] == "result":
-            future = self._result_futures.get(msg["message_id"])
+        message = Message.parse_obj(msg)
+
+        if message.message_type == "result":
+            future = self._result_futures.get(message.message_id)
 
             if future is None:
                 # no listener for this result
                 return
 
-            if msg["success"]:
-                future.set_result(msg["data"])
+            if message.success:
+                future.set_result(message.data)
                 return
 
             if msg["errorCode"] != "zwave_error":
@@ -172,7 +176,7 @@ class Client:
             future.set_exception(err)
             return
 
-        if msg["message_type"] != "event":
+        if message.message_type != "event":
             # Can't handle
             _LOGGER.debug(
                 "Received message with unknown type '%s': %s",
@@ -183,7 +187,7 @@ class Client:
 
         """TODO do this right"""
         # event = Event(type=msg["event"]["event"], data=msg["event"])
-        _LOGGER.info("Received event: %s", msg)
+        _LOGGER.info("Received event: %s", message.data)
         """TODO handle the received event"""
 
     async def _send_json_message(self, message: Dict[str, Any]) -> None:

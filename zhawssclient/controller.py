@@ -45,5 +45,4 @@ class Controller(EventBase):
 
     async def get_devices(self) -> Awaitable[GetDevicesResponse]:
         """Get devices from the websocket server."""
-        data = await self._client.async_send_command({"command": "get_devices"})
-        return GetDevicesResponse.parse_obj(data)
+        return await self._client.async_send_command({"command": "get_devices"})
