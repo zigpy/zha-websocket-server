@@ -1,13 +1,13 @@
 """Models that represent types for the zhawssclient."""
 
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from zhawssclient.event import EventBase
 from zhawssclient.model import BaseModel
 
 
-class BaseEventedModel(BaseModel, EventBase):
+class BaseEventedModel(EventBase, BaseModel):
     """Base evented model."""
 
 
@@ -86,3 +86,5 @@ class Device(BaseEventedModel):
     signature: DeviceSignature
     entities: Dict[str, BasePlatformEntity]
     neighbors: List[Any]
+    controller: Optional[Any]
+    client: Optional[Any]

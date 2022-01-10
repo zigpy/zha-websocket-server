@@ -330,7 +330,7 @@ class Device(LogMixin):
 
     def send_event(self, signal: dict[str, Any]) -> None:
         """Broadcast an event from this device."""
-        signal["data"]["device"] = {"ieee": self.ieee}
+        signal["data"]["device"] = {"ieee": str(self.ieee)}
         self.controller.server.client_manager.broadcast(signal)
 
     @periodic(_UPDATE_ALIVE_INTERVAL)

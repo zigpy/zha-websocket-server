@@ -9,17 +9,25 @@ import uuid
 from aiohttp import ClientSession, ClientWebSocketResponse, client_exceptions
 from aiohttp.http_websocket import WSMsgType
 
+from zhawssclient.event import EventBase
 from zhawssclient.model.messages import Message
 
 SIZE_PARSE_JSON_EXECUTOR = 8192
 _LOGGER = logging.getLogger(__package__)
 
 
-class Client:
+class Client(EventBase):
     """Class to manage the IoT connection."""
 
-    def __init__(self, ws_server_url: str, aiohttp_session: ClientSession):
+    def __init__(
+        self,
+        ws_server_url: str,
+        aiohttp_session: ClientSession,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         """Initialize the Client class."""
+        super().__init__(*args, **kwargs)
         self.ws_server_url = ws_server_url
         self.aiohttp_session = aiohttp_session
         # The WebSocket client
@@ -150,7 +158,6 @@ class Client:
 
         Run all async tasks in a wrapper to log appropriately.
         """
-        _LOGGER.info("Received event: %s", msg)
 
         try:
             message = Message.parse_obj(msg).__root__
@@ -186,11 +193,10 @@ class Client:
                 msg,
             )
             return
-
-        """TODO do this right"""
-        # event = Event(type=msg["event"]["event"], data=msg["event"])
-        _LOGGER.info("Received event: %s", message.data)
-        """TODO handle the received event"""
+        try:
+            self.emit(message.data.event_type, message.data)
+        except Exception as err:
+            _LOGGER.error("Error handling event: %s", err, exc_info=err)
 
     async def _send_json_message(self, message: Dict[str, Any]) -> None:
         """Send a message.

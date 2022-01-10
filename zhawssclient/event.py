@@ -10,8 +10,9 @@ _LOGGER = logging.getLogger(__package__)
 class EventBase:
     """Represent a zhawssclient base class for event handling models."""
 
-    def __init__(self) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         """Initialize event base."""
+        super().__init__(*args, **kwargs)
         self._listeners: Dict[str, List[Callable]] = {}
 
     def on(  # pylint: disable=invalid-name

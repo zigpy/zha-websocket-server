@@ -14,3 +14,4 @@ class BaseModel(PydanticBaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+        extra = "allow"
