@@ -63,7 +63,7 @@ async def stop_network(
 ) -> Awaitable[None]:
     """Stop the Zigbee network."""
     await server.controller.stop_network()
-    client.send_result_success(message[MESSAGE_ID], {})
+    client.send_result_success(message[MESSAGE_ID], {COMMAND: APICommands.STOP_NETWORK})
 
 
 @decorators.async_response
@@ -79,7 +79,7 @@ async def get_devices(
     devices: list[Device] = server.controller.get_devices()
     _LOGGER.info("devices: %s", devices)
     client.send_result_success(
-        message[MESSAGE_ID], {"command": "get_devices", DEVICES: devices}
+        message[MESSAGE_ID], {COMMAND: APICommands.GET_DEVICES, DEVICES: devices}
     )
 
 
@@ -95,7 +95,10 @@ async def permit_joining(
 ) -> Awaitable[None]:
     """Permit joining devices to the Zigbee network."""
     await server.controller.application_controller.permit(message[DURATION])
-    client.send_result_success(message[MESSAGE_ID], {DURATION: message[DURATION]})
+    client.send_result_success(
+        message[MESSAGE_ID],
+        {COMMAND: APICommands.PERMIT_JOINING, DURATION: message[DURATION]},
+    )
 
 
 @decorators.async_response
@@ -111,6 +114,12 @@ async def remove_device(
     """Permit joining devices to the Zigbee network."""
     await server.controller.application_controller.remove(
         EUI64.convert(message["ieee"])
+    )
+    client.send_result_success(
+        message[MESSAGE_ID],
+        {
+            COMMAND: APICommands.REMOVE_DEVICE,
+        },
     )
 
 

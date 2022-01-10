@@ -16,10 +16,17 @@ class CommandResponse(BaseModel):
     success: bool
 
 
-class StartNetworkResponse(CommandResponse):
+class DefaultResponse(CommandResponse):
     """Get devices response."""
 
-    command: Literal["start_network"] = "start_network"
+    command: Literal["start_network", "stop_network", "remove_device", "stop_server"]
+
+
+class PermitJoiningResponse(CommandResponse):
+    """Get devices response."""
+
+    command: Literal["permit_joining"] = "permit_joining"
+    duration: int
 
 
 class GetDevicesResponse(CommandResponse):
@@ -30,6 +37,6 @@ class GetDevicesResponse(CommandResponse):
 
 
 CommandResponses = Annotated[
-    Union[GetDevicesResponse, StartNetworkResponse],
+    Union[DefaultResponse, GetDevicesResponse, PermitJoiningResponse],
     Field(discriminator="command"),  # noqa: F821
 ]

@@ -74,4 +74,4 @@ async def stop_server(
 ) -> Awaitable[None]:
     """Stop the Zigbee network."""
     await server.stop_server()
-    client.send_result_success(message[MESSAGE_ID], {})
+    client.send_result_success(message[MESSAGE_ID], {COMMAND: APICommands.STOP_SERVER})
