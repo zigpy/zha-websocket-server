@@ -105,7 +105,9 @@ class Controller:
     def get_devices(self) -> list[Any]:
         """Get Zigbee devices."""
         # temporary to test response
-        return [device.zha_device_info for device in self._devices.values()]
+        return {
+            str(ieee): device.zha_device_info for ieee, device in self._devices.items()
+        }
 
     def get_groups(self):
         """Get Zigbee groups."""

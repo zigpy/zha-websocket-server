@@ -138,7 +138,7 @@ class Device(LogMixin):
             )
             """
 
-        self._platform_entities: List[PlatformEntity] = []
+        self._platform_entities: Dict[EUI64, PlatformEntity] = {}
         self.semaphore: asyncio.Semaphore = asyncio.Semaphore(3)
         self._zdo_handler: ZDOClusterHandler = ZDOClusterHandler(self)
         self.status: DeviceStatus = DeviceStatus.CREATED
@@ -495,9 +495,10 @@ class Device(LogMixin):
         """Get ZHA device information."""
         device_info = {}
         device_info.update(self.device_info)
-        device_info["entities"] = [
-            platform_entity.to_json() for platform_entity in self.platform_entities
-        ]
+        device_info["entities"] = {
+            unique_id: platform_entity.to_json()
+            for unique_id, platform_entity in self.platform_entities.items()
+        }
 
         # Return the neighbor information
         device_info[ATTR_NEIGHBORS] = [
