@@ -153,7 +153,7 @@ class Client:
         _LOGGER.info("Received event: %s", msg)
 
         try:
-            message = Message.parse_obj(msg)
+            message = Message.parse_obj(msg).__root__
         except Exception as err:
             _LOGGER.error("Error parsing message: %s", err, exc_info=err)
 
@@ -165,7 +165,7 @@ class Client:
                 return
 
             if message.success:
-                future.set_result(message.data)
+                future.set_result(message)
                 return
 
             if msg["errorCode"] != "zwave_error":

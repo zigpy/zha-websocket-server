@@ -12,6 +12,8 @@ class CommandResponse(BaseModel):
     """Command response model."""
 
     message_type: Literal["result"] = "result"
+    message_id: int
+    success: bool
 
 
 class StartNetworkResponse(CommandResponse):
@@ -27,7 +29,7 @@ class GetDevicesResponse(CommandResponse):
     devices: Dict[str, Device] = None
 
 
-CommandResponse = Annotated[
+CommandResponses = Annotated[
     Union[GetDevicesResponse, StartNetworkResponse],
     Field(discriminator="command"),  # noqa: F821
 ]

@@ -51,19 +51,10 @@ class Client:
 
     def send_result_success(self, message_id: str, message: dict[str, Any]) -> None:
         """Send success result prompted by a client request."""
-        message[MESSAGE_TYPE] = MessageTypes.RESULT
-        response = {
-            SUCCESS: True,
-            MESSAGE_ID: message_id,
-            MESSAGE_TYPE: MessageTypes.RESULT,
-            "data": message,
-        }
-        """
         message[SUCCESS] = True
         message[MESSAGE_ID] = message_id
         message[MESSAGE_TYPE] = MessageTypes.RESULT
-        """
-        self._send_data(response)
+        self._send_data(message)
 
     def send_result_error(
         self, message_id: str, error_code: str, message: dict[str, Any]
