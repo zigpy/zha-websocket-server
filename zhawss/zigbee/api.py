@@ -78,7 +78,9 @@ async def get_devices(
     """Get Zigbee devices."""
     devices: list[Device] = server.controller.get_devices()
     _LOGGER.info("devices: %s", devices)
-    client.send_result_success(message[MESSAGE_ID], {DEVICES: devices})
+    client.send_result_success(
+        message[MESSAGE_ID], {"command": "get_devices", DEVICES: devices}
+    )
 
 
 @decorators.async_response

@@ -7,6 +7,7 @@ from typing import Any, Dict, Optional
 import uuid
 
 from aiohttp import ClientSession, ClientWebSocketResponse, client_exceptions
+from aiohttp.http_websocket import WSMsgType
 
 from zhawssclient.model.messages import Message
 
@@ -122,7 +123,6 @@ class Client:
         assert self._client
         msg = await self._client.receive()
 
-        """
         if msg.type in (WSMsgType.CLOSE, WSMsgType.CLOSED, WSMsgType.CLOSING):
             raise Exception("Connection was closed.")
 
@@ -131,7 +131,6 @@ class Client:
 
         if msg.type != WSMsgType.TEXT:
             raise Exception(f"Received non-Text message: {msg.type}")
-        """
 
         try:
             if len(msg.data) > SIZE_PARSE_JSON_EXECUTOR:
@@ -153,7 +152,10 @@ class Client:
         """
         _LOGGER.info("Received event: %s", msg)
 
-        message = Message.parse_obj(msg)
+        try:
+            message = Message.parse_obj(msg)
+        except Exception as err:
+            _LOGGER.error("Error parsing message: %s", err, exc_info=err)
 
         if message.message_type == "result":
             future = self._result_futures.get(message.message_id)

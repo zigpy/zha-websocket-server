@@ -13,5 +13,4 @@ class BaseModel(PydanticBaseModel):
     """Base model for zhawss models."""
 
     class Config:
-        json_loads = orjson.loads
-        json_dumps = orjson_dumps
+        arbitrary_types_allowed = True
