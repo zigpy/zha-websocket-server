@@ -45,6 +45,7 @@ class EventBase:
 
     def _handle_event_protocol(self, event) -> None:
         """Process an event based on event protocol."""
+        _LOGGER.debug("handling event protocol for event: %s", event)
         handler = getattr(self, f"handle_{event.event.replace(' ', '_')}", None)
         if handler is None:
             _LOGGER.debug("Received unknown event: %s", event)

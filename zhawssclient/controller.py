@@ -13,7 +13,6 @@ from zhawssclient.device import Device
 from zhawssclient.event import EventBase
 from zhawssclient.model.commands import GetDevicesResponse
 from zhawssclient.model.events import (
-    ControllerEvent,
     DeviceConfiguredEvent,
     DeviceFullyInitializedEvent,
     DeviceJoinedEvent,
@@ -38,7 +37,7 @@ class Controller(EventBase):
         self._listen_task: Optional[Task] = None
         self._devices: Dict[str, Device] = {}
         self._client.on("platform_entity_event", self.handle_platform_entity_event)
-        self._client.on("controller_event", self.handle_controller_event)
+        self._client.on("controller_event", self._handle_event_protocol)
 
     @property
     def devices(self) -> Dict[str, Device]:
@@ -82,11 +81,6 @@ class Controller(EventBase):
             _LOGGER.warning("Received event for an unknown entity: %s", event)
             return
         entity.emit(event.event, event)
-
-    def handle_controller_event(self, event: ControllerEvent) -> None:
-        """Handle a controller event."""
-        _LOGGER.debug("controller event received: %s", event)
-        self._handle_event_protocol(event)
 
     def handle_device_joined(self, event: DeviceJoinedEvent) -> None:
         """Handle device joined.
