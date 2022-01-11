@@ -2,8 +2,6 @@
 import logging
 from typing import Callable, Dict, List
 
-from zhawssclient.model.events import Events
-
 _LOGGER = logging.getLogger(__package__)
 
 
@@ -45,9 +43,9 @@ class EventBase:
         for listener in self._listeners.get(event_name, []):
             listener(data)
 
-    def _handle_event_protocol(self, event: Events) -> None:
+    def _handle_event_protocol(self, event) -> None:
         """Process an event based on event protocol."""
-        handler = getattr(self, f"handle_{event.type.replace(' ', '_')}", None)
+        handler = getattr(self, f"handle_{event.event.replace(' ', '_')}", None)
         if handler is None:
             _LOGGER.debug("Received unknown event: %s", event)
             return

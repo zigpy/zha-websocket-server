@@ -12,7 +12,16 @@ from zhawssclient.client import Client
 from zhawssclient.device import Device
 from zhawssclient.event import EventBase
 from zhawssclient.model.commands import GetDevicesResponse
-from zhawssclient.model.events import PlatformEntityEvent
+from zhawssclient.model.events import (
+    ControllerEvent,
+    DeviceConfiguredEvent,
+    DeviceFullyInitializedEvent,
+    DeviceJoinedEvent,
+    DeviceLeftEvent,
+    DeviceRemovedEvent,
+    PlatformEntityEvent,
+    RawDeviceInitializedEvent,
+)
 
 CONNECT_TIMEOUT = 10
 
@@ -29,6 +38,7 @@ class Controller(EventBase):
         self._listen_task: Optional[Task] = None
         self._devices: Dict[str, Device] = {}
         self._client.on("platform_entity_event", self.handle_platform_entity_event)
+        self._client.on("controller_event", self.handle_controller_event)
 
     @property
     def devices(self) -> Dict[str, Device]:
@@ -52,6 +62,14 @@ class Controller(EventBase):
         except Exception as err:
             _LOGGER.error("Unable to connect to the zhawss: %s", err)
 
+    async def load_devices(self) -> Awaitable[None]:
+        """Load devices from the websocket server."""
+        response: GetDevicesResponse = await self._client.async_send_command(
+            {"command": "get_devices"}
+        )
+        for ieee, device in response.devices.items():
+            self._devices[ieee] = Device(device, self, self._client)
+
     def handle_platform_entity_event(self, event: PlatformEntityEvent) -> None:
         """Handle a platform_entity_event from the websocket server."""
         _LOGGER.debug("platform_entity_event: %s", event)
@@ -65,10 +83,62 @@ class Controller(EventBase):
             return
         entity.emit(event.event, event)
 
-    async def load_devices(self) -> Awaitable[None]:
-        """Load devices from the websocket server."""
-        response: GetDevicesResponse = await self._client.async_send_command(
-            {"command": "get_devices"}
+    def handle_controller_event(self, event: ControllerEvent) -> None:
+        """Handle a controller event."""
+        _LOGGER.debug("controller event received: %s", event)
+        self._handle_event_protocol(event)
+
+    def handle_device_joined(self, event: DeviceJoinedEvent) -> None:
+        """Handle device joined.
+
+        At this point, no information about the device is known other than its
+        address
+        """
+        _LOGGER.info("Device %s - %s joined", event.ieee, event.nwk)
+        self.emit("device_joined", event)
+
+    def handle_raw_device_initialized(self, event: RawDeviceInitializedEvent) -> None:
+        """Handle a device initialization without quirks loaded."""
+        _LOGGER.info("Device %s - %s raw device initialized", event.ieee, event.nwk)
+        self.emit("raw_device_initialized", event)
+
+    def handle_device_configured(self, event: DeviceConfiguredEvent) -> None:
+        """Handle device configured event."""
+        _LOGGER.info("Device %s - %s configured", event.ieee, event.nwk)
+        self.emit("device_configured", event)
+
+    def handle_device_fully_initialized(
+        self, event: DeviceFullyInitializedEvent
+    ) -> None:
+        """Handle device joined and basic information discovered."""
+        _LOGGER.info("Device %s - %s initialized", event.ieee, event.nwk)
+        self.emit("device_fully_initialized", event)
+
+    def handle_device_left(self, event: DeviceLeftEvent) -> None:
+        """Handle device leaving the network."""
+        _LOGGER.info("Device %s - %s left", event.ieee, event.nwk)
+        self.emit("device_left", event)
+
+    def handle_device_removed(self, event: DeviceRemovedEvent) -> None:
+        """Handle device being removed from the network."""
+        _LOGGER.info(
+            "Device %s - %s has been removed from the network", event.ieee, event.nwk
         )
-        for ieee, device in response.devices.items():
-            self._devices[ieee] = Device(device, self, self._client)
+        self._devices.pop(event.ieee, None)
+        self.emit("device_removed", event)
+
+    def handle_group_member_removed(self, event) -> None:
+        """Handle group member removed event."""
+        self.emit("group_member_removed", event)
+
+    def handle_group_member_added(self, event) -> None:
+        """Handle group member added event."""
+        self.emit("group_member_added", event)
+
+    def handle_group_added(self, event) -> None:
+        """Handle group added event."""
+        self.emit("group_added", event)
+
+    def handle_group_removed(self, event) -> None:
+        """Handle group removed event."""
+        self.emit("group_removed", event)

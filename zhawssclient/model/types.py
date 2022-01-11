@@ -80,8 +80,8 @@ class DeviceSignature(BaseModel):
     endpoints: Dict[int, DeviceSignatureEndpoint]
 
 
-class Device(BaseModel):
-    """Device model."""
+class BaseDevice(BaseModel):
+    """Base device model."""
 
     ieee: str
     nwk: int
@@ -98,5 +98,10 @@ class Device(BaseModel):
     available: bool
     device_type: str
     signature: DeviceSignature
+
+
+class Device(BaseDevice):
+    """Device model."""
+
     entities: Dict[str, BasePlatformEntity]
     neighbors: List[Any]

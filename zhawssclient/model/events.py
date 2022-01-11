@@ -8,6 +8,7 @@ from typing import Annotated, Any, Literal, Union
 from pydantic.fields import Field
 
 from zhawssclient.model import BaseModel
+from zhawssclient.model.types import BaseDevice, Device, DeviceSignature
 
 
 class MinimalPlatformEntity(BaseModel):
@@ -83,7 +84,82 @@ class ZCLAttributeUpdatedEvent(BaseEvent):
     endpoint: MinimalEndpoint
 
 
+class ControllerEvent(BaseEvent):
+    """Controller event."""
+
+    event_type: Literal["controller_event"]
+
+
+class DeviceJoinedEvent(ControllerEvent):
+    """Device joined event."""
+
+    event: Literal["device_joined"]
+    ieee: str
+    nwk: str
+    pairing_status: str
+
+
+class RawDeviceInitializedEvent(ControllerEvent):
+    """Raw device initialized event."""
+
+    event: Literal["raw_device_initialized"]
+    ieee: str
+    nwk: str
+    pairing_status: str
+    manufacturer: str
+    model: str
+    signature: DeviceSignature
+
+
+class DeviceFullyInitializedEvent(ControllerEvent):
+    """Device fully initialized event."""
+
+    event: Literal["device_fully_initialized"]
+    ieee: str
+    nwk: str
+    pairing_status: str
+    manufacturer: str
+    model: str
+    device: Device
+
+
+class DeviceConfiguredEvent(ControllerEvent):
+    """Device configured event."""
+
+    event: Literal["device_configured"]
+    ieee: str
+    nwk: str
+    pairing_status: str
+    manufacturer: str
+    model: str
+    device: BaseDevice
+
+
+class DeviceLeftEvent(ControllerEvent):
+    """Device left event."""
+
+    event: Literal["device_left"]
+    ieee: str
+    nwk: str
+
+
+class DeviceRemovedEvent(ControllerEvent):
+    """Device removed event."""
+
+    event: Literal["device_removed"]
+    device: Device
+
+
 Events = Annotated[
-    Union[PlatformEntityEvent, ZCLAttributeUpdatedEvent],
+    Union[
+        PlatformEntityEvent,
+        ZCLAttributeUpdatedEvent,
+        DeviceJoinedEvent,
+        RawDeviceInitializedEvent,
+        DeviceFullyInitializedEvent,
+        DeviceConfiguredEvent,
+        DeviceLeftEvent,
+        DeviceRemovedEvent,
+    ],
     Field(discriminator="event"),  # noqa: F821
 ]

@@ -122,7 +122,8 @@ class Controller:
         self.server.client_manager.broadcast(
             {
                 "message_type": "event",
-                "event_type": "device_joined",
+                "event_type": "controller_event",
+                "event": "device_joined",
                 "ieee": device.ieee,
                 "nwk": device.nwk,
                 "pairing_status": DevicePairingStatus.PAIRED.name,
@@ -135,7 +136,8 @@ class Controller:
         self.server.client_manager.broadcast(
             {
                 "message_type": "event",
-                "event_type": "raw_device_initialized",
+                "event_type": "controller_event",
+                "event": "raw_device_initialized",
                 "ieee": device.ieee,
                 "nwk": device.nwk,
                 "pairing_status": DevicePairingStatus.INTERVIEW_COMPLETE.name,
@@ -155,6 +157,15 @@ class Controller:
     def device_left(self, device: ZigpyDeviceType) -> None:
         """Handle device leaving the network."""
         _LOGGER.info("Device %s - %s left", device.ieee, device.nwk)
+        self.server.client_manager.broadcast(
+            {
+                "message_type": "event",
+                "event_type": "controller_event",
+                "event": "device_left",
+                "ieee": device.ieee,
+                "nwk": device.nwk,
+            }
+        )
 
     def device_removed(self, device: ZigpyDeviceType):
         """Handle device being removed from the network."""
@@ -162,7 +173,8 @@ class Controller:
         if device is not None:
             device_info = device.zha_device_info
             device_info["message_type"] = "event"
-            device_info["event_type"] = "device_removed"
+            device_info["event_type"] = "controller_event"
+            device_info["event"] = "device_removed"
             self.server.client_manager.broadcast(device_info)
 
     def group_member_removed(self, zigpy_group: Group, endpoint: Endpoint) -> None:
@@ -207,12 +219,13 @@ class Controller:
             )
             await self._async_device_joined(zha_device)
 
-        device_info = zha_device.zha_device_info
-        device_info["pairing_status"] = DevicePairingStatus.INITIALIZED.name
-        device_info["message_type"] = "event"
-        device_info["event_type"] = "device_fully_initialized"
-
-        self.server.client_manager.broadcast(device_info)
+        message = {"device": zha_device.zha_device_info}
+        message["pairing_status"] = DevicePairingStatus.INITIALIZED.name
+        message["message_type"] = "event"
+        message["event_type"] = "controller_event"
+        message["event"] = "device_fully_initialized"
+        message["device"] = zha_device.zha_device_info
+        self.server.client_manager.broadcast(message)
 
     def get_or_create_device(self, zigpy_device: ZigpyDeviceType):
         """Get or create a device."""
@@ -223,12 +236,13 @@ class Controller:
 
     async def _async_device_joined(self, device: Device) -> None:
         device.available = True
-        device_info = device.device_info
+        message = {"device": device.device_info}
         await device.async_configure()
-        device_info["pairing_status"] = DevicePairingStatus.CONFIGURED.name
-        device_info["message_type"] = "event"
-        device_info["event_type"] = "device_fully_initialized"
-        self.server.client_manager.broadcast(device_info)
+        message["pairing_status"] = DevicePairingStatus.CONFIGURED.name
+        message["message_type"] = "event"
+        message["event_type"] = "controller_event"
+        message["event"] = "device_configured"
+        self.server.client_manager.broadcast(message)
         await device.async_initialize(from_cache=False)
         self.create_platform_entities()
 
@@ -240,11 +254,12 @@ class Controller:
         )
         # we don't have to do this on a nwk swap but we don't have a way to tell currently
         await device.async_configure()
-        device_info = device.device_info
-        device_info["pairing_status"] = DevicePairingStatus.CONFIGURED.name
-        device_info["message_type"] = "event"
-        device_info["event_type"] = "device_fully_initialized"
-        self.server.client_manager.broadcast(device_info)
+        message = {"device": device.device_info}
+        message["pairing_status"] = DevicePairingStatus.CONFIGURED.name
+        message["message_type"] = "event"
+        message["event_type"] = "controller_event"
+        message["event"] = "device_configured"
+        self.server.client_manager.broadcast(message)
         # force async_initialize() to fire so don't explicitly call it
         device.available = False
         device.update_available(True)
