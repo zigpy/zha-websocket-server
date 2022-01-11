@@ -14,7 +14,7 @@ from zhawss.zigbee.cluster.types import ClusterHandlerType
 from zhawss.zigbee.types import DeviceType, EndpointType
 
 MULTI_MATCH = functools.partial(PLATFORM_ENTITIES.multipass_match, Platform.SELECT)
-STATE_UNKNOWN: Final = "unknown"
+STATE_UNKNOWN: Final[str] = "unknown"
 
 
 class Strobe(t.enum8):

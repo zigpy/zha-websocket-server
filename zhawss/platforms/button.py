@@ -2,7 +2,7 @@
 
 import abc
 import functools
-from typing import Any, Awaitable, List, Union
+from typing import Any, Awaitable, Final, List, Union
 
 from zhawss.platforms import PlatformEntity
 from zhawss.platforms.registries import PLATFORM_ENTITIES, Platform
@@ -11,7 +11,7 @@ from zhawss.zigbee.cluster.types import ClusterHandlerType
 from zhawss.zigbee.types import DeviceType, EndpointType
 
 MULTI_MATCH = functools.partial(PLATFORM_ENTITIES.multipass_match, Platform.BUTTON)
-DEFAULT_DURATION = 5  # seconds
+DEFAULT_DURATION: Final[int] = 5  # seconds
 
 
 class Button(PlatformEntity):

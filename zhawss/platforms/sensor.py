@@ -4,7 +4,7 @@ import asyncio
 import functools
 import logging
 import numbers
-from typing import Any, List, Union
+from typing import Any, Final, List, Union
 
 from zhawss.decorators import periodic
 from zhawss.platforms import PlatformEntity
@@ -48,12 +48,12 @@ BATTERY_SIZES = {
     255: "Unknown",
 }
 
-CURRENT_HVAC_OFF = "off"
-CURRENT_HVAC_HEAT = "heating"
-CURRENT_HVAC_COOL = "cooling"
-CURRENT_HVAC_DRY = "drying"
-CURRENT_HVAC_IDLE = "idle"
-CURRENT_HVAC_FAN = "fan"
+CURRENT_HVAC_OFF: Final[str] = "off"
+CURRENT_HVAC_HEAT: Final[str] = "heating"
+CURRENT_HVAC_COOL: Final[str] = "cooling"
+CURRENT_HVAC_DRY: Final[str] = "drying"
+CURRENT_HVAC_IDLE: Final[str] = "idle"
+CURRENT_HVAC_FAN: Final[str] = "fan"
 
 
 class Sensor(PlatformEntity):

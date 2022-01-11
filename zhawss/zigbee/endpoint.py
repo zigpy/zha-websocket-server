@@ -3,7 +3,7 @@
 
 import asyncio
 import logging
-from typing import Any, Awaitable
+from typing import Any, Awaitable, Final
 
 import zigpy
 from zigpy.typing import EndpointType as ZigpyEndpointType
@@ -21,10 +21,10 @@ from zhawss.zigbee.cluster.types import (
 from zhawss.zigbee.decorators import CALLABLE_T
 from zhawss.zigbee.types import DeviceType, EndpointType
 
-ATTR_DEVICE_TYPE = "device_type"
-ATTR_PROFILE_ID = "profile_id"
-ATTR_IN_CLUSTERS = "input_clusters"
-ATTR_OUT_CLUSTERS = "output_clusters"
+ATTR_DEVICE_TYPE: Final[str] = "device_type"
+ATTR_PROFILE_ID: Final[str] = "profile_id"
+ATTR_IN_CLUSTERS: Final[str] = "input_clusters"
+ATTR_OUT_CLUSTERS: Final[str] = "output_clusters"
 
 _LOGGER = logging.getLogger(__name__)
 

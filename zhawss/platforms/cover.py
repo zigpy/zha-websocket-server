@@ -20,15 +20,15 @@ from zhawss.zigbee.types import DeviceType, EndpointType
 
 MULTI_MATCH = functools.partial(PLATFORM_ENTITIES.multipass_match, Platform.COVER)
 
-ATTR_CURRENT_POSITION = "current_position"
-ATTR_CURRENT_TILT_POSITION = "current_tilt_position"
-ATTR_POSITION = "position"
-ATTR_TILT_POSITION = "tilt_position"
+ATTR_CURRENT_POSITION: Final[str] = "current_position"
+ATTR_CURRENT_TILT_POSITION: Final[str] = "current_tilt_position"
+ATTR_POSITION: Final[str] = "position"
+ATTR_TILT_POSITION: Final[str] = "tilt_position"
 
-STATE_OPEN: Final = "open"
-STATE_OPENING: Final = "opening"
-STATE_CLOSED: Final = "closed"
-STATE_CLOSING: Final = "closing"
+STATE_OPEN: Final[str] = "open"
+STATE_OPENING: Final[str] = "opening"
+STATE_CLOSED: Final[str] = "closed"
+STATE_CLOSING: Final[str] = "closing"
 
 _LOGGER = logging.getLogger(__name__)
 

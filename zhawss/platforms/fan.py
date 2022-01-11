@@ -3,7 +3,7 @@
 from abc import abstractmethod
 import functools
 import math
-from typing import Dict, List, Union
+from typing import Dict, Final, List, Union
 
 from zhawss.platforms import PlatformEntity
 from zhawss.platforms.registries import PLATFORM_ENTITIES, Platform
@@ -16,23 +16,27 @@ STRICT_MATCH = functools.partial(PLATFORM_ENTITIES.strict_match, Platform.FAN)
 # Additional speeds in zigbee's ZCL
 # Spec is unclear as to what this value means. On King Of Fans HBUniversal
 # receiver, this means Very High.
-PRESET_MODE_ON = "on"
+PRESET_MODE_ON: Final[str] = "on"
 # The fan speed is self-regulated
-PRESET_MODE_AUTO = "auto"
+PRESET_MODE_AUTO: Final[str] = "auto"
 # When the heated/cooled space is occupied, the fan is always on
-PRESET_MODE_SMART = "smart"
+PRESET_MODE_SMART: Final[str] = "smart"
 
-SPEED_RANGE = (1, 3)  # off is not included
-PRESET_MODES_TO_NAME = {4: PRESET_MODE_ON, 5: PRESET_MODE_AUTO, 6: PRESET_MODE_SMART}
+SPEED_RANGE: Final = (1, 3)  # off is not included
+PRESET_MODES_TO_NAME: Final[Dict[int, str]] = {
+    4: PRESET_MODE_ON,
+    5: PRESET_MODE_AUTO,
+    6: PRESET_MODE_SMART,
+}
 
 NAME_TO_PRESET_MODE = {v: k for k, v in PRESET_MODES_TO_NAME.items()}
 PRESET_MODES = list(NAME_TO_PRESET_MODE)
 
-DEFAULT_ON_PERCENTAGE = 50
+DEFAULT_ON_PERCENTAGE: Final[int] = 50
 
-ATTR_PERCENTAGE = "percentage"
-ATTR_PRESET_MODE = "preset_mode"
-SUPPORT_SET_SPEED = 1
+ATTR_PERCENTAGE: Final[str] = "percentage"
+ATTR_PRESET_MODE: Final[str] = "preset_mode"
+SUPPORT_SET_SPEED: Final[int] = 1
 
 
 def ranged_value_to_percentage(

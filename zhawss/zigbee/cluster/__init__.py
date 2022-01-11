@@ -5,7 +5,7 @@ import asyncio
 from enum import Enum
 from functools import partialmethod
 import logging
-from typing import Any, Awaitable, Dict
+from typing import Any, Awaitable, Dict, Final
 
 import zigpy.exceptions
 from zigpy.util import ListenableMixin
@@ -25,7 +25,7 @@ from zhawss.zigbee.types import DeviceType, EndpointType
 
 _LOGGER = logging.getLogger(__name__)
 
-SIGNAL_ATTR_UPDATED = "attribute_updated"
+SIGNAL_ATTR_UPDATED: Final[str] = "attribute_updated"
 
 
 class ClusterHandlerStatus(Enum):
@@ -111,12 +111,6 @@ class ClusterHandler(ListenableMixin, LogMixin):
             },
             "unique_id": self.unique_id,
         }
-        """
-        signal["cluster_handler_unique_id"] = self.unique_id
-        signal["cluster_id"] = self.cluster.cluster_id
-        signal["endpoint_attribute"] = self.cluster.ep_attribute
-        signal["cluster_name"] = self.cluster.name
-        """
         self._endpoint.send_event(signal)
 
     async def bind(self) -> Awaitable[None]:

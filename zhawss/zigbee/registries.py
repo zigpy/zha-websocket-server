@@ -1,11 +1,13 @@
 """Mapping registries for zhawss."""
 
+from typing import Final
+
 from zhawss.zigbee.decorators import DictRegistry, SetRegistry
 
-PHILLIPS_REMOTE_CLUSTER = 0xFC00
-SMARTTHINGS_ACCELERATION_CLUSTER = 0xFC02
-SMARTTHINGS_HUMIDITY_CLUSTER = 0xFC45
-VOC_LEVEL_CLUSTER = 0x042E
+PHILLIPS_REMOTE_CLUSTER: Final[int] = 0xFC00
+SMARTTHINGS_ACCELERATION_CLUSTER: Final[int] = 0xFC02
+SMARTTHINGS_HUMIDITY_CLUSTER: Final[int] = 0xFC45
+VOC_LEVEL_CLUSTER: Final[int] = 0x042E
 
 BINDABLE_CLUSTERS = SetRegistry()
 HANDLER_ONLY_CLUSTERS = SetRegistry()

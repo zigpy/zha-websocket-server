@@ -13,14 +13,14 @@ from zhawss.zigbee.types import DeviceType, EndpointType
 
 MULTI_MATCH = functools.partial(PLATFORM_ENTITIES.multipass_match, Platform.LOCK)
 
-STATE_LOCKED: Final = "locked"
-STATE_UNLOCKED: Final = "unlocked"
-STATE_LOCKING: Final = "locking"
-STATE_UNLOCKING: Final = "unlocking"
-STATE_JAMMED: Final = "jammed"
+STATE_LOCKED: Final[str] = "locked"
+STATE_UNLOCKED: Final[str] = "unlocked"
+STATE_LOCKING: Final[str] = "locking"
+STATE_UNLOCKING: Final[str] = "unlocking"
+STATE_JAMMED: Final[str] = "jammed"
 # The first state is Zigbee 'Not fully locked'
-STATE_LIST = [STATE_UNLOCKED, STATE_LOCKED, STATE_UNLOCKED]
-VALUE_TO_STATE = dict(enumerate(STATE_LIST))
+STATE_LIST: Final[List[str]] = [STATE_UNLOCKED, STATE_LOCKED, STATE_UNLOCKED]
+VALUE_TO_STATE: Final = dict(enumerate(STATE_LIST))
 
 
 @MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_DOORLOCK)

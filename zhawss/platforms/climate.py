@@ -20,33 +20,33 @@ STRICT_MATCH = functools.partial(PLATFORM_ENTITIES.strict_match, Platform.CLIMAT
 MULTI_MATCH = functools.partial(PLATFORM_ENTITIES.multipass_match, Platform.CLIMATE)
 
 
-ATTR_SYS_MODE = "system_mode"
-ATTR_RUNNING_MODE = "running_mode"
-ATTR_SETPT_CHANGE_SRC = "setpoint_change_source"
-ATTR_SETPT_CHANGE_AMT = "setpoint_change_amount"
-ATTR_OCCUPANCY = "occupancy"
-ATTR_PI_COOLING_DEMAND = "pi_cooling_demand"
-ATTR_PI_HEATING_DEMAND = "pi_heating_demand"
-ATTR_OCCP_COOL_SETPT = "occupied_cooling_setpoint"
-ATTR_OCCP_HEAT_SETPT = "occupied_heating_setpoint"
-ATTR_UNOCCP_HEAT_SETPT = "unoccupied_heating_setpoint"
-ATTR_UNOCCP_COOL_SETPT = "unoccupied_cooling_setpoint"
-ATTR_HVAC_MODE = "hvac_mode"
-ATTR_TARGET_TEMP_HIGH = "target_temp_high"
-ATTR_TARGET_TEMP_LOW = "target_temp_low"
+ATTR_SYS_MODE: Final[str] = "system_mode"
+ATTR_RUNNING_MODE: Final[str] = "running_mode"
+ATTR_SETPT_CHANGE_SRC: Final[str] = "setpoint_change_source"
+ATTR_SETPT_CHANGE_AMT: Final[str] = "setpoint_change_amount"
+ATTR_OCCUPANCY: Final[str] = "occupancy"
+ATTR_PI_COOLING_DEMAND: Final[str] = "pi_cooling_demand"
+ATTR_PI_HEATING_DEMAND: Final[str] = "pi_heating_demand"
+ATTR_OCCP_COOL_SETPT: Final[str] = "occupied_cooling_setpoint"
+ATTR_OCCP_HEAT_SETPT: Final[str] = "occupied_heating_setpoint"
+ATTR_UNOCCP_HEAT_SETPT: Final[str] = "unoccupied_heating_setpoint"
+ATTR_UNOCCP_COOL_SETPT: Final[str] = "unoccupied_cooling_setpoint"
+ATTR_HVAC_MODE: Final[str] = "hvac_mode"
+ATTR_TARGET_TEMP_HIGH: Final[str] = "target_temp_high"
+ATTR_TARGET_TEMP_LOW: Final[str] = "target_temp_low"
 
-SUPPORT_TARGET_TEMPERATURE = 1
-SUPPORT_TARGET_TEMPERATURE_RANGE = 2
-SUPPORT_TARGET_HUMIDITY = 4
-SUPPORT_FAN_MODE = 8
-SUPPORT_PRESET_MODE = 16
-SUPPORT_SWING_MODE = 32
-SUPPORT_AUX_HEAT = 64
+SUPPORT_TARGET_TEMPERATURE: Final[int] = 1
+SUPPORT_TARGET_TEMPERATURE_RANGE: Final[int] = 2
+SUPPORT_TARGET_HUMIDITY: Final[int] = 4
+SUPPORT_FAN_MODE: Final[int] = 8
+SUPPORT_PRESET_MODE: Final[int] = 16
+SUPPORT_SWING_MODE: Final[int] = 32
+SUPPORT_AUX_HEAT: Final[int] = 64
 
-PRECISION_TENTHS: Final = 0.1
+PRECISION_TENTHS: Final[float] = 0.1
 # Temperature attribute
-ATTR_TEMPERATURE: Final = "temperature"
-TEMP_CELSIUS: Final = "°C"
+ATTR_TEMPERATURE: Final[str] = "temperature"
+TEMP_CELSIUS: Final[str] = "°C"
 
 
 class HVACMode(StrEnum):
@@ -147,7 +147,7 @@ SYSTEM_MODE_2_HVAC = {
     ThermostatCluster.SystemMode.Sleep: HVACMode.OFF,
 }
 
-ZCL_TEMP = 100
+ZCL_TEMP: Final[int] = 100
 _LOGGER = logging.getLogger(__name__)
 
 
