@@ -34,7 +34,7 @@ async def main():
 
     for device in devices.values():
         print("Device: ", device)
-        for entity in device.entities.values():
+        for entity in device.device.entities.values():
             print("Entity: ", entity)
 
     await waiter

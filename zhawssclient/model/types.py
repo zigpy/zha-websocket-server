@@ -4,7 +4,7 @@ Types are representations of the objects that exist in zhawss.
 """
 
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Union
 
 from zhawssclient.event import EventBase
 from zhawssclient.model import BaseModel
@@ -80,7 +80,7 @@ class DeviceSignature(BaseModel):
     endpoints: Dict[int, DeviceSignatureEndpoint]
 
 
-class Device(BaseEventedModel):
+class Device(BaseModel):
     """Device model."""
 
     ieee: str
@@ -100,5 +100,3 @@ class Device(BaseEventedModel):
     signature: DeviceSignature
     entities: Dict[str, BasePlatformEntity]
     neighbors: List[Any]
-    controller: Optional[ControllerType] = None
-    client: Optional[ClientType] = None

@@ -9,10 +9,10 @@ from aiohttp import ClientSession
 from async_timeout import timeout
 
 from zhawssclient.client import Client
+from zhawssclient.device import Device
 from zhawssclient.event import EventBase
 from zhawssclient.model.commands import GetDevicesResponse
 from zhawssclient.model.events import PlatformEntityEvent
-from zhawssclient.model.types import Device
 
 CONNECT_TIMEOUT = 10
 
@@ -59,7 +59,7 @@ class Controller(EventBase):
         if device is None:
             _LOGGER.warning("Received event from unknown device: %s", event)
             return
-        entity = device.entities.get(event.platform_entity.unique_id)
+        entity = device.device.entities.get(event.platform_entity.unique_id)
         if entity is None:
             _LOGGER.warning("Received event for an unknown entity: %s", event)
             return
@@ -71,6 +71,4 @@ class Controller(EventBase):
             {"command": "get_devices"}
         )
         for ieee, device in response.devices.items():
-            self._devices[ieee] = device
-            device.client = self._client
-            device.controller = self
+            self._devices[ieee] = Device(device, self, self._client)
