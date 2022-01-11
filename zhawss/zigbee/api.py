@@ -17,6 +17,7 @@ from zhawss.const import (
     CONF_RADIO_TYPE,
     DEVICES,
     DURATION,
+    IEEE,
     MESSAGE_ID,
     APICommands,
 )
@@ -105,7 +106,7 @@ async def permit_joining(
 @decorators.websocket_command(
     {
         vol.Required(COMMAND): str(APICommands.REMOVE_DEVICE),
-        vol.Required("ieee"): str,
+        vol.Required(IEEE): str,
     }
 )
 async def remove_device(

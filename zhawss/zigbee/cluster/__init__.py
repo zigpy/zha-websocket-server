@@ -12,6 +12,7 @@ from zigpy.util import ListenableMixin
 from zigpy.zcl import Cluster as ZigpyCluster
 from zigpy.zcl.foundation import Status
 
+from zhawss.const import EVENT, EVENT_TYPE, EventTypes
 from zhawss.util import LogMixin
 from zhawss.zigbee.cluster.const import (
     CLUSTER_HANDLER_ZDO,
@@ -313,8 +314,8 @@ class ClusterHandler(ListenableMixin, LogMixin):
         """Handle attribute updates on this cluster."""
         self.send_event(
             {
-                "event": SIGNAL_ATTR_UPDATED,
-                "event_type": "raw_zcl",
+                EVENT: SIGNAL_ATTR_UPDATED,
+                EVENT_TYPE: EventTypes.RAW_ZCL_EVENT,
                 "attribute": {
                     "id": attrid,
                     "name": self.cluster.attributes.get(attrid, [attrid])[0],

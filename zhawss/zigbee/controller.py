@@ -1,10 +1,10 @@
 """Controller for zha web socket server."""
 import asyncio
-from enum import Enum
 import logging
 import time
 from typing import Any, Awaitable, Dict
 
+from backports.strenum.strenum import StrEnum
 from bellows.zigbee.application import ControllerApplication
 from serial.serialutil import SerialException
 from zhaquirks import setup as setup_quirks
@@ -13,7 +13,20 @@ from zigpy.group import Group
 from zigpy.types.named import EUI64
 from zigpy.typing import DeviceType as ZigpyDeviceType
 
-from zhawss.const import CONF_ENABLE_QUIRKS, CONF_RADIO_TYPE
+from zhawss.const import (
+    CONF_ENABLE_QUIRKS,
+    CONF_RADIO_TYPE,
+    DEVICE,
+    EVENT,
+    EVENT_TYPE,
+    IEEE,
+    MESSAGE_TYPE,
+    NWK,
+    PAIRING_STATUS,
+    ControllerEvents,
+    EventTypes,
+    MessageTypes,
+)
 from zhawss.platforms import discovery
 from zhawss.websocket.types import ServerType
 from zhawss.zigbee.device import Device, DeviceStatus
@@ -22,13 +35,13 @@ from zhawss.zigbee.radio import RadioType
 _LOGGER = logging.getLogger(__name__)
 
 
-class DevicePairingStatus(Enum):
+class DevicePairingStatus(StrEnum):
     """Status of a device."""
 
-    PAIRED = 1
-    INTERVIEW_COMPLETE = 2
-    CONFIGURED = 3
-    INITIALIZED = 4
+    PAIRED = "paired"
+    INTERVIEW_COMPLETE = "interview_complete"
+    CONFIGURED = "configured"
+    INITIALIZED = "initialized"
 
 
 class Controller:
@@ -121,12 +134,12 @@ class Controller:
         _LOGGER.info("Device %s - %s joined", device.ieee, f"0x{device.nwk:04x}")
         self.server.client_manager.broadcast(
             {
-                "message_type": "event",
-                "event_type": "controller_event",
-                "event": "device_joined",
-                "ieee": str(device.ieee),
-                "nwk": f"0x{device.nwk:04x}",
-                "pairing_status": DevicePairingStatus.PAIRED.name,
+                MESSAGE_TYPE: MessageTypes.EVENT,
+                EVENT_TYPE: EventTypes.CONTROLLER_EVENT,
+                EVENT: ControllerEvents.DEVICE_JOINED,
+                IEEE: str(device.ieee),
+                NWK: f"0x{device.nwk:04x}",
+                PAIRING_STATUS: DevicePairingStatus.PAIRED,
             }
         )
 
@@ -137,12 +150,12 @@ class Controller:
         )
         self.server.client_manager.broadcast(
             {
-                "message_type": "event",
-                "event_type": "controller_event",
-                "event": "raw_device_initialized",
-                "ieee": str(device.ieee),
-                "nwk": f"0x{device.nwk:04x}",
-                "pairing_status": DevicePairingStatus.INTERVIEW_COMPLETE.name,
+                MESSAGE_TYPE: MessageTypes.EVENT,
+                EVENT_TYPE: EventTypes.CONTROLLER_EVENT,
+                EVENT: ControllerEvents.RAW_DEVICE_INITIALIZED,
+                IEEE: str(device.ieee),
+                NWK: f"0x{device.nwk:04x}",
+                PAIRING_STATUS: DevicePairingStatus.INTERVIEW_COMPLETE,
                 "model": device.model if device.model else "unknown_model",
                 "manufacturer": device.manufacturer
                 if device.manufacturer
@@ -161,11 +174,11 @@ class Controller:
         _LOGGER.info("Device %s - %s left", device.ieee, f"0x{device.nwk:04x}")
         self.server.client_manager.broadcast(
             {
-                "message_type": "event",
-                "event_type": "controller_event",
-                "event": "device_left",
-                "ieee": str(device.ieee),
-                "nwk": f"0x{device.nwk:04x}",
+                MESSAGE_TYPE: MessageTypes.EVENT,
+                EVENT_TYPE: EventTypes.CONTROLLER_EVENT,
+                EVENT: ControllerEvents.DEVICE_LEFT,
+                IEEE: str(device.ieee),
+                NWK: f"0x{device.nwk:04x}",
             }
         )
 
@@ -173,10 +186,10 @@ class Controller:
         """Handle device being removed from the network."""
         device = self._devices.pop(device.ieee, None)
         if device is not None:
-            message = {"device": device.zha_device_info}
-            message["message_type"] = "event"
-            message["event_type"] = "controller_event"
-            message["event"] = "device_removed"
+            message = {DEVICE: device.zha_device_info}
+            message[MESSAGE_TYPE] = MessageTypes.EVENT
+            message[EVENT_TYPE] = EventTypes.CONTROLLER_EVENT
+            message[EVENT] = ControllerEvents.DEVICE_REMOVED
             self.server.client_manager.broadcast(message)
 
     def group_member_removed(self, zigpy_group: Group, endpoint: Endpoint) -> None:
@@ -221,12 +234,11 @@ class Controller:
             )
             await self._async_device_joined(zha_device)
 
-        message = {"device": zha_device.zha_device_info}
-        message["pairing_status"] = DevicePairingStatus.INITIALIZED.name
-        message["message_type"] = "event"
-        message["event_type"] = "controller_event"
-        message["event"] = "device_fully_initialized"
-        message["device"] = zha_device.zha_device_info
+        message = {DEVICE: zha_device.zha_device_info}
+        message[PAIRING_STATUS] = DevicePairingStatus.INITIALIZED
+        message[MESSAGE_TYPE] = MessageTypes.EVENT
+        message[EVENT_TYPE] = EventTypes.CONTROLLER_EVENT
+        message[EVENT] = ControllerEvents.DEVICE_FULLY_INITIALIZED
         self.server.client_manager.broadcast(message)
 
     def get_or_create_device(self, zigpy_device: ZigpyDeviceType):
@@ -238,12 +250,12 @@ class Controller:
 
     async def _async_device_joined(self, device: Device) -> None:
         device.available = True
-        message = {"device": device.device_info}
+        message = {DEVICE: device.device_info}
         await device.async_configure()
-        message["pairing_status"] = DevicePairingStatus.CONFIGURED.name
-        message["message_type"] = "event"
-        message["event_type"] = "controller_event"
-        message["event"] = "device_configured"
+        message[PAIRING_STATUS] = DevicePairingStatus.CONFIGURED
+        message[MESSAGE_TYPE] = MessageTypes.EVENT
+        message[EVENT_TYPE] = EventTypes.CONTROLLER_EVENT
+        message[EVENT] = ControllerEvents.DEVICE_CONFIGURED
         self.server.client_manager.broadcast(message)
         await device.async_initialize(from_cache=False)
         self.create_platform_entities()
@@ -256,11 +268,11 @@ class Controller:
         )
         # we don't have to do this on a nwk swap but we don't have a way to tell currently
         await device.async_configure()
-        message = {"device": device.device_info}
-        message["pairing_status"] = DevicePairingStatus.CONFIGURED.name
-        message["message_type"] = "event"
-        message["event_type"] = "controller_event"
-        message["event"] = "device_configured"
+        message = {DEVICE: device.device_info}
+        message[PAIRING_STATUS] = DevicePairingStatus.CONFIGURED
+        message[MESSAGE_TYPE] = MessageTypes.EVENT
+        message[EVENT_TYPE] = EventTypes.CONTROLLER_EVENT
+        message[EVENT] = ControllerEvents.DEVICE_CONFIGURED
         self.server.client_manager.broadcast(message)
         # force async_initialize() to fire so don't explicitly call it
         device.available = False

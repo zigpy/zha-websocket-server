@@ -76,7 +76,7 @@ class PlatformEntityEvent(BaseEvent):
 class ZCLAttributeUpdatedEvent(BaseEvent):
     """ZCL attribute updated event."""
 
-    event_type: Literal["raw_zcl"]
+    event_type: Literal["raw_zcl_event"]
     event: Literal["attribute_updated"]
     device: MinimalDevice
     cluster_handler: MinimalClusterHandler

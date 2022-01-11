@@ -6,6 +6,7 @@ import asyncio
 import logging
 from typing import Any, Awaitable, Dict, List, Union
 
+from zhawss.const import EVENT, EVENT_TYPE, EventTypes, PlatformEntityEvents
 from zhawss.platforms.registries import Platform
 from zhawss.platforms.types import PlatformEntityType
 from zhawss.util import LogMixin
@@ -113,8 +114,8 @@ class PlatformEntity(LogMixin):
         self.send_event(
             {
                 "state": self.get_state(),
-                "event": "platform_entity_state_changed",
-                "event_type": "platform_entity_event",
+                EVENT: PlatformEntityEvents.PLATFORM_ENTITY_STATE_CHANGED,
+                EVENT_TYPE: EventTypes.PLATFORM_ENTITY_EVENT,
             }
         )
 

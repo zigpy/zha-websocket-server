@@ -16,6 +16,7 @@ from zigpy.types.named import EUI64
 from zigpy.zcl.clusters.general import Groups
 import zigpy.zdo.types as zdo_types
 
+from zhawss.const import DEVICE, IEEE, NWK
 from zhawss.decorators import periodic
 from zhawss.platforms import PlatformEntity
 from zhawss.util import LogMixin
@@ -41,7 +42,6 @@ ATTR_DEVICE_TYPE = "device_type"
 ATTR_ENDPOINTS = "endpoints"
 ATTR_ENDPOINT_NAMES = "endpoint_names"
 ATTR_ENDPOINT_ID = "endpoint_id"
-ATTR_IEEE = "ieee"
 ATTR_IN_CLUSTERS = "input_clusters"
 ATTR_LAST_SEEN = "last_seen"
 ATTR_LEVEL = "level"
@@ -53,7 +53,6 @@ ATTR_MODEL = "model"
 ATTR_NAME = "name"
 ATTR_NEIGHBORS = "neighbors"
 ATTR_NODE_DESCRIPTOR = "node_descriptor"
-ATTR_NWK = "nwk"
 ATTR_OUT_CLUSTERS = "output_clusters"
 ATTR_POWER_SOURCE = "power_source"
 ATTR_PROFILE_ID = "profile_id"
@@ -330,7 +329,7 @@ class Device(LogMixin):
 
     def send_event(self, signal: dict[str, Any]) -> None:
         """Broadcast an event from this device."""
-        signal["device"] = {"ieee": str(self.ieee)}
+        signal[DEVICE] = {IEEE: str(self.ieee)}
         self.controller.server.client_manager.broadcast(signal)
 
     @periodic(_UPDATE_ALIVE_INTERVAL)
@@ -406,8 +405,8 @@ class Device(LogMixin):
         time_struct = time.localtime(self.last_seen)
         update_time = time.strftime("%Y-%m-%dT%H:%M:%S", time_struct)
         return {
-            ATTR_IEEE: ieee,
-            ATTR_NWK: f"0x{self.nwk:04x}",
+            IEEE: ieee,
+            NWK: f"0x{self.nwk:04x}",
             ATTR_MANUFACTURER: self.manufacturer,
             ATTR_MODEL: self.model,
             ATTR_NAME: self.name or ieee,
@@ -507,8 +506,8 @@ class Device(LogMixin):
                 "rx_on_when_idle": neighbor.neighbor.rx_on_when_idle.name,
                 "relationship": neighbor.neighbor.relationship.name,
                 "extended_pan_id": str(neighbor.neighbor.extended_pan_id),
-                "ieee": str(neighbor.neighbor.ieee),
-                "nwk": f"0x{neighbor.neighbor.nwk:04x}",
+                IEEE: str(neighbor.neighbor.ieee),
+                NWK: f"0x{neighbor.neighbor.nwk:04x}",
                 "permit_joining": neighbor.neighbor.permit_joining.name,
                 "depth": str(neighbor.neighbor.depth),
                 "lqi": str(neighbor.neighbor.lqi),
