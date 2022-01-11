@@ -90,48 +90,42 @@ class ControllerEvent(BaseEvent):
     event_type: Literal["controller_event"]
 
 
-class DeviceJoinedEvent(ControllerEvent):
+class DevicePairingEvent(BaseEvent):
+    """Device pairing event."""
+
+    pairing_status: str
+
+
+class DeviceJoinedEvent(DevicePairingEvent):
     """Device joined event."""
 
     event: Literal["device_joined"]
     ieee: str
     nwk: str
-    pairing_status: str
 
 
-class RawDeviceInitializedEvent(ControllerEvent):
+class RawDeviceInitializedEvent(DevicePairingEvent):
     """Raw device initialized event."""
 
     event: Literal["raw_device_initialized"]
     ieee: str
     nwk: str
-    pairing_status: str
     manufacturer: str
     model: str
     signature: DeviceSignature
 
 
-class DeviceFullyInitializedEvent(ControllerEvent):
+class DeviceFullyInitializedEvent(DevicePairingEvent):
     """Device fully initialized event."""
 
     event: Literal["device_fully_initialized"]
-    ieee: str
-    nwk: str
-    pairing_status: str
-    manufacturer: str
-    model: str
     device: Device
 
 
-class DeviceConfiguredEvent(ControllerEvent):
+class DeviceConfiguredEvent(DevicePairingEvent):
     """Device configured event."""
 
     event: Literal["device_configured"]
-    ieee: str
-    nwk: str
-    pairing_status: str
-    manufacturer: str
-    model: str
     device: BaseDevice
 
 

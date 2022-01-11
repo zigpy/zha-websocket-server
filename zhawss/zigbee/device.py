@@ -42,7 +42,7 @@ ATTR_ENDPOINTS = "endpoints"
 ATTR_ENDPOINT_NAMES = "endpoint_names"
 ATTR_ENDPOINT_ID = "endpoint_id"
 ATTR_IEEE = "ieee"
-ATTR_IN_CLUSTERS = "in_clusters"
+ATTR_IN_CLUSTERS = "input_clusters"
 ATTR_LAST_SEEN = "last_seen"
 ATTR_LEVEL = "level"
 ATTR_LQI = "lqi"
@@ -54,7 +54,7 @@ ATTR_NAME = "name"
 ATTR_NEIGHBORS = "neighbors"
 ATTR_NODE_DESCRIPTOR = "node_descriptor"
 ATTR_NWK = "nwk"
-ATTR_OUT_CLUSTERS = "out_clusters"
+ATTR_OUT_CLUSTERS = "output_clusters"
 ATTR_POWER_SOURCE = "power_source"
 ATTR_PROFILE_ID = "profile_id"
 ATTR_QUIRK_APPLIED = "quirk_applied"
@@ -304,7 +304,7 @@ class Device(LogMixin):
     def zigbee_signature(self) -> dict[str, Any]:
         # Get zigbee signature for this device.
         return {
-            ATTR_NODE_DESCRIPTOR: str(self._zigpy_device.node_desc),
+            ATTR_NODE_DESCRIPTOR: self._zigpy_device.node_desc.as_dict(),
             ATTR_ENDPOINTS: {
                 signature[0]: signature[1]
                 for signature in [
@@ -407,7 +407,7 @@ class Device(LogMixin):
         update_time = time.strftime("%Y-%m-%dT%H:%M:%S", time_struct)
         return {
             ATTR_IEEE: ieee,
-            ATTR_NWK: self.nwk,
+            ATTR_NWK: f"0x{self.nwk:04x}",
             ATTR_MANUFACTURER: self.manufacturer,
             ATTR_MODEL: self.model,
             ATTR_NAME: self.name or ieee,
@@ -508,7 +508,7 @@ class Device(LogMixin):
                 "relationship": neighbor.neighbor.relationship.name,
                 "extended_pan_id": str(neighbor.neighbor.extended_pan_id),
                 "ieee": str(neighbor.neighbor.ieee),
-                "nwk": str(neighbor.neighbor.nwk),
+                "nwk": f"0x{neighbor.neighbor.nwk:04x}",
                 "permit_joining": neighbor.neighbor.permit_joining.name,
                 "depth": str(neighbor.neighbor.depth),
                 "lqi": str(neighbor.neighbor.lqi),

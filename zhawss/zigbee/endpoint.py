@@ -23,8 +23,8 @@ from zhawss.zigbee.types import DeviceType, EndpointType
 
 ATTR_DEVICE_TYPE = "device_type"
 ATTR_PROFILE_ID = "profile_id"
-ATTR_IN_CLUSTERS = "in_clusters"
-ATTR_OUT_CLUSTERS = "out_clusters"
+ATTR_IN_CLUSTERS = "input_clusters"
+ATTR_OUT_CLUSTERS = "output_clusters"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ class Endpoint:
         return (
             self.id,
             {
-                ATTR_PROFILE_ID: self._zigpy_endpoint.profile_id,
+                ATTR_PROFILE_ID: f"0x{self._zigpy_endpoint.profile_id:04x}",
                 ATTR_DEVICE_TYPE: f"0x{self._zigpy_endpoint.device_type:04x}"
                 if self._zigpy_endpoint.device_type is not None
                 else "",

@@ -118,28 +118,30 @@ class Controller:
         At this point, no information about the device is known other than its
         address
         """
-        _LOGGER.info("Device %s - %s joined", device.ieee, device.nwk)
+        _LOGGER.info("Device %s - %s joined", device.ieee, f"0x{device.nwk:04x}")
         self.server.client_manager.broadcast(
             {
                 "message_type": "event",
                 "event_type": "controller_event",
                 "event": "device_joined",
-                "ieee": device.ieee,
-                "nwk": device.nwk,
+                "ieee": str(device.ieee),
+                "nwk": f"0x{device.nwk:04x}",
                 "pairing_status": DevicePairingStatus.PAIRED.name,
             }
         )
 
     def raw_device_initialized(self, device: ZigpyDeviceType) -> None:
         """Handle a device initialization without quirks loaded."""
-        _LOGGER.info("Device %s - %s raw device initialized", device.ieee, device.nwk)
+        _LOGGER.info(
+            "Device %s - %s raw device initialized", device.ieee, f"0x{device.nwk:04x}"
+        )
         self.server.client_manager.broadcast(
             {
                 "message_type": "event",
                 "event_type": "controller_event",
                 "event": "raw_device_initialized",
-                "ieee": device.ieee,
-                "nwk": device.nwk,
+                "ieee": str(device.ieee),
+                "nwk": f"0x{device.nwk:04x}",
                 "pairing_status": DevicePairingStatus.INTERVIEW_COMPLETE.name,
                 "model": device.model if device.model else "unknown_model",
                 "manufacturer": device.manufacturer
@@ -151,19 +153,19 @@ class Controller:
 
     def device_initialized(self, device: ZigpyDeviceType) -> None:
         """Handle device joined and basic information discovered."""
-        _LOGGER.info("Device %s - %s initialized", device.ieee, device.nwk)
+        _LOGGER.info("Device %s - %s initialized", device.ieee, f"0x{device.nwk:04x}")
         asyncio.create_task(self.async_device_initialized(device))
 
     def device_left(self, device: ZigpyDeviceType) -> None:
         """Handle device leaving the network."""
-        _LOGGER.info("Device %s - %s left", device.ieee, device.nwk)
+        _LOGGER.info("Device %s - %s left", device.ieee, f"0x{device.nwk:04x}")
         self.server.client_manager.broadcast(
             {
                 "message_type": "event",
                 "event_type": "controller_event",
                 "event": "device_left",
-                "ieee": device.ieee,
-                "nwk": device.nwk,
+                "ieee": str(device.ieee),
+                "nwk": f"0x{device.nwk:04x}",
             }
         )
 
@@ -171,11 +173,11 @@ class Controller:
         """Handle device being removed from the network."""
         device = self._devices.pop(device.ieee, None)
         if device is not None:
-            device_info = device.zha_device_info
-            device_info["message_type"] = "event"
-            device_info["event_type"] = "controller_event"
-            device_info["event"] = "device_removed"
-            self.server.client_manager.broadcast(device_info)
+            message = {"device": device.zha_device_info}
+            message["message_type"] = "event"
+            message["event_type"] = "controller_event"
+            message["event"] = "device_removed"
+            self.server.client_manager.broadcast(message)
 
     def group_member_removed(self, zigpy_group: Group, endpoint: Endpoint) -> None:
         """Handle zigpy group member removed event."""
@@ -197,7 +199,7 @@ class Controller:
             zha_device.async_update_last_seen(time.time())
         _LOGGER.debug(
             "device - %s:%s entering async_device_initialized - is_new_join: %s",
-            device.nwk,
+            f"0x{device.nwk:04x}",
             device.ieee,
             zha_device.status is not DeviceStatus.INITIALIZED,
         )
@@ -207,14 +209,14 @@ class Controller:
             # new nwk or device was physically reset and added again without being removed
             _LOGGER.debug(
                 "device - %s:%s has been reset and re-added or its nwk address changed",
-                device.nwk,
+                f"0x{device.nwk:04x}",
                 device.ieee,
             )
             await self._async_device_rejoined(zha_device)
         else:
             _LOGGER.debug(
                 "device - %s:%s has joined the ZHA zigbee network",
-                device.nwk,
+                f"0x{device.nwk:04x}",
                 device.ieee,
             )
             await self._async_device_joined(zha_device)
@@ -249,7 +251,7 @@ class Controller:
     async def _async_device_rejoined(self, device: Device):
         _LOGGER.debug(
             "skipping discovery for previously discovered device - %s:%s",
-            device.nwk,
+            f"0x{device.nwk:04x}",
             device.ieee,
         )
         # we don't have to do this on a nwk swap but we don't have a way to tell currently

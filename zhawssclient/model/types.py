@@ -4,7 +4,7 @@ Types are representations of the objects that exist in zhawss.
 """
 
 
-from typing import TYPE_CHECKING, Any, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from zhawssclient.event import EventBase
 from zhawssclient.model import BaseModel
@@ -69,14 +69,34 @@ class BasePlatformEntity(BaseEventedModel):
 class DeviceSignatureEndpoint(BaseModel):
     """Device signature endpoint model."""
 
-    profile_id: int
-    device_type: str
-    in_clusters: List[str]
-    out_clusters: List[str]
+    profile_id: Optional[str]
+    device_type: Optional[str]
+    input_clusters: List[str]
+    output_clusters: List[str]
+
+
+class NodeDescriptor(BaseModel):
+    """Node descriptor model."""
+
+    logical_type: int
+    complex_descriptor_available: bool
+    user_descriptor_available: bool
+    reserved: int
+    aps_flags: int
+    frequency_band: int
+    mac_capability_flags: int
+    manufacturer_code: int
+    maximum_buffer_size: int
+    maximum_incoming_transfer_size: int
+    server_mask: int
+    maximum_outgoing_transfer_size: int
+    descriptor_capability_field: int
 
 
 class DeviceSignature(BaseModel):
-    node_descriptor: str
+    node_descriptor: Optional[NodeDescriptor]
+    manufacturer: Optional[str]
+    model: Optional[str]
     endpoints: Dict[int, DeviceSignatureEndpoint]
 
 
@@ -84,7 +104,7 @@ class BaseDevice(BaseModel):
     """Base device model."""
 
     ieee: str
-    nwk: int
+    nwk: str
     manufacturer: str
     model: str
     name: str

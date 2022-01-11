@@ -31,6 +31,7 @@ class Controller(EventBase):
     """Controller implementation."""
 
     def __init__(self, ws_server_url: str, aiohttp_session: ClientSession):
+        super().__init__()
         self._ws_server_url: str = ws_server_url
         self._aiohttp_session: ClientSession = aiohttp_session
         self._client: Client = Client(ws_server_url, aiohttp_session)
@@ -98,14 +99,17 @@ class Controller(EventBase):
 
     def handle_device_configured(self, event: DeviceConfiguredEvent) -> None:
         """Handle device configured event."""
-        _LOGGER.info("Device %s - %s configured", event.ieee, event.nwk)
+        device = event.device
+        _LOGGER.info("Device %s - %s configured", device.ieee, device.nwk)
         self.emit("device_configured", event)
 
     def handle_device_fully_initialized(
         self, event: DeviceFullyInitializedEvent
     ) -> None:
         """Handle device joined and basic information discovered."""
-        _LOGGER.info("Device %s - %s initialized", event.ieee, event.nwk)
+        device = event.device
+        _LOGGER.info("Device %s - %s initialized", device.ieee, device.nwk)
+        self._devices[device.ieee] = Device(device, self, self._client)
         self.emit("device_fully_initialized", event)
 
     def handle_device_left(self, event: DeviceLeftEvent) -> None:
@@ -115,10 +119,11 @@ class Controller(EventBase):
 
     def handle_device_removed(self, event: DeviceRemovedEvent) -> None:
         """Handle device being removed from the network."""
+        device = event.device
         _LOGGER.info(
-            "Device %s - %s has been removed from the network", event.ieee, event.nwk
+            "Device %s - %s has been removed from the network", device.ieee, device.nwk
         )
-        self._devices.pop(event.ieee, None)
+        self._devices.pop(device.ieee, None)
         self.emit("device_removed", event)
 
     def handle_group_member_removed(self, event) -> None:

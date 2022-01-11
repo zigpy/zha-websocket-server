@@ -35,3 +35,6 @@ class Device(EventBase):
     def device(self, device: DeviceModel) -> None:
         """Set the device."""
         self._device = device
+
+    def __repr__(self) -> str:
+        return self._device.__repr__()

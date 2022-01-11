@@ -6,6 +6,8 @@ from colorlog import ColoredFormatter
 
 from zhawssclient.controller import Controller
 
+_LOGGER = logging.getLogger(__name__)
+
 
 async def main():
     fmt = "%(asctime)s %(levelname)s (%(threadName)s) [%(name)s] %(message)s"
@@ -33,9 +35,9 @@ async def main():
     devices = controller.devices
 
     for device in devices.values():
-        print("Device: ", device)
+        _LOGGER.info("Device: %s", device)
         for entity in device.device.entities.values():
-            print("Entity: ", entity)
+            _LOGGER.info("Entity: %s", entity)
 
     await waiter
 
