@@ -11,6 +11,7 @@ from async_timeout import timeout
 from zhawssclient.client import Client
 from zhawssclient.device import Device
 from zhawssclient.event import EventBase
+from zhawssclient.helpers import LightHelper
 from zhawssclient.model.commands import Command, CommandResponse, GetDevicesResponse
 from zhawssclient.model.events import (
     DeviceConfiguredEvent,
@@ -39,6 +40,7 @@ class Controller(EventBase):
         self._devices: Dict[str, Device] = {}
         self._client.on("platform_entity_event", self.handle_platform_entity_event)
         self._client.on("controller_event", self._handle_event_protocol)
+        self.lights = LightHelper(self._client)
 
     @property
     def devices(self) -> Dict[str, Device]:

@@ -60,6 +60,16 @@ async def main():
 
     await controller.send_command(light_turn_on)
 
+    light_platform_entity = devices["b0:ce:18:14:03:09:c6:15"].device.entities[
+        "b0:ce:18:14:03:09:c6:15-1"
+    ]
+
+    await controller.lights.turn_off(light_platform_entity)
+
+    await asyncio.sleep(10)
+
+    await controller.lights.turn_on(light_platform_entity)
+
     await waiter
 
 
