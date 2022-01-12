@@ -5,6 +5,7 @@ import aiohttp
 from colorlog import ColoredFormatter
 
 from zhawssclient.controller import Controller
+from zhawssclient.model.commands import LightTurnOffCommand, LightTurnOnCommand
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -38,6 +39,26 @@ async def main():
         _LOGGER.info("Device: %s", device)
         for entity in device.device.entities.values():
             _LOGGER.info("Entity: %s", entity)
+
+    light_turn_on = LightTurnOnCommand.parse_obj(
+        {
+            "ieee": "b0:ce:18:14:03:09:c6:15",
+            "unique_id": "b0:ce:18:14:03:09:c6:15-1",
+        }
+    )
+
+    light_turn_off = LightTurnOffCommand.parse_obj(
+        {
+            "ieee": "b0:ce:18:14:03:09:c6:15",
+            "unique_id": "b0:ce:18:14:03:09:c6:15-1",
+        }
+    )
+
+    await controller.send_command(light_turn_off)
+
+    await asyncio.sleep(10)
+
+    await controller.send_command(light_turn_on)
 
     await waiter
 

@@ -11,7 +11,7 @@ from async_timeout import timeout
 from zhawssclient.client import Client
 from zhawssclient.device import Device
 from zhawssclient.event import EventBase
-from zhawssclient.model.commands import GetDevicesResponse
+from zhawssclient.model.commands import Command, CommandResponse, GetDevicesResponse
 from zhawssclient.model.events import (
     DeviceConfiguredEvent,
     DeviceFullyInitializedEvent,
@@ -61,6 +61,10 @@ class Controller(EventBase):
             await self._client.listen()
         except Exception as err:
             _LOGGER.error("Unable to connect to the zhawss: %s", err)
+
+    async def send_command(self, command: Command) -> Awaitable[CommandResponse]:
+        """Send a command and get a response."""
+        return await self._client.async_send_command(command.dict(exclude_none=True))
 
     async def load_devices(self) -> Awaitable[None]:
         """Load devices from the websocket server."""
