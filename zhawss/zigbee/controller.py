@@ -2,7 +2,7 @@
 import asyncio
 import logging
 import time
-from typing import Any, Awaitable, Dict
+from typing import Any, Awaitable, Dict, Union
 
 from backports.strenum.strenum import StrEnum
 from bellows.zigbee.application import ControllerApplication
@@ -121,6 +121,15 @@ class Controller:
         return {
             str(ieee): device.zha_device_info for ieee, device in self._devices.items()
         }
+
+    def get_device(self, ieee: Union[EUI64, str]) -> Device:
+        """Get a device by ieee address."""
+        if isinstance(ieee, str):
+            ieee = EUI64.convert(ieee)
+        device = self._devices.get(ieee)
+        if not device:
+            raise ValueError(f"Device {str(ieee)} not found")
+        return device
 
     def get_groups(self):
         """Get Zigbee groups."""

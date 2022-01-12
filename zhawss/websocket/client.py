@@ -103,8 +103,8 @@ class Client:
 
         try:
             msg = MINIMAL_MESSAGE_SCHEMA(message)
-        except voluptuous.Invalid:
-            _LOGGER.error("Received invalid command", message)
+        except voluptuous.Invalid as exception:
+            _LOGGER.error("Received invalid command", message, exc_info=exception)
             return
 
         if msg[COMMAND] not in handlers:

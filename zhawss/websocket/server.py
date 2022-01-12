@@ -8,7 +8,7 @@ import voluptuous
 import websockets
 
 from zhawss.const import COMMAND, MESSAGE_ID, APICommands
-from zhawss.platforms import discovery
+from zhawss.platforms import discovery, load_platform_entity_apis
 from zhawss.platforms.discovery import PLATFORMS
 from zhawss.websocket.api import decorators, register_api_command
 from zhawss.websocket.client import ClientManager
@@ -61,6 +61,7 @@ class Server:
         """Load server API commands."""
         register_api_command(self, stop_server)
         load_zigbee_controller_api(self)
+        load_platform_entity_apis(self)
 
 
 @decorators.async_response

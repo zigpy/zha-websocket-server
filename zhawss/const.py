@@ -23,6 +23,10 @@ class APICommands(StrEnum):
     # Server API commands
     STOP_SERVER = "stop_server"
 
+    # Light API commands
+    LIGHT_TURN_ON = "light_turn_on"
+    LIGHT_TURN_OFF = "light_turn_off"
+
 
 class MessageTypes(StrEnum):
     """WS message types."""

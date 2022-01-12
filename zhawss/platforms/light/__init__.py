@@ -140,13 +140,13 @@ class BaseLight(PlatformEntity):
 
     def get_state(self) -> dict[str, Any]:
         """Return the state of the light."""
-        state = super().get_state()
+        state = {}
         state["on"] = self.is_on
         state["brightness"] = self.brightness
         state["hs_color"] = self.hs_color
         state["color_temp"] = self.color_temp
         state["effect"] = self.effect
-        state = {"off_brightness": self._off_brightness}
+        state["off_brightness"] = self._off_brightness
         return state
 
     @property
@@ -414,7 +414,7 @@ class Light(BaseLight):
         self._level_cluster_handler.add_listener(self)
 
         @periodic(self._REFRESH_INTERVAL)
-        async def _refresh(self):
+        async def _refresh():
             """Call async_get_state at an interval."""
             await self.async_update()
             self.send_state_changed_event()

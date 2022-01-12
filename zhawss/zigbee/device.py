@@ -317,6 +317,13 @@ class Device(LogMixin):
         """Return the platform entities for this device."""
         return self._platform_entities
 
+    def get_platform_entity(self, unique_id: str) -> PlatformEntity:
+        """Get a platform entity by unique id"""
+        entity = self._platform_entities.get(unique_id)
+        if entity is None:
+            raise ValueError(f"Entity {unique_id} not found")
+        return entity
+
     """ TODO
     def async_update_sw_build_id(self, sw_version: int):
         #Update device sw version.

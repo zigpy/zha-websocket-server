@@ -1,0 +1,6 @@
+{
+  "message_id": 20,
+  "ieee": "b0:ce:18:14:03:09:c6:15",
+  "unique_id": "b0:ce:18:14:03:09:c6:15-1",
+  "command": "light_turn_off"
+}

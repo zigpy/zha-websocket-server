@@ -10,6 +10,7 @@ from zhawss.const import EVENT, EVENT_TYPE, EventTypes, PlatformEntityEvents
 from zhawss.platforms.registries import Platform
 from zhawss.platforms.types import PlatformEntityType
 from zhawss.util import LogMixin
+from zhawss.websocket.types import ServerType
 from zhawss.zigbee.cluster.types import ClusterHandlerType
 from zhawss.zigbee.types import DeviceType, EndpointType
 
@@ -150,3 +151,10 @@ class PlatformEntity(LogMixin):
         msg = f"%s: {msg}"
         args = (self.unique_id,) + args
         _LOGGER.log(level, msg, *args)
+
+
+def load_platform_entity_apis(server: ServerType):
+    """Load the ws apis for all platform entities types."""
+    from zhawss.platforms.light.api import load_api as load_light_api
+
+    load_light_api(server)

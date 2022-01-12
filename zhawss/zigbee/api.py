@@ -124,7 +124,7 @@ async def remove_device(
     )
 
 
-def load_api(server) -> None:
+def load_api(server: ServerType) -> None:
     """Load the api command handlers."""
     register_api_command(server, start_network)
     register_api_command(server, stop_network)
