@@ -21,6 +21,7 @@ MULTI_MATCH = functools.partial(PLATFORM_ENTITIES.multipass_match, Platform.CLIM
 
 
 ATTR_SYS_MODE: Final[str] = "system_mode"
+ATTR_FAN_MODE: Final[str] = "fan_mode"
 ATTR_RUNNING_MODE: Final[str] = "running_mode"
 ATTR_SETPT_CHANGE_SRC: Final[str] = "setpoint_change_source"
 ATTR_SETPT_CHANGE_AMT: Final[str] = "setpoint_change_amount"

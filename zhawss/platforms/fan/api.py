@@ -1,3 +1,176 @@
 """WS API for the fan platform entity."""
+from typing import Any, Awaitable
 
-# on, off, set %, set preset mode
+from backports.strenum.strenum import StrEnum
+import voluptuous as vol
+
+from zhawss.const import COMMAND, IEEE, MESSAGE_ID
+from zhawss.websocket.api import decorators, register_api_command
+from zhawss.websocket.types import ClientType, ServerType
+from zhawss.zigbee.device import ATTR_UNIQUE_ID
+
+ATTR_SPEED = "speed"
+ATTR_PERCENTAGE = "percentage"
+ATTR_PRESET_MODE = "preset_mode"
+
+
+class FanAPICommands(StrEnum):
+    """Light API commands."""
+
+    TURN_ON = "fan_turn_on"
+    TURN_OFF = "fan_turn_off"
+    SET_PERCENTAGE = "fan_set_percentage"
+    SET_PRESET_MODE = "fan_set_preset_mode"
+
+
+@decorators.async_response
+@decorators.websocket_command(
+    {
+        vol.Required(COMMAND): FanAPICommands.TURN_ON,
+        vol.Required(IEEE): str,
+        vol.Required(ATTR_UNIQUE_ID): str,
+        vol.Optional(ATTR_SPEED): str,
+        vol.Optional(ATTR_PERCENTAGE): vol.All(
+            vol.Coerce(int), vol.Range(min=0, max=100)
+        ),
+        vol.Optional(ATTR_PRESET_MODE): str,
+    }
+)
+async def turn_on(
+    server: ServerType, client: ClientType, message: dict[str, Any]
+) -> Awaitable[None]:
+    """Turn fan on."""
+    try:
+        device = server.controller.get_device(message[IEEE])
+        fan_entity = device.get_platform_entity(message[ATTR_UNIQUE_ID])
+    except ValueError as err:
+        client.send_error(message[MESSAGE_ID], str(err))
+        return
+
+    try:
+        await fan_entity.async_turn_on(**message)
+    except Exception as err:
+        client.send_error(message[MESSAGE_ID], str(err))
+
+    client.send_result_success(
+        message[MESSAGE_ID],
+        {
+            COMMAND: FanAPICommands.TURN_ON,
+            IEEE: message[IEEE],
+            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
+        },
+    )
+
+
+@decorators.async_response
+@decorators.websocket_command(
+    {
+        vol.Required(COMMAND): FanAPICommands.TURN_OFF,
+        vol.Required(IEEE): str,
+        vol.Required(ATTR_UNIQUE_ID): str,
+    }
+)
+async def turn_off(
+    server: ServerType, client: ClientType, message: dict[str, Any]
+) -> Awaitable[None]:
+    """Turn fan off."""
+    try:
+        device = server.controller.get_device(message[IEEE])
+        fan_entity = device.get_platform_entity(message[ATTR_UNIQUE_ID])
+    except ValueError as err:
+        client.send_error(message[MESSAGE_ID], str(err))
+        return
+
+    try:
+        await fan_entity.async_turn_off()
+    except Exception as err:
+        client.send_error(message[MESSAGE_ID], str(err))
+
+    client.send_result_success(
+        message[MESSAGE_ID],
+        {
+            COMMAND: FanAPICommands.TURN_OFF,
+            IEEE: message[IEEE],
+            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
+        },
+    )
+
+
+@decorators.async_response
+@decorators.websocket_command(
+    {
+        vol.Required(COMMAND): FanAPICommands.SET_PERCENTAGE,
+        vol.Required(IEEE): str,
+        vol.Required(ATTR_UNIQUE_ID): str,
+        vol.Required(ATTR_PERCENTAGE): vol.All(
+            vol.Coerce(int), vol.Range(min=0, max=100)
+        ),
+    }
+)
+async def set_percentage(
+    server: ServerType, client: ClientType, message: dict[str, Any]
+) -> Awaitable[None]:
+    """Set the fan speed percentage."""
+    try:
+        device = server.controller.get_device(message[IEEE])
+        fan_entity = device.get_platform_entity(message[ATTR_UNIQUE_ID])
+    except ValueError as err:
+        client.send_error(message[MESSAGE_ID], str(err))
+        return
+
+    try:
+        await fan_entity.async_set_percentage(**message)
+    except Exception as err:
+        client.send_error(message[MESSAGE_ID], str(err))
+
+    client.send_result_success(
+        message[MESSAGE_ID],
+        {
+            COMMAND: FanAPICommands.SET_PERCENTAGE,
+            IEEE: message[IEEE],
+            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
+        },
+    )
+
+
+@decorators.async_response
+@decorators.websocket_command(
+    {
+        vol.Required(COMMAND): FanAPICommands.TURN_OFF,
+        vol.Required(IEEE): str,
+        vol.Required(ATTR_UNIQUE_ID): str,
+        vol.Required(ATTR_PRESET_MODE): str,
+    }
+)
+async def set_preset_mode(
+    server: ServerType, client: ClientType, message: dict[str, Any]
+) -> Awaitable[None]:
+    """Set the fan preset mode."""
+    try:
+        device = server.controller.get_device(message[IEEE])
+        fan_entity = device.get_platform_entity(message[ATTR_UNIQUE_ID])
+    except ValueError as err:
+        client.send_error(message[MESSAGE_ID], str(err))
+        return
+
+    try:
+        await fan_entity.async_set_preset_mode(**message)
+    except Exception as err:
+        client.send_error(message[MESSAGE_ID], str(err))
+
+    client.send_result_success(
+        message[MESSAGE_ID],
+        {
+            COMMAND: FanAPICommands.TURN_OFF,
+            IEEE: message[IEEE],
+            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
+        },
+    )
+
+
+def load_api(server: ServerType) -> None:
+    """Load the api command handlers."""
+    register_api_command(server, turn_on)
+    register_api_command(server, turn_off)
+    register_api_command(server, set_percentage)
+    register_api_command(server, set_preset_mode)

@@ -10,7 +10,7 @@ from zhawss.websocket.api import decorators, register_api_command
 from zhawss.websocket.types import ClientType, ServerType
 from zhawss.zigbee.device import ATTR_UNIQUE_ID
 
-COMMAND_PRESS = "press"
+COMMAND_PRESS = "button_press"
 
 
 @decorators.async_response
@@ -24,16 +24,16 @@ COMMAND_PRESS = "press"
 async def press(
     server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> Awaitable[None]:
-    """Turn on the light."""
+    """Turn on the button."""
     try:
         device = server.controller.get_device(message[IEEE])
-        light_entity = device.get_platform_entity(message[ATTR_UNIQUE_ID])
+        button_entity = device.get_platform_entity(message[ATTR_UNIQUE_ID])
     except ValueError as err:
         client.send_error(message[MESSAGE_ID], str(err))
         return
 
     try:
-        await light_entity.async_turn_off(**message)
+        await button_entity.async_press()
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
