@@ -6,11 +6,21 @@ import asyncio
 import logging
 from typing import Any, Awaitable, Dict, List, Union
 
-from zhawss.const import EVENT, EVENT_TYPE, EventTypes, PlatformEntityEvents
+import voluptuous as vol
+
+from zhawss.const import (
+    ATTR_UNIQUE_ID,
+    COMMAND,
+    EVENT,
+    EVENT_TYPE,
+    IEEE,
+    EventTypes,
+    PlatformEntityEvents,
+)
 from zhawss.platforms.registries import Platform
 from zhawss.platforms.types import PlatformEntityType
 from zhawss.util import LogMixin
-from zhawss.websocket.types import ServerType
+from zhawss.websocket.types import ClientType, ServerType
 from zhawss.zigbee.cluster.types import ClusterHandlerType
 from zhawss.zigbee.types import DeviceType, EndpointType
 
@@ -153,8 +163,35 @@ class PlatformEntity(LogMixin):
         _LOGGER.log(level, msg, *args)
 
 
+def platform_entity_command_schema(
+    command: str, schema: Dict[str, Any] = None
+) -> Dict[str, Any]:
+    """Return the schema for a platform entity command."""
+    full_schema = {
+        vol.Required(COMMAND): str(command),
+        vol.Required(IEEE): str,
+        vol.Required(ATTR_UNIQUE_ID): str,
+    }
+    if schema:
+        full_schema.update(schema)
+    return full_schema
+
+
+def send_result_success(
+    client: ClientType, request_message: dict[str, Any], data: dict[str, Any] = None
+) -> None:
+    """Send a success result."""
+    if data is None:
+        data = {}
+    data[IEEE] = request_message[IEEE]
+    data[ATTR_UNIQUE_ID] = request_message[ATTR_UNIQUE_ID]
+    client.send_result_success(request_message, data)
+
+
 def load_platform_entity_apis(server: ServerType):
     """Load the ws apis for all platform entities types."""
     from zhawss.platforms.light.api import load_api as load_light_api
+    from zhawss.platforms.switch.api import load_api as load_switch_api
 
     load_light_api(server)
+    load_switch_api(server)

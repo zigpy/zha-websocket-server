@@ -6,7 +6,8 @@ from typing import Any, Awaitable
 from backports.strenum.strenum import StrEnum
 import voluptuous as vol
 
-from zhawss.const import COMMAND, IEEE, MESSAGE_ID
+from zhawss.const import ATTR_UNIQUE_ID, IEEE, MESSAGE_ID
+from zhawss.platforms import platform_entity_command_schema, send_result_success
 from zhawss.platforms.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_TEMP,
@@ -17,7 +18,6 @@ from zhawss.platforms.light import (
 )
 from zhawss.websocket.api import decorators, register_api_command
 from zhawss.websocket.types import ClientType, ServerType
-from zhawss.zigbee.device import ATTR_UNIQUE_ID
 
 
 class LightAPICommands(StrEnum):
@@ -39,27 +39,27 @@ VALID_FLASH = vol.In([FLASH_SHORT, FLASH_LONG])
 
 @decorators.async_response
 @decorators.websocket_command(
-    {
-        vol.Required(COMMAND): str(LightAPICommands.LIGHT_TURN_ON),
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-        vol.Optional(ATTR_BRIGHTNESS): VALID_BRIGHTNESS,
-        vol.Optional(ATTR_TRANSITION): VALID_TRANSITION,
-        vol.Optional(ATTR_FLASH): VALID_FLASH,
-        vol.Optional(ATTR_EFFECT): str,
-        vol.Exclusive(ATTR_HS_COLOR, COLOR_GROUP): vol.All(
-            vol.Coerce(tuple),
-            vol.ExactSequence(
-                (
-                    vol.All(vol.Coerce(float), vol.Range(min=0, max=360)),
-                    vol.All(vol.Coerce(float), vol.Range(min=0, max=100)),
-                )
+    platform_entity_command_schema(
+        LightAPICommands.LIGHT_TURN_ON,
+        {
+            vol.Optional(ATTR_BRIGHTNESS): VALID_BRIGHTNESS,
+            vol.Optional(ATTR_TRANSITION): VALID_TRANSITION,
+            vol.Optional(ATTR_FLASH): VALID_FLASH,
+            vol.Optional(ATTR_EFFECT): str,
+            vol.Exclusive(ATTR_HS_COLOR, COLOR_GROUP): vol.All(
+                vol.Coerce(tuple),
+                vol.ExactSequence(
+                    (
+                        vol.All(vol.Coerce(float), vol.Range(min=0, max=360)),
+                        vol.All(vol.Coerce(float), vol.Range(min=0, max=100)),
+                    )
+                ),
             ),
-        ),
-        vol.Exclusive(ATTR_COLOR_TEMP, COLOR_GROUP): vol.All(
-            vol.Coerce(int), vol.Range(min=1)
-        ),
-    }
+            vol.Exclusive(ATTR_COLOR_TEMP, COLOR_GROUP): vol.All(
+                vol.Coerce(int), vol.Range(min=1)
+            ),
+        },
+    )
 )
 async def turn_on(
     server: ServerType, client: ClientType, message: dict[str, Any]
@@ -77,25 +77,18 @@ async def turn_on(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: LightAPICommands.LIGHT_TURN_ON,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 @decorators.async_response
 @decorators.websocket_command(
-    {
-        vol.Required(COMMAND): str(LightAPICommands.LIGHT_TURN_OFF),
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-        vol.Optional(ATTR_TRANSITION): VALID_TRANSITION,
-        vol.Optional(ATTR_FLASH): VALID_FLASH,
-    }
+    platform_entity_command_schema(
+        LightAPICommands.LIGHT_TURN_OFF,
+        {
+            vol.Optional(ATTR_TRANSITION): VALID_TRANSITION,
+            vol.Optional(ATTR_FLASH): VALID_FLASH,
+        },
+    )
 )
 async def turn_off(
     server: ServerType, client: ClientType, message: dict[str, Any]
@@ -113,14 +106,7 @@ async def turn_off(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: LightAPICommands.LIGHT_TURN_OFF,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 def load_api(server: ServerType) -> None:

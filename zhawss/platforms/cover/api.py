@@ -8,11 +8,11 @@ from typing import Any, Awaitable
 from backports.strenum.strenum import StrEnum
 import voluptuous as vol
 
-from zhawss.const import COMMAND, IEEE, MESSAGE_ID
+from zhawss.const import ATTR_UNIQUE_ID, IEEE, MESSAGE_ID
+from zhawss.platforms import platform_entity_command_schema, send_result_success
 from zhawss.platforms.cover import ATTR_POSITION
 from zhawss.websocket.api import decorators, register_api_command
 from zhawss.websocket.types import ClientType, ServerType
-from zhawss.zigbee.device import ATTR_UNIQUE_ID
 
 
 class CoverCommands(StrEnum):
@@ -25,13 +25,7 @@ class CoverCommands(StrEnum):
 
 
 @decorators.async_response
-@decorators.websocket_command(
-    {
-        vol.Required(COMMAND): CoverCommands.OPEN,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-    }
-)
+@decorators.websocket_command(platform_entity_command_schema(CoverCommands.OPEN))
 async def open(
     server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> Awaitable[None]:
@@ -48,24 +42,11 @@ async def open(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: CoverCommands.OPEN,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 @decorators.async_response
-@decorators.websocket_command(
-    {
-        vol.Required(COMMAND): CoverCommands.CLOSE,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-    }
-)
+@decorators.websocket_command(platform_entity_command_schema(CoverCommands.CLOSE))
 async def close(
     server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> Awaitable[None]:
@@ -82,24 +63,17 @@ async def close(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: CoverCommands.CLOSE,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 @decorators.async_response
 @decorators.websocket_command(
-    {
-        vol.Required(COMMAND): CoverCommands.SET_POSITION,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-        vol.Required(ATTR_POSITION): int,
-    }
+    platform_entity_command_schema(
+        CoverCommands.SET_POSITION,
+        {
+            vol.Required(ATTR_POSITION): int,
+        },
+    )
 )
 async def set_position(
     server: ServerType, client: ClientType, message: dict[str, Any]
@@ -117,24 +91,11 @@ async def set_position(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: CoverCommands.SET_POSITION,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 @decorators.async_response
-@decorators.websocket_command(
-    {
-        vol.Required(COMMAND): CoverCommands.STOP,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-    }
-)
+@decorators.websocket_command(platform_entity_command_schema(CoverCommands.STOP))
 async def stop(
     server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> Awaitable[None]:
@@ -151,14 +112,7 @@ async def stop(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: CoverCommands.STOP,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 def load_api(server: ServerType) -> None:

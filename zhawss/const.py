@@ -27,6 +27,10 @@ class APICommands(StrEnum):
     LIGHT_TURN_ON = "light_turn_on"
     LIGHT_TURN_OFF = "light_turn_off"
 
+    # Switch API commands
+    SWITCH_TURN_ON = "switch_turn_on"
+    SWITCH_TURN_OFF = "switch_turn_off"
+
 
 class MessageTypes(StrEnum):
     """WS message types."""
@@ -66,6 +70,7 @@ class RawZCLEvents(StrEnum):
     ATTRIBUTE_UPDATED = "attribute_updated"
 
 
+ATTR_UNIQUE_ID: Final[str] = "unique_id"
 COMMAND: Final[str] = "command"
 CONF_BAUDRATE: Final[str] = "baudrate"
 CONF_CUSTOM_QUIRKS_PATH: Final[str] = "custom_quirks_path"

@@ -1,11 +1,11 @@
 """WS api for the climate platform entity."""
-
 from typing import Any, Awaitable
 
 from backports.strenum.strenum import StrEnum
 import voluptuous as vol
 
-from zhawss.const import COMMAND, IEEE, MESSAGE_ID
+from zhawss.const import ATTR_UNIQUE_ID, IEEE, MESSAGE_ID
+from zhawss.platforms import platform_entity_command_schema, send_result_success
 from zhawss.platforms.climate import (
     ATTR_FAN_MODE,
     ATTR_HVAC_MODE,
@@ -15,7 +15,6 @@ from zhawss.platforms.climate import (
 )
 from zhawss.websocket.api import decorators, register_api_command
 from zhawss.websocket.types import ClientType, ServerType
-from zhawss.zigbee.device import ATTR_UNIQUE_ID
 
 # All activity disabled / Device is off/standby
 HVAC_MODE_OFF = "off"
@@ -63,12 +62,12 @@ class ClimateCommands(StrEnum):
 
 @decorators.async_response
 @decorators.websocket_command(
-    {
-        vol.Required(COMMAND): ClimateCommands.SET_FAN_MODE,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-        vol.Required(ATTR_FAN_MODE): str,
-    }
+    platform_entity_command_schema(
+        ClimateCommands.SET_FAN_MODE,
+        {
+            vol.Required(ATTR_FAN_MODE): str,
+        },
+    )
 )
 async def set_fan_mode(
     server: ServerType, client: ClientType, message: dict[str, Any]
@@ -86,24 +85,17 @@ async def set_fan_mode(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: ClimateCommands.SET_FAN_MODE,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 @decorators.async_response
 @decorators.websocket_command(
-    {
-        vol.Required(COMMAND): ClimateCommands.SET_HVAC_MODE,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-        vol.Required(ATTR_HVAC_MODE): vol.In(HVAC_MODES),
-    }
+    platform_entity_command_schema(
+        ClimateCommands.SET_HVAC_MODE,
+        {
+            vol.Required(ATTR_HVAC_MODE): vol.In(HVAC_MODES),
+        },
+    )
 )
 async def set_hvac_mode(
     server: ServerType, client: ClientType, message: dict[str, Any]
@@ -121,24 +113,17 @@ async def set_hvac_mode(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: ClimateCommands.SET_HVAC_MODE,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 @decorators.async_response
 @decorators.websocket_command(
-    {
-        vol.Required(COMMAND): ClimateCommands.SET_PRESET_MODE,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-        vol.Required(ATTR_PRESET_MODE): str,
-    }
+    platform_entity_command_schema(
+        ClimateCommands.SET_PRESET_MODE,
+        {
+            vol.Required(ATTR_PRESET_MODE): str,
+        },
+    )
 )
 async def set_preset_mode(
     server: ServerType, client: ClientType, message: dict[str, Any]
@@ -156,27 +141,20 @@ async def set_preset_mode(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: ClimateCommands.SET_PRESET_MODE,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 @decorators.async_response
 @decorators.websocket_command(
-    {
-        vol.Required(COMMAND): ClimateCommands.SET_TEMPERATURE,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-        vol.Exclusive(ATTR_TEMPERATURE, "temperature"): vol.Coerce(float),
-        vol.Inclusive(ATTR_TARGET_TEMP_HIGH, "temperature"): vol.Coerce(float),
-        vol.Inclusive(ATTR_TARGET_TEMP_LOW, "temperature"): vol.Coerce(float),
-        vol.Optional(ATTR_HVAC_MODE): vol.In(HVAC_MODES),
-    }
+    platform_entity_command_schema(
+        ClimateCommands.SET_TEMPERATURE,
+        {
+            vol.Exclusive(ATTR_TEMPERATURE, "temperature"): vol.Coerce(float),
+            vol.Inclusive(ATTR_TARGET_TEMP_HIGH, "temperature"): vol.Coerce(float),
+            vol.Inclusive(ATTR_TARGET_TEMP_LOW, "temperature"): vol.Coerce(float),
+            vol.Optional(ATTR_HVAC_MODE): vol.In(HVAC_MODES),
+        },
+    )
 )
 async def set_temperature(
     server: ServerType, client: ClientType, message: dict[str, Any]
@@ -194,14 +172,7 @@ async def set_temperature(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: ClimateCommands.SET_TEMPERATURE,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 def load_api(server: ServerType) -> None:

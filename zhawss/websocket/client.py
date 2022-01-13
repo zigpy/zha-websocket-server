@@ -51,11 +51,18 @@ class Client:
         message[MESSAGE_TYPE] = MessageTypes.EVENT
         self._send_data(message)
 
-    def send_result_success(self, message_id: str, message: dict[str, Any]) -> None:
+    def send_result_success(
+        self, request_message: dict[str, Any], data: dict[str, Any] = None
+    ) -> None:
         """Send success result prompted by a client request."""
-        message[SUCCESS] = True
-        message[MESSAGE_ID] = message_id
-        message[MESSAGE_TYPE] = MessageTypes.RESULT
+        message = {
+            SUCCESS: True,
+            MESSAGE_ID: request_message[MESSAGE_ID],
+            MESSAGE_TYPE: MessageTypes.RESULT,
+            COMMAND: request_message[COMMAND],
+        }
+        if data:
+            message.update(data)
         self._send_data(message)
 
     def send_result_error(
@@ -104,11 +111,16 @@ class Client:
         try:
             msg = MINIMAL_MESSAGE_SCHEMA(message)
         except voluptuous.Invalid as exception:
-            _LOGGER.error("Received invalid command", message, exc_info=exception)
+            _LOGGER.error(
+                f"Received invalid command[unable to parse command]: {message}",
+                exc_info=exception,
+            )
             return
 
         if msg[COMMAND] not in handlers:
-            _LOGGER.error("Received invalid command: {}".format(msg[COMMAND]))
+            _LOGGER.error(
+                f"Received invalid command[command not registered]: {msg[COMMAND]}"
+            )
             return
 
         handler, schema = handlers[msg[COMMAND]]

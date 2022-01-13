@@ -18,7 +18,6 @@ from zhawss.const import (
     DEVICES,
     DURATION,
     IEEE,
-    MESSAGE_ID,
     APICommands,
 )
 from zhawss.websocket.api import decorators, register_api_command
@@ -48,9 +47,7 @@ async def start_network(
 ) -> Awaitable[None]:
     """Start the Zigbee network."""
     await server.controller.start_network(message)
-    client.send_result_success(
-        message[MESSAGE_ID], {COMMAND: APICommands.START_NETWORK}
-    )
+    client.send_result_success(message)
 
 
 @decorators.async_response
@@ -64,7 +61,7 @@ async def stop_network(
 ) -> Awaitable[None]:
     """Stop the Zigbee network."""
     await server.controller.stop_network()
-    client.send_result_success(message[MESSAGE_ID], {COMMAND: APICommands.STOP_NETWORK})
+    client.send_result_success(message)
 
 
 @decorators.async_response
@@ -79,9 +76,7 @@ async def get_devices(
     """Get Zigbee devices."""
     devices: list[Device] = server.controller.get_devices()
     _LOGGER.info("devices: %s", devices)
-    client.send_result_success(
-        message[MESSAGE_ID], {COMMAND: APICommands.GET_DEVICES, DEVICES: devices}
-    )
+    client.send_result_success(message, {DEVICES: devices})
 
 
 @decorators.async_response
@@ -97,8 +92,8 @@ async def permit_joining(
     """Permit joining devices to the Zigbee network."""
     await server.controller.application_controller.permit(message[DURATION])
     client.send_result_success(
-        message[MESSAGE_ID],
-        {COMMAND: APICommands.PERMIT_JOINING, DURATION: message[DURATION]},
+        message,
+        {DURATION: message[DURATION]},
     )
 
 
@@ -116,12 +111,7 @@ async def remove_device(
     await server.controller.application_controller.remove(
         EUI64.convert(message["ieee"])
     )
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: APICommands.REMOVE_DEVICE,
-        },
-    )
+    client.send_result_success(message)
 
 
 def load_api(server: ServerType) -> None:

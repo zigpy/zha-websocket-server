@@ -3,10 +3,10 @@ from typing import Any, Awaitable
 
 import voluptuous as vol
 
-from zhawss.const import COMMAND, IEEE, MESSAGE_ID
+from zhawss.const import ATTR_UNIQUE_ID, IEEE, MESSAGE_ID
+from zhawss.platforms import platform_entity_command_schema, send_result_success
 from zhawss.websocket.api import decorators, register_api_command
 from zhawss.websocket.types import ClientType, ServerType
-from zhawss.zigbee.device import ATTR_UNIQUE_ID
 
 ATTR_VALUE = "value"
 COMMAND_SET_VALUE = "number_set_value"
@@ -14,12 +14,12 @@ COMMAND_SET_VALUE = "number_set_value"
 
 @decorators.async_response
 @decorators.websocket_command(
-    {
-        vol.Required(COMMAND): COMMAND_SET_VALUE,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-        vol.Required(ATTR_VALUE): vol.Coerce(float),
-    }
+    platform_entity_command_schema(
+        COMMAND_SET_VALUE,
+        {
+            vol.Required(ATTR_VALUE): vol.Coerce(float),
+        },
+    )
 )
 async def set_value(
     server: ServerType, client: ClientType, message: dict[str, Any]
@@ -38,14 +38,7 @@ async def set_value(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: COMMAND_SET_VALUE,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 def load_api(server: ServerType) -> None:

@@ -1,15 +1,13 @@
 """WS api for the alarm control panel platform entity."""
-
-# disarm, arm home, arm away, arm night, trigger
 from typing import Any, Awaitable, Final
 
 from backports.strenum.strenum import StrEnum
 import voluptuous as vol
 
-from zhawss.const import COMMAND, IEEE, MESSAGE_ID
+from zhawss.const import ATTR_UNIQUE_ID, IEEE, MESSAGE_ID
+from zhawss.platforms import platform_entity_command_schema, send_result_success
 from zhawss.websocket.api import decorators, register_api_command
 from zhawss.websocket.types import ClientType, ServerType
-from zhawss.zigbee.device import ATTR_UNIQUE_ID
 
 
 class AlarmControlPanelCommands(StrEnum):
@@ -27,12 +25,12 @@ ATTR_CODE: Final[str] = "code"
 
 @decorators.async_response
 @decorators.websocket_command(
-    {
-        vol.Required(COMMAND): AlarmControlPanelCommands.DISARM,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-        vol.Optional(ATTR_CODE): str,
-    }
+    platform_entity_command_schema(
+        AlarmControlPanelCommands.DISARM,
+        {
+            vol.Optional(ATTR_CODE): str,
+        },
+    )
 )
 async def disarm(
     server: ServerType, client: ClientType, message: dict[str, Any]
@@ -50,24 +48,17 @@ async def disarm(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: AlarmControlPanelCommands.DISARM,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 @decorators.async_response
 @decorators.websocket_command(
-    {
-        vol.Required(COMMAND): AlarmControlPanelCommands.ARM_HOME,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-        vol.Optional(ATTR_CODE): str,
-    }
+    platform_entity_command_schema(
+        AlarmControlPanelCommands.ARM_HOME,
+        {
+            vol.Optional(ATTR_CODE): str,
+        },
+    )
 )
 async def arm_home(
     server: ServerType, client: ClientType, message: dict[str, Any]
@@ -85,24 +76,17 @@ async def arm_home(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: AlarmControlPanelCommands.ARM_HOME,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 @decorators.async_response
 @decorators.websocket_command(
-    {
-        vol.Required(COMMAND): AlarmControlPanelCommands.ARM_AWAY,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-        vol.Optional(ATTR_CODE): str,
-    }
+    platform_entity_command_schema(
+        AlarmControlPanelCommands.ARM_AWAY,
+        {
+            vol.Optional(ATTR_CODE): str,
+        },
+    )
 )
 async def arm_away(
     server: ServerType, client: ClientType, message: dict[str, Any]
@@ -120,24 +104,17 @@ async def arm_away(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: AlarmControlPanelCommands.ARM_AWAY,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 @decorators.async_response
 @decorators.websocket_command(
-    {
-        vol.Required(COMMAND): AlarmControlPanelCommands.ARM_NIGHT,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-        vol.Optional(ATTR_CODE): str,
-    }
+    platform_entity_command_schema(
+        AlarmControlPanelCommands.ARM_NIGHT,
+        {
+            vol.Optional(ATTR_CODE): str,
+        },
+    )
 )
 async def arm_night(
     server: ServerType, client: ClientType, message: dict[str, Any]
@@ -155,24 +132,17 @@ async def arm_night(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: AlarmControlPanelCommands.ARM_NIGHT,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 @decorators.async_response
 @decorators.websocket_command(
-    {
-        vol.Required(COMMAND): AlarmControlPanelCommands.TRIGGER,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-        vol.Optional(ATTR_CODE): str,
-    }
+    platform_entity_command_schema(
+        AlarmControlPanelCommands.TRIGGER,
+        {
+            vol.Optional(ATTR_CODE): str,
+        },
+    )
 )
 async def trigger(
     server: ServerType, client: ClientType, message: dict[str, Any]
@@ -190,14 +160,7 @@ async def trigger(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: AlarmControlPanelCommands.TRIGGER,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 def load_api(server: ServerType) -> None:

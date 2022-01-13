@@ -4,10 +4,10 @@ from typing import Any, Awaitable
 from backports.strenum.strenum import StrEnum
 import voluptuous as vol
 
-from zhawss.const import COMMAND, IEEE, MESSAGE_ID
+from zhawss.const import ATTR_UNIQUE_ID, IEEE, MESSAGE_ID
+from zhawss.platforms import platform_entity_command_schema, send_result_success
 from zhawss.websocket.api import decorators, register_api_command
 from zhawss.websocket.types import ClientType, ServerType
-from zhawss.zigbee.device import ATTR_UNIQUE_ID
 
 ATTR_SPEED = "speed"
 ATTR_PERCENTAGE = "percentage"
@@ -25,16 +25,16 @@ class FanAPICommands(StrEnum):
 
 @decorators.async_response
 @decorators.websocket_command(
-    {
-        vol.Required(COMMAND): FanAPICommands.TURN_ON,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-        vol.Optional(ATTR_SPEED): str,
-        vol.Optional(ATTR_PERCENTAGE): vol.All(
-            vol.Coerce(int), vol.Range(min=0, max=100)
-        ),
-        vol.Optional(ATTR_PRESET_MODE): str,
-    }
+    platform_entity_command_schema(
+        FanAPICommands.TURN_ON,
+        {
+            vol.Optional(ATTR_SPEED): str,
+            vol.Optional(ATTR_PERCENTAGE): vol.All(
+                vol.Coerce(int), vol.Range(min=0, max=100)
+            ),
+            vol.Optional(ATTR_PRESET_MODE): str,
+        },
+    )
 )
 async def turn_on(
     server: ServerType, client: ClientType, message: dict[str, Any]
@@ -52,24 +52,11 @@ async def turn_on(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: FanAPICommands.TURN_ON,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 @decorators.async_response
-@decorators.websocket_command(
-    {
-        vol.Required(COMMAND): FanAPICommands.TURN_OFF,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-    }
-)
+@decorators.websocket_command(platform_entity_command_schema(FanAPICommands.TURN_OFF))
 async def turn_off(
     server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> Awaitable[None]:
@@ -86,26 +73,19 @@ async def turn_off(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: FanAPICommands.TURN_OFF,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 @decorators.async_response
 @decorators.websocket_command(
-    {
-        vol.Required(COMMAND): FanAPICommands.SET_PERCENTAGE,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-        vol.Required(ATTR_PERCENTAGE): vol.All(
-            vol.Coerce(int), vol.Range(min=0, max=100)
-        ),
-    }
+    platform_entity_command_schema(
+        FanAPICommands.SET_PERCENTAGE,
+        {
+            vol.Required(ATTR_PERCENTAGE): vol.All(
+                vol.Coerce(int), vol.Range(min=0, max=100)
+            ),
+        },
+    )
 )
 async def set_percentage(
     server: ServerType, client: ClientType, message: dict[str, Any]
@@ -123,24 +103,17 @@ async def set_percentage(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: FanAPICommands.SET_PERCENTAGE,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 @decorators.async_response
 @decorators.websocket_command(
-    {
-        vol.Required(COMMAND): FanAPICommands.TURN_OFF,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-        vol.Required(ATTR_PRESET_MODE): str,
-    }
+    platform_entity_command_schema(
+        FanAPICommands.TURN_OFF,
+        {
+            vol.Required(ATTR_PRESET_MODE): str,
+        },
+    )
 )
 async def set_preset_mode(
     server: ServerType, client: ClientType, message: dict[str, Any]
@@ -158,14 +131,7 @@ async def set_preset_mode(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: FanAPICommands.TURN_OFF,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 def load_api(server: ServerType) -> None:

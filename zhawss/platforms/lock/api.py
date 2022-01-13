@@ -5,10 +5,10 @@ from typing import Any, Awaitable
 from backports.strenum.strenum import StrEnum
 import voluptuous as vol
 
-from zhawss.const import COMMAND, IEEE, MESSAGE_ID
+from zhawss.const import ATTR_UNIQUE_ID, IEEE, MESSAGE_ID
+from zhawss.platforms import platform_entity_command_schema, send_result_success
 from zhawss.websocket.api import decorators, register_api_command
 from zhawss.websocket.types import ClientType, ServerType
-from zhawss.zigbee.device import ATTR_UNIQUE_ID
 
 
 class LockCommands(StrEnum):
@@ -23,13 +23,7 @@ class LockCommands(StrEnum):
 
 
 @decorators.async_response
-@decorators.websocket_command(
-    {
-        vol.Required(COMMAND): LockCommands.LOCK,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-    }
-)
+@decorators.websocket_command(platform_entity_command_schema(LockCommands.LOCK))
 async def lock(
     server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> Awaitable[None]:
@@ -46,24 +40,11 @@ async def lock(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: LockCommands.LOCK,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 @decorators.async_response
-@decorators.websocket_command(
-    {
-        vol.Required(COMMAND): LockCommands.UNLOCK,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-    }
-)
+@decorators.websocket_command(platform_entity_command_schema(LockCommands.UNLOCK))
 async def unlock(
     server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> Awaitable[None]:
@@ -80,25 +61,18 @@ async def unlock(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: LockCommands.UNLOCK,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 @decorators.async_response
 @decorators.websocket_command(
-    {
-        vol.Required(COMMAND): LockCommands.SET_USER_LOCK_CODE,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-        vol.Required("code_slot"): vol.Coerce(int),
-        vol.Required("user_code"): str,
-    }
+    platform_entity_command_schema(
+        LockCommands.SET_USER_LOCK_CODE,
+        {
+            vol.Required("code_slot"): vol.Coerce(int),
+            vol.Required("user_code"): str,
+        },
+    )
 )
 async def set_user_lock_code(
     server: ServerType, client: ClientType, message: dict[str, Any]
@@ -116,24 +90,17 @@ async def set_user_lock_code(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: LockCommands.SET_USER_LOCK_CODE,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 @decorators.async_response
 @decorators.websocket_command(
-    {
-        vol.Required(COMMAND): LockCommands.ENABLE_USER_LOCK_CODE,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-        vol.Required("code_slot"): vol.Coerce(int),
-    }
+    platform_entity_command_schema(
+        LockCommands.ENABLE_USER_LOCK_CODE,
+        {
+            vol.Required("code_slot"): vol.Coerce(int),
+        },
+    )
 )
 async def enable_user_lock_code(
     server: ServerType, client: ClientType, message: dict[str, Any]
@@ -151,24 +118,17 @@ async def enable_user_lock_code(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: LockCommands.ENABLE_USER_LOCK_CODE,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 @decorators.async_response
 @decorators.websocket_command(
-    {
-        vol.Required(COMMAND): LockCommands.DISABLE_USER_LOCK_CODE,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-        vol.Required("code_slot"): vol.Coerce(int),
-    }
+    platform_entity_command_schema(
+        LockCommands.DISABLE_USER_LOCK_CODE,
+        {
+            vol.Required("code_slot"): vol.Coerce(int),
+        },
+    )
 )
 async def disable_user_lock_code(
     server: ServerType, client: ClientType, message: dict[str, Any]
@@ -186,24 +146,17 @@ async def disable_user_lock_code(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: LockCommands.DISABLE_USER_LOCK_CODE,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 @decorators.async_response
 @decorators.websocket_command(
-    {
-        vol.Required(COMMAND): LockCommands.CLEAR_USER_LOCK_CODE,
-        vol.Required(IEEE): str,
-        vol.Required(ATTR_UNIQUE_ID): str,
-        vol.Required("code_slot"): vol.Coerce(int),
-    }
+    platform_entity_command_schema(
+        LockCommands.CLEAR_USER_LOCK_CODE,
+        {
+            vol.Required("code_slot"): vol.Coerce(int),
+        },
+    )
 )
 async def clear_user_lock_code(
     server: ServerType, client: ClientType, message: dict[str, Any]
@@ -221,14 +174,7 @@ async def clear_user_lock_code(
     except Exception as err:
         client.send_error(message[MESSAGE_ID], str(err))
 
-    client.send_result_success(
-        message[MESSAGE_ID],
-        {
-            COMMAND: LockCommands.CLEAR_USER_LOCK_CODE,
-            IEEE: message[IEEE],
-            ATTR_UNIQUE_ID: message[ATTR_UNIQUE_ID],
-        },
-    )
+    send_result_success(client, message)
 
 
 def load_api(server: ServerType) -> None:

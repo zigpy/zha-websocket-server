@@ -7,7 +7,7 @@ from typing import Any, Awaitable
 import voluptuous
 import websockets
 
-from zhawss.const import COMMAND, MESSAGE_ID, APICommands
+from zhawss.const import COMMAND, APICommands
 from zhawss.platforms import discovery, load_platform_entity_apis
 from zhawss.platforms.discovery import PLATFORMS
 from zhawss.websocket.api import decorators, register_api_command
@@ -75,4 +75,4 @@ async def stop_server(
 ) -> Awaitable[None]:
     """Stop the Zigbee network."""
     await server.stop_server()
-    client.send_result_success(message[MESSAGE_ID], {COMMAND: APICommands.STOP_SERVER})
+    client.send_result_success(message)
