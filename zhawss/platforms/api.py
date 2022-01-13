@@ -49,8 +49,28 @@ async def execute_platform_entity_command(
 
 def load_platform_entity_apis(server: ServerType):
     """Load the ws apis for all platform entities types."""
+    from zhawss.platforms.alarm_control_panel.api import (
+        load_api as load_alarm_control_panel_api,
+    )
+    from zhawss.platforms.button.api import load_api as load_button_api
+    from zhawss.platforms.climate.api import load_api as load_climate_api
+    from zhawss.platforms.cover.api import load_api as load_cover_api
+    from zhawss.platforms.fan.api import load_api as load_fan_api
     from zhawss.platforms.light.api import load_api as load_light_api
+    from zhawss.platforms.lock.api import load_api as load_lock_api
+    from zhawss.platforms.number.api import load_api as load_number_api
+    from zhawss.platforms.select.api import load_api as load_select_api
+    from zhawss.platforms.siren.api import load_api as load_siren_api
     from zhawss.platforms.switch.api import load_api as load_switch_api
 
+    load_alarm_control_panel_api(server)
+    load_button_api(server)
+    load_climate_api(server)
+    load_cover_api(server)
+    load_fan_api(server)
     load_light_api(server)
+    load_lock_api(server)
+    load_number_api(server)
+    load_select_api(server)
+    load_siren_api(server)
     load_switch_api(server)
