@@ -3,8 +3,10 @@ from typing import Any, Awaitable, Union
 
 import voluptuous as vol
 
-from zhawss.const import ATTR_UNIQUE_ID, IEEE, MESSAGE_ID
-from zhawss.platforms import platform_entity_command_schema, send_result_success
+from zhawss.platforms.api import (
+    execute_platform_entity_command,
+    platform_entity_command_schema,
+)
 from zhawss.websocket.api import decorators, register_api_command
 from zhawss.websocket.types import ClientType, ServerType
 
@@ -25,20 +27,9 @@ async def select_option(
     server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> Awaitable[None]:
     """Select an option."""
-    try:
-        device = server.controller.get_device(message[IEEE])
-        select_entity = device.get_platform_entity(message[ATTR_UNIQUE_ID])
-    except ValueError as err:
-        client.send_error(message[MESSAGE_ID], str(err))
-        return
-
-    try:
-        option = message[ATTR_OPTION]
-        await select_entity.async_select_option(option)
-    except Exception as err:
-        client.send_error(message[MESSAGE_ID], str(err))
-
-    send_result_success(client, message)
+    await execute_platform_entity_command(
+        server, client, message, "async_select_option"
+    )
 
 
 def load_api(server: ServerType) -> None:

@@ -4,8 +4,10 @@ from typing import Any, Awaitable
 from backports.strenum.strenum import StrEnum
 import voluptuous as vol
 
-from zhawss.const import ATTR_UNIQUE_ID, IEEE, MESSAGE_ID
-from zhawss.platforms import platform_entity_command_schema, send_result_success
+from zhawss.platforms.api import (
+    execute_platform_entity_command,
+    platform_entity_command_schema,
+)
 from zhawss.platforms.climate import (
     ATTR_FAN_MODE,
     ATTR_HVAC_MODE,
@@ -73,19 +75,7 @@ async def set_fan_mode(
     server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> Awaitable[None]:
     """Set the fan mode for the climate platform entity."""
-    try:
-        device = server.controller.get_device(message[IEEE])
-        climate_entity = device.get_platform_entity(message[ATTR_UNIQUE_ID])
-    except ValueError as err:
-        client.send_error(message[MESSAGE_ID], str(err))
-        return
-
-    try:
-        await climate_entity.async_set_fan_mode(**message)
-    except Exception as err:
-        client.send_error(message[MESSAGE_ID], str(err))
-
-    send_result_success(client, message)
+    await execute_platform_entity_command(server, client, message, "async_set_fan_mode")
 
 
 @decorators.async_response
@@ -101,19 +91,9 @@ async def set_hvac_mode(
     server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> Awaitable[None]:
     """Set the hvac mode for the climate platform entity."""
-    try:
-        device = server.controller.get_device(message[IEEE])
-        climate_entity = device.get_platform_entity(message[ATTR_UNIQUE_ID])
-    except ValueError as err:
-        client.send_error(message[MESSAGE_ID], str(err))
-        return
-
-    try:
-        await climate_entity.async_set_hvac_mode(**message)
-    except Exception as err:
-        client.send_error(message[MESSAGE_ID], str(err))
-
-    send_result_success(client, message)
+    await execute_platform_entity_command(
+        server, client, message, "async_set_hvac_mode"
+    )
 
 
 @decorators.async_response
@@ -129,19 +109,9 @@ async def set_preset_mode(
     server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> Awaitable[None]:
     """Set the preset mode for the climate platform entity."""
-    try:
-        device = server.controller.get_device(message[IEEE])
-        climate_entity = device.get_platform_entity(message[ATTR_UNIQUE_ID])
-    except ValueError as err:
-        client.send_error(message[MESSAGE_ID], str(err))
-        return
-
-    try:
-        await climate_entity.async_set_preset_mode(**message)
-    except Exception as err:
-        client.send_error(message[MESSAGE_ID], str(err))
-
-    send_result_success(client, message)
+    await execute_platform_entity_command(
+        server, client, message, "async_set_preset_mode"
+    )
 
 
 @decorators.async_response
@@ -160,19 +130,9 @@ async def set_temperature(
     server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> Awaitable[None]:
     """Set the temperature and hvac mode for the climate platform entity."""
-    try:
-        device = server.controller.get_device(message[IEEE])
-        climate_entity = device.get_platform_entity(message[ATTR_UNIQUE_ID])
-    except ValueError as err:
-        client.send_error(message[MESSAGE_ID], str(err))
-        return
-
-    try:
-        await climate_entity.async_set_temperature(**message)
-    except Exception as err:
-        client.send_error(message[MESSAGE_ID], str(err))
-
-    send_result_success(client, message)
+    await execute_platform_entity_command(
+        server, client, message, "async_set_temperature"
+    )
 
 
 def load_api(server: ServerType) -> None:

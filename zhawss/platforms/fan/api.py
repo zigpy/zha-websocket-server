@@ -4,8 +4,10 @@ from typing import Any, Awaitable
 from backports.strenum.strenum import StrEnum
 import voluptuous as vol
 
-from zhawss.const import ATTR_UNIQUE_ID, IEEE, MESSAGE_ID
-from zhawss.platforms import platform_entity_command_schema, send_result_success
+from zhawss.platforms.api import (
+    execute_platform_entity_command,
+    platform_entity_command_schema,
+)
 from zhawss.websocket.api import decorators, register_api_command
 from zhawss.websocket.types import ClientType, ServerType
 
@@ -40,19 +42,7 @@ async def turn_on(
     server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> Awaitable[None]:
     """Turn fan on."""
-    try:
-        device = server.controller.get_device(message[IEEE])
-        fan_entity = device.get_platform_entity(message[ATTR_UNIQUE_ID])
-    except ValueError as err:
-        client.send_error(message[MESSAGE_ID], str(err))
-        return
-
-    try:
-        await fan_entity.async_turn_on(**message)
-    except Exception as err:
-        client.send_error(message[MESSAGE_ID], str(err))
-
-    send_result_success(client, message)
+    await execute_platform_entity_command(server, client, message, "async_turn_on")
 
 
 @decorators.async_response
@@ -61,19 +51,7 @@ async def turn_off(
     server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> Awaitable[None]:
     """Turn fan off."""
-    try:
-        device = server.controller.get_device(message[IEEE])
-        fan_entity = device.get_platform_entity(message[ATTR_UNIQUE_ID])
-    except ValueError as err:
-        client.send_error(message[MESSAGE_ID], str(err))
-        return
-
-    try:
-        await fan_entity.async_turn_off()
-    except Exception as err:
-        client.send_error(message[MESSAGE_ID], str(err))
-
-    send_result_success(client, message)
+    await execute_platform_entity_command(server, client, message, "async_turn_off")
 
 
 @decorators.async_response
@@ -91,19 +69,9 @@ async def set_percentage(
     server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> Awaitable[None]:
     """Set the fan speed percentage."""
-    try:
-        device = server.controller.get_device(message[IEEE])
-        fan_entity = device.get_platform_entity(message[ATTR_UNIQUE_ID])
-    except ValueError as err:
-        client.send_error(message[MESSAGE_ID], str(err))
-        return
-
-    try:
-        await fan_entity.async_set_percentage(**message)
-    except Exception as err:
-        client.send_error(message[MESSAGE_ID], str(err))
-
-    send_result_success(client, message)
+    await execute_platform_entity_command(
+        server, client, message, "async_set_percentage"
+    )
 
 
 @decorators.async_response
@@ -119,19 +87,9 @@ async def set_preset_mode(
     server: ServerType, client: ClientType, message: dict[str, Any]
 ) -> Awaitable[None]:
     """Set the fan preset mode."""
-    try:
-        device = server.controller.get_device(message[IEEE])
-        fan_entity = device.get_platform_entity(message[ATTR_UNIQUE_ID])
-    except ValueError as err:
-        client.send_error(message[MESSAGE_ID], str(err))
-        return
-
-    try:
-        await fan_entity.async_set_preset_mode(**message)
-    except Exception as err:
-        client.send_error(message[MESSAGE_ID], str(err))
-
-    send_result_success(client, message)
+    await execute_platform_entity_command(
+        server, client, message, "async_set_preset_mode"
+    )
 
 
 def load_api(server: ServerType) -> None:

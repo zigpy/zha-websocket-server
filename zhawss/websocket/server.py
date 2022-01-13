@@ -8,7 +8,8 @@ import voluptuous
 import websockets
 
 from zhawss.const import COMMAND, APICommands
-from zhawss.platforms import discovery, load_platform_entity_apis
+from zhawss.platforms import discovery
+from zhawss.platforms.api import load_platform_entity_apis
 from zhawss.platforms.discovery import PLATFORMS
 from zhawss.websocket.api import decorators, register_api_command
 from zhawss.websocket.client import ClientManager

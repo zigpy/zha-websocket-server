@@ -28,8 +28,8 @@ async def main():
         )
     )
 
-    test_lights = False
-    test_switches = True
+    test_lights = True
+    test_switches = False
     waiter = asyncio.Future()
     controller = Controller("ws://localhost:8001/", aiohttp.ClientSession())
     await controller.connect()
