@@ -14,6 +14,7 @@ from zhawss.const import (
     EVENT,
     EVENT_TYPE,
     IEEE,
+    MESSAGE_ID,
     EventTypes,
     PlatformEntityEvents,
 )
@@ -186,6 +187,29 @@ def send_result_success(
     data[IEEE] = request_message[IEEE]
     data[ATTR_UNIQUE_ID] = request_message[ATTR_UNIQUE_ID]
     client.send_result_success(request_message, data)
+
+
+async def execute_platform_entity_action(
+    server: ServerType,
+    client: ClientType,
+    command: str,
+    request_message: dict[str, Any],
+) -> Union[PlatformEntityType, None]:
+    """Get the platform entity and execute an action."""
+    try:
+        device = server.controller.get_device(request_message[IEEE])
+        platform_entity = device.get_platform_entity(request_message[ATTR_UNIQUE_ID])
+    except ValueError as err:
+        client.send_error(request_message[MESSAGE_ID], str(err))
+        return None
+
+    try:
+        action = getattr(platform_entity, command)
+        await action(**request_message)
+    except Exception as err:
+        client.send_error(request_message[MESSAGE_ID], str(err))
+
+    send_result_success(client, request_message)
 
 
 def load_platform_entity_apis(server: ServerType):
