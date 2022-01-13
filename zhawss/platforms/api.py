@@ -1,10 +1,9 @@
 """WS API for common platform entity functionality."""
-from typing import Any, Dict, Union
+from typing import Any, Awaitable, Dict
 
 import voluptuous as vol
 
 from zhawss.const import ATTR_UNIQUE_ID, COMMAND, IEEE, MESSAGE_ID
-from zhawss.platforms.types import PlatformEntityType
 from zhawss.websocket.types import ClientType, ServerType
 
 
@@ -22,23 +21,12 @@ def platform_entity_command_schema(
     return full_schema
 
 
-def send_result_success(
-    client: ClientType, request_message: dict[str, Any], data: dict[str, Any] = None
-) -> None:
-    """Send a success result."""
-    if data is None:
-        data = {}
-    data[IEEE] = request_message[IEEE]
-    data[ATTR_UNIQUE_ID] = request_message[ATTR_UNIQUE_ID]
-    client.send_result_success(request_message, data)
-
-
 async def execute_platform_entity_command(
     server: ServerType,
     client: ClientType,
     request_message: dict[str, Any],
     command: str,
-) -> Union[PlatformEntityType, None]:
+) -> Awaitable[None]:
     """Get the platform entity and execute a command."""
     try:
         device = server.controller.get_device(request_message[IEEE])
@@ -53,7 +41,10 @@ async def execute_platform_entity_command(
     except Exception as err:
         client.send_error(request_message[MESSAGE_ID], str(err))
 
-    send_result_success(client, request_message)
+    result = {}
+    result[IEEE] = request_message[IEEE]
+    result[ATTR_UNIQUE_ID] = request_message[ATTR_UNIQUE_ID]
+    client.send_result_success(request_message, result)
 
 
 def load_platform_entity_apis(server: ServerType):
