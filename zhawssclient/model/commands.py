@@ -46,6 +46,18 @@ class LightTurnOffCommand(PlatformEntityCommand):
     flash: Optional[Literal["long", "short"]]
 
 
+class SwitchTurnOnCommand(PlatformEntityCommand):
+    """Command to instruct a switch to turn on."""
+
+    command: Literal["switch_turn_on"] = "switch_turn_on"
+
+
+class SwitchTurnOffCommand(PlatformEntityCommand):
+    """Command to instruct a switch to turn off."""
+
+    command: Literal["switch_turn_off"] = "switch_turn_off"
+
+
 class CommandResponse(BaseModel):
     """Command response model."""
 
@@ -64,6 +76,8 @@ class DefaultResponse(CommandResponse):
         "stop_server",
         "light_turn_on",
         "light_turn_off",
+        "switch_turn_on",
+        "switch_turn_off",
     ]
 
 

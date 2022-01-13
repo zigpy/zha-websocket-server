@@ -28,6 +28,8 @@ async def main():
         )
     )
 
+    test_lights = False
+    test_switches = True
     waiter = asyncio.Future()
     controller = Controller("ws://localhost:8001/", aiohttp.ClientSession())
     await controller.connect()
@@ -40,35 +42,54 @@ async def main():
         for entity in device.device.entities.values():
             _LOGGER.info("Entity: %s", entity)
 
-    light_turn_on = LightTurnOnCommand.parse_obj(
-        {
-            "ieee": "b0:ce:18:14:03:09:c6:15",
-            "unique_id": "b0:ce:18:14:03:09:c6:15-1",
-        }
-    )
+    if test_lights:
+        light_turn_on = LightTurnOnCommand.parse_obj(
+            {
+                "ieee": "b0:ce:18:14:03:09:c6:15",
+                "unique_id": "b0:ce:18:14:03:09:c6:15-1",
+            }
+        )
 
-    light_turn_off = LightTurnOffCommand.parse_obj(
-        {
-            "ieee": "b0:ce:18:14:03:09:c6:15",
-            "unique_id": "b0:ce:18:14:03:09:c6:15-1",
-        }
-    )
+        light_turn_off = LightTurnOffCommand.parse_obj(
+            {
+                "ieee": "b0:ce:18:14:03:09:c6:15",
+                "unique_id": "b0:ce:18:14:03:09:c6:15-1",
+            }
+        )
 
-    await controller.send_command(light_turn_off)
+        await controller.send_command(light_turn_off)
 
-    await asyncio.sleep(10)
+        await asyncio.sleep(3)
 
-    await controller.send_command(light_turn_on)
+        await controller.send_command(light_turn_on)
 
-    light_platform_entity = devices["b0:ce:18:14:03:09:c6:15"].device.entities[
-        "b0:ce:18:14:03:09:c6:15-1"
-    ]
+        await asyncio.sleep(3)
 
-    await controller.lights.turn_off(light_platform_entity)
+        light_platform_entity = devices["b0:ce:18:14:03:09:c6:15"].device.entities[
+            "b0:ce:18:14:03:09:c6:15-1"
+        ]
 
-    await asyncio.sleep(10)
+        await controller.lights.turn_off(light_platform_entity)
 
-    await controller.lights.turn_on(light_platform_entity)
+        await asyncio.sleep(3)
+
+        await controller.lights.turn_on(light_platform_entity)
+
+        await asyncio.sleep(3)
+
+    if test_switches:
+
+        switch_platform_entity = devices["00:15:8d:00:02:82:d0:78"].device.entities[
+            "00:15:8d:00:02:82:d0:78-1"
+        ]
+
+        await controller.switches.turn_off(switch_platform_entity)
+
+        await asyncio.sleep(3)
+
+        await controller.switches.turn_on(switch_platform_entity)
+
+        await asyncio.sleep(3)
 
     await waiter
 
