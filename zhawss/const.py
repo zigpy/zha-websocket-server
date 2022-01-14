@@ -72,6 +72,7 @@ class APICommands(StrEnum):
 
     CLIENT_LISTEN = "client_listen"
     CLIENT_LISTEN_RAW_ZCL = "client_listen_raw_zcl"
+    CLIENT_DISCONNECT = "client_disconnect"
 
 
 class MessageTypes(StrEnum):

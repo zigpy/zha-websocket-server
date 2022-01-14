@@ -33,6 +33,7 @@ class ClientAPICommands(StrEnum):
 
     LISTEN_RAW_ZCL = "client_listen_raw_zcl"
     LISTEN = "client_listen"
+    DISCONNECT = "client_disconnect"
 
 
 class Client:
@@ -184,10 +185,25 @@ async def listen(
     client.send_result_success(message)
 
 
+@decorators.async_response
+@decorators.websocket_command(
+    {
+        COMMAND: str(ClientAPICommands.DISCONNECT),
+    }
+)
+async def disconnect(
+    server: ServerType, client: Client, message: dict[str, Any]
+) -> Awaitable[None]:
+    """Disconnect the client."""
+    client.disconnect()
+    server.client_manager.remove_client(client)
+
+
 def load_api(server: ServerType) -> None:
     """Load the api command handlers."""
     register_api_command(server, listen_raw_zcl)
     register_api_command(server, listen)
+    register_api_command(server, disconnect)
 
 
 class ClientManager:
@@ -208,6 +224,10 @@ class ClientManager:
         client: Client = Client(websocket, self)
         self._clients.append(client)
         await client.listen()
+
+    def remove_client(self, client: Client) -> Awaitable[None]:
+        """Adds a new client to the client manager."""
+        self._clients.remove(client)
 
     def broadcast(self, message: dict[str, Any]) -> None:
         """Broadcast a message to all connected clients."""
