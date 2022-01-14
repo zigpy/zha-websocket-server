@@ -37,7 +37,10 @@ async def execute_platform_entity_command(
 
     try:
         action = getattr(platform_entity, command)
-        await action(**request_message)
+        if action.__code__.co_argcount == 1:  # the only argument is self
+            await action()
+        else:
+            await action(**request_message)
     except Exception as err:
         client.send_error(request_message[MESSAGE_ID], str(err))
 
