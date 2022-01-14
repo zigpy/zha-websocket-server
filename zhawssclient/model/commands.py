@@ -96,7 +96,7 @@ class LockLockCommand(PlatformEntityCommand):
 class LockUnlockCommand(PlatformEntityCommand):
     """Command to unlock a lock platform entity."""
 
-    command: Literal["unlock_lock"] = "unlock_lock"
+    command: Literal["lock_unlock"] = "lock_unlock"
 
 
 class LockDisableUserLockCodeCommand(PlatformEntityCommand):

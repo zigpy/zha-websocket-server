@@ -31,6 +31,43 @@ class APICommands(StrEnum):
     SWITCH_TURN_ON = "switch_turn_on"
     SWITCH_TURN_OFF = "switch_turn_off"
 
+    SIREN_TURN_ON = "siren_turn_on"
+    SIREN_TURN_OFF = "siren_turn_off"
+
+    LOCK_UNLOCK = "lock_unlock"
+    LOCK_LOCK = "lock_lock"
+    LOCK_SET_USER_CODE = "lock_set_user_code"
+    LOCK_ENAABLE_USER_CODE = "lock_enable_user_code"
+    LOCK_DISABLE_USER_CODE = "lock_disable_user_code"
+    LOCK_CLEAR_USER_CODE = "lock_clear_user_code"
+
+    CLIMATE_SET_TEMPERATURE = "climate_set_temperature"
+    CLIMATE_SET_HVAC_MODE = "climate_set_hvac_mode"
+    CLIMATE_SET_FAN_MODE = "climate_set_fan_mode"
+    CLIMATE_SET_PRESET_MODE = "climate_set_preset_mode"
+
+    COVER_OPEN = "cover_open"
+    COVER_CLOSE = "cover_close"
+    COVER_STOP = "cover_stop"
+    COVER_SET_POSITION = "cover_set_position"
+
+    FAN_TURN_ON = "fan_turn_on"
+    FAN_TURN_OFF = "fan_turn_off"
+    FAN_SET_PERCENTAGE = "fan_set_percentage"
+    FAN_SET_PRESET_MODE = "fan_set_preset_mode"
+
+    BUTTON_PRESS = "button_press"
+
+    ALARM_CONTROL_PANEL_DISARM = "alarm_control_panel_disarm"
+    ALARM_CONTROL_PANEL_ARM_HOME = "alarm_control_panel_arm_home"
+    ALARM_CONTROL_PANEL_ARM_AWAY = "alarm_control_panel_arm_away"
+    ALARM_CONTROL_PANEL_ARM_NIGHT = "alarm_control_panel_arm_night"
+    ALARM_CONTROL_PANEL_TRIGGER = "alarm_control_panel_trigger"
+
+    SELECT_SELECT_OPTION = "select_select_option"
+
+    NUMBER_SET_VALUE = "number_set_value"
+
 
 class MessageTypes(StrEnum):
     """WS message types."""
