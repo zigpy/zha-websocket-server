@@ -28,8 +28,8 @@ async def _handle_async_response(
     try:
         await func(server, client, msg)
     except Exception as err:  # pylint: disable=broad-except
-        # TODO fix this
-        client.async_handle_exception(msg, err)
+        # TODO fix this to send a real error code and message
+        client.send_result_error(msg, "API_COMMAND_HANDLER_ERROR", str(err))
 
 
 def async_response(
