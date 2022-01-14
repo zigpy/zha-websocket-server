@@ -28,8 +28,9 @@ async def main():
         )
     )
 
-    test_lights = True
+    test_lights = False
     test_switches = False
+    test_alarm_control_panel = True
     waiter = asyncio.Future()
     controller = Controller("ws://localhost:8001/", aiohttp.ClientSession())
     await controller.connect()
@@ -88,6 +89,18 @@ async def main():
         await asyncio.sleep(3)
 
         await controller.switches.turn_on(switch_platform_entity)
+
+        await asyncio.sleep(3)
+
+    if test_alarm_control_panel:
+
+        alarm_control_panel_platform_entity = devices[
+            "00:0d:6f:00:05:65:83:f2"
+        ].device.entities["00:0d:6f:00:05:65:83:f2-1"]
+
+        await controller.alarm_control_panels.trigger(
+            alarm_control_panel_platform_entity
+        )
 
         await asyncio.sleep(3)
 
