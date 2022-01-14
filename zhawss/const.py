@@ -70,6 +70,9 @@ class APICommands(StrEnum):
 
     PLATFORM_ENTITY_REFRESH_STATE = "platform_entity_refresh_state"
 
+    CLIENT_LISTEN = "client_listen"
+    CLIENT_LISTEN_RAW_ZCL = "client_listen_raw_zcl"
+
 
 class MessageTypes(StrEnum):
     """WS message types."""

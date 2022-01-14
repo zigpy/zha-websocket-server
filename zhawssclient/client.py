@@ -90,6 +90,8 @@ class Client(EventBase):
 
         assert self._client
 
+        await self.async_send_command({"command": "client_listen"})
+
         try:
             while not self._client.closed:
                 data = await self._receive_json_or_raise()

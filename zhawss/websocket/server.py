@@ -60,9 +60,12 @@ class Server:
 
     def _register_api_commands(self) -> None:
         """Load server API commands."""
+        from zhawss.websocket.client import load_api as load_client_api
+
         register_api_command(self, stop_server)
         load_zigbee_controller_api(self)
         load_platform_entity_apis(self)
+        load_client_api(self)
 
 
 @decorators.async_response
