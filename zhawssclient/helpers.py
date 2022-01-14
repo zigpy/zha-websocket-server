@@ -10,6 +10,9 @@ from zhawssclient.model.commands import (
     AlarmControlPanelDisarmCommand,
     AlarmControlPanelTriggerCommand,
     ButtonPressCommand,
+    ClientDisconnectCommand,
+    ClientListenCommand,
+    ClientListenRawZCLCommand,
     ClimateSetFanModeCommand,
     ClimateSetHvacModeCommand,
     ClimateSetPresetModeCommand,
@@ -739,7 +742,7 @@ class AlarmControlPanelHelper:
 
 
 class PlatformEntityHelper:
-    """Helper to get platform entities."""
+    """Helper to send global platform entity commands."""
 
     CONTROLLER_ATTRIBUTE = "entities"
 
@@ -753,6 +756,31 @@ class PlatformEntityHelper:
             ieee=platform_entity.device_ieee,
             unique_id=platform_entity.unique_id,
         )
+        return await self._client.async_send_command(command.dict(exclude_none=True))
+
+
+class ClientHelper:
+    """Helper to send client specific commands."""
+
+    CONTROLLER_ATTRIBUTE = "clients"
+
+    def __init__(self, client: Client):
+        """Initialize the client helper."""
+        self._client: Client = client
+
+    async def listen(self) -> Awaitable[None]:
+        """Listen for incoming messages."""
+        command = ClientListenCommand()
+        return await self._client.async_send_command(command.dict(exclude_none=True))
+
+    async def listen_raw_zcl(self) -> Awaitable[None]:
+        """Listen for incoming raw ZCL messages."""
+        command = ClientListenRawZCLCommand()
+        return await self._client.async_send_command(command.dict(exclude_none=True))
+
+    async def disconnect(self) -> Awaitable[None]:
+        """Disconnect this client from the server."""
+        command = ClientDisconnectCommand()
         return await self._client.async_send_command(command.dict(exclude_none=True))
 
 
@@ -778,3 +806,4 @@ def attach_platform_entity_helpers(controller: ControllerType, client: Client) -
         PlatformEntityHelper.CONTROLLER_ATTRIBUTE,
         PlatformEntityHelper(client),
     )
+    setattr(controller, ClientHelper.CONTROLLER_ATTRIBUTE, ClientHelper(client))

@@ -262,6 +262,24 @@ class PlatformEntityRefreshStateCommand(PlatformEntityCommand):
     command: Literal["platform_entity_refresh_state"] = "platform_entity_refresh_state"
 
 
+class ClientListenCommand(PlatformEntityCommand):
+    """Command to listen to events for a client."""
+
+    command: Literal["client_listen"] = "client_listen"
+
+
+class ClientListenRawZCLCommand(PlatformEntityCommand):
+    """Command to listen to raw zcl events for a client."""
+
+    command: Literal["client_listen_raw_zcl"] = "client_listen_raw_zcl"
+
+
+class ClientDisconnectCommand(PlatformEntityCommand):
+    """Command to disconnect a client."""
+
+    command: Literal["client_disconnect"] = "client_disconnect"
+
+
 class CommandResponse(BaseModel):
     """Command response model."""
 
@@ -311,6 +329,9 @@ class DefaultResponse(CommandResponse):
         "siren_turn_off",
         "numbet_set_value",
         "platform_entity_refresh_state",
+        "client_listen",
+        "client_listen_raw_zcl",
+        "client_disconnect",
     ]
 
 
