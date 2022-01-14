@@ -256,6 +256,12 @@ class AlarmControlPanelTriggerCommand(PlatformEntityCommand):
     command: Literal["alarm_control_panel_trigger"] = "alarm_control_panel_trigger"
 
 
+class PlatformEntityRefreshStateCommand(PlatformEntityCommand):
+    """Command to refresh the state of a platform entity."""
+
+    command: Literal["platform_entity_refresh_state"] = "platform_entity_refresh_state"
+
+
 class CommandResponse(BaseModel):
     """Command response model."""
 
@@ -304,6 +310,7 @@ class DefaultResponse(CommandResponse):
         "siren_turn_on",
         "siren_turn_off",
         "numbet_set_value",
+        "platform_entity_refresh_state",
     ]
 
 

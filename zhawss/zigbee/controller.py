@@ -72,6 +72,11 @@ class Controller:
         """Return the Zigpy ControllerApplication"""
         return self._application_controller
 
+    @property
+    def coordinator_device(self) -> Device:
+        """Get the coordinator device."""
+        return self._devices[self._application_controller.ieee]
+
     async def start_network(self, configuration) -> Awaitable[None]:
         """Start the Zigbee network."""
         if configuration.get(CONF_ENABLE_QUIRKS):
@@ -117,7 +122,7 @@ class Controller:
 
     def get_devices(self) -> Dict[str, Any]:
         """Get Zigbee devices."""
-        # temporary to test response
+        # TODO temporary to test response
         return {
             str(ieee): device.zha_device_info for ieee, device in self._devices.items()
         }

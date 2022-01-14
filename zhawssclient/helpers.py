@@ -31,6 +31,7 @@ from zhawssclient.model.commands import (
     LockSetUserLockCodeCommand,
     LockUnlockCommand,
     NumberSetValueCommand,
+    PlatformEntityRefreshStateCommand,
     SelectSelectOptionCommand,
     SirenTurnOffCommand,
     SirenTurnOnCommand,
@@ -737,6 +738,24 @@ class AlarmControlPanelHelper:
         return await self._client.async_send_command(command.dict(exclude_none=True))
 
 
+class PlatformEntityHelper:
+    """Helper to get platform entities."""
+
+    CONTROLLER_ATTRIBUTE = "entities"
+
+    def __init__(self, client: Client):
+        """Initialize the platform entity helper."""
+        self._client: Client = client
+
+    async def refresh_state(self, platform_entity) -> Awaitable[None]:
+        """Refresh the state of a platform entity."""
+        command = PlatformEntityRefreshStateCommand(
+            ieee=platform_entity.device_ieee,
+            unique_id=platform_entity.unique_id,
+        )
+        return await self._client.async_send_command(command.dict(exclude_none=True))
+
+
 def attach_platform_entity_helpers(controller: ControllerType, client: Client) -> None:
     """Attach helper methods to the controller."""
     setattr(controller, LightHelper.CONTROLLER_ATTRIBUTE, LightHelper(client))
@@ -753,4 +772,9 @@ def attach_platform_entity_helpers(controller: ControllerType, client: Client) -
         controller,
         AlarmControlPanelHelper.CONTROLLER_ATTRIBUTE,
         AlarmControlPanelHelper(client),
+    )
+    setattr(
+        controller,
+        PlatformEntityHelper.CONTROLLER_ATTRIBUTE,
+        PlatformEntityHelper(client),
     )

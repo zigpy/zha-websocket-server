@@ -29,10 +29,10 @@ async def main():
     )
 
     test_lights = False
-    test_switches = False
+    test_switches = True
     test_alarm_control_panel = False
     test_locks = False
-    test_buttons = True
+    test_buttons = False
     waiter = asyncio.Future()
     controller = Controller("ws://localhost:8001/", aiohttp.ClientSession())
     await controller.connect()
@@ -91,6 +91,10 @@ async def main():
         await asyncio.sleep(3)
 
         await controller.switches.turn_on(switch_platform_entity)
+
+        await asyncio.sleep(3)
+
+        await controller.entities.refresh_state(switch_platform_entity)
 
         await asyncio.sleep(3)
 

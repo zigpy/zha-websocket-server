@@ -68,6 +68,8 @@ class APICommands(StrEnum):
 
     NUMBER_SET_VALUE = "number_set_value"
 
+    PLATFORM_ENTITY_REFRESH_STATE = "platform_entity_refresh_state"
+
 
 class MessageTypes(StrEnum):
     """WS message types."""

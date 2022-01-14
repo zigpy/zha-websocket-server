@@ -1,10 +1,18 @@
 """WS API for common platform entity functionality."""
 from typing import Any, Awaitable, Dict
 
+from backports.strenum.strenum import StrEnum
 import voluptuous as vol
 
 from zhawss.const import ATTR_UNIQUE_ID, COMMAND, IEEE, MESSAGE_ID
+from zhawss.websocket.api import decorators, register_api_command
 from zhawss.websocket.types import ClientType, ServerType
+
+
+class PlatformEntityCommands(StrEnum):
+    """Enumeration of platform entity commands."""
+
+    REFRESH_STATE = "platform_entity_refresh_state"
 
 
 def platform_entity_command_schema(
@@ -50,6 +58,17 @@ async def execute_platform_entity_command(
     client.send_result_success(request_message, result)
 
 
+@decorators.async_response
+@decorators.websocket_command(
+    platform_entity_command_schema(PlatformEntityCommands.REFRESH_STATE)
+)
+async def refresh_state(
+    server: ServerType, client: ClientType, message: dict[str, Any]
+) -> Awaitable[None]:
+    """Refresh the state of the platform entity."""
+    await execute_platform_entity_command(server, client, message, "async_update")
+
+
 def load_platform_entity_apis(server: ServerType):
     """Load the ws apis for all platform entities types."""
     from zhawss.platforms.alarm_control_panel.api import (
@@ -66,6 +85,7 @@ def load_platform_entity_apis(server: ServerType):
     from zhawss.platforms.siren.api import load_api as load_siren_api
     from zhawss.platforms.switch.api import load_api as load_switch_api
 
+    register_api_command(server, refresh_state)
     load_alarm_control_panel_api(server)
     load_button_api(server)
     load_climate_api(server)
