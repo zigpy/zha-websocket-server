@@ -2,6 +2,7 @@
 
 from typing import Annotated, Dict, Literal, Optional, Tuple, Union
 
+from pydantic import conint
 from pydantic.fields import Field
 
 from zhawssclient.model import BaseModel
@@ -133,7 +134,7 @@ class FanTurnOnCommand(PlatformEntityCommand):
 
     command: Literal["fan_turn_on"] = "fan_turn_on"
     speed: Optional[str]
-    percentage: Optional[int]  # TODO range 0-100
+    percentage: Optional[conint(ge=0, le=100)]
     preset_mode: Optional[str]
 
 
@@ -147,7 +148,7 @@ class FanSetPercentageCommand(PlatformEntityCommand):
     """Command to set the speed percentage for a fan platform entity."""
 
     command: Literal["fan_set_percentage"] = "fan_set_percentage"
-    percentage: Optional[int]  # TODO range 0-100
+    percentage: Optional[conint(ge=0, le=100)]
 
 
 class FanSetPresetModeCommand(PlatformEntityCommand):
