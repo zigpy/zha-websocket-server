@@ -1,0 +1,99 @@
+"""WS API for common platform entity functionality."""
+from typing import Any, Awaitable, Dict
+
+from backports.strenum.strenum import StrEnum
+import voluptuous as vol
+
+from zhaws.server.const import ATTR_UNIQUE_ID, COMMAND, IEEE, MESSAGE_ID
+from zhaws.server.websocket.api import decorators, register_api_command
+from zhaws.server.websocket.types import ClientType, ServerType
+
+
+class PlatformEntityCommands(StrEnum):
+    """Enumeration of platform entity commands."""
+
+    REFRESH_STATE = "platform_entity_refresh_state"
+
+
+def platform_entity_command_schema(
+    command: str, schema: Dict[str, Any] = None
+) -> Dict[str, Any]:
+    """Return the schema for a platform entity command."""
+    full_schema = {
+        vol.Required(COMMAND): str(command),
+        vol.Required(IEEE): str,
+        vol.Required(ATTR_UNIQUE_ID): str,
+    }
+    if schema:
+        full_schema.update(schema)
+    return full_schema
+
+
+async def execute_platform_entity_command(
+    server: ServerType,
+    client: ClientType,
+    request_message: dict[str, Any],
+    command: str,
+) -> Awaitable[None]:
+    """Get the platform entity and execute a command."""
+    try:
+        device = server.controller.get_device(request_message[IEEE])
+        platform_entity = device.get_platform_entity(request_message[ATTR_UNIQUE_ID])
+    except ValueError as err:
+        client.send_error(request_message[MESSAGE_ID], str(err))
+        return None
+
+    try:
+        action = getattr(platform_entity, command)
+        if action.__code__.co_argcount == 1:  # the only argument is self
+            await action()
+        else:
+            await action(**request_message)
+    except Exception as err:
+        client.send_error(request_message[MESSAGE_ID], str(err))
+
+    result = {}
+    result[IEEE] = request_message[IEEE]
+    result[ATTR_UNIQUE_ID] = request_message[ATTR_UNIQUE_ID]
+    client.send_result_success(request_message, result)
+
+
+@decorators.async_response
+@decorators.websocket_command(
+    platform_entity_command_schema(PlatformEntityCommands.REFRESH_STATE)
+)
+async def refresh_state(
+    server: ServerType, client: ClientType, message: dict[str, Any]
+) -> Awaitable[None]:
+    """Refresh the state of the platform entity."""
+    await execute_platform_entity_command(server, client, message, "async_update")
+
+
+def load_platform_entity_apis(server: ServerType):
+    """Load the ws apis for all platform entities types."""
+    from zhaws.server.platforms.alarm_control_panel.api import (
+        load_api as load_alarm_control_panel_api,
+    )
+    from zhaws.server.platforms.button.api import load_api as load_button_api
+    from zhaws.server.platforms.climate.api import load_api as load_climate_api
+    from zhaws.server.platforms.cover.api import load_api as load_cover_api
+    from zhaws.server.platforms.fan.api import load_api as load_fan_api
+    from zhaws.server.platforms.light.api import load_api as load_light_api
+    from zhaws.server.platforms.lock.api import load_api as load_lock_api
+    from zhaws.server.platforms.number.api import load_api as load_number_api
+    from zhaws.server.platforms.select.api import load_api as load_select_api
+    from zhaws.server.platforms.siren.api import load_api as load_siren_api
+    from zhaws.server.platforms.switch.api import load_api as load_switch_api
+
+    register_api_command(server, refresh_state)
+    load_alarm_control_panel_api(server)
+    load_button_api(server)
+    load_climate_api(server)
+    load_cover_api(server)
+    load_fan_api(server)
+    load_light_api(server)
+    load_lock_api(server)
+    load_number_api(server)
+    load_select_api(server)
+    load_siren_api(server)
+    load_switch_api(server)
