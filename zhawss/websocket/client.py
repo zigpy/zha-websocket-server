@@ -10,6 +10,7 @@ from websockets.server import WebSocketServerProtocol
 from zhawss.const import (
     COMMAND,
     ERROR_CODE,
+    ERROR_MESSAGE,
     MESSAGE_ID,
     MESSAGE_TYPE,
     MINIMAL_MESSAGE_SCHEMA,
@@ -66,28 +67,36 @@ class Client:
         self._send_data(message)
 
     def send_result_error(
-        self, message_id: str, error_code: str, message: dict[str, Any]
+        self, request_message: dict[str, Any], error_code: str, error_message: str
     ) -> None:
         """Send error result prompted by a client request."""
-        message[SUCCESS] = False
-        message[MESSAGE_ID] = message_id
-        message[ERROR_CODE] = error_code
-        message[MESSAGE_TYPE] = MessageTypes.RESULT
+        message = {
+            SUCCESS: False,
+            MESSAGE_ID: request_message[MESSAGE_ID],
+            MESSAGE_TYPE: MessageTypes.RESULT,
+            COMMAND: request_message[COMMAND],
+            ERROR_CODE: error_code,
+            ERROR_MESSAGE: error_message,
+        }
         self._send_data(message)
 
     def send_result_zigbee_error(
         self,
-        message_id: str,
+        request_message: dict[str, Any],
         error_code: str,
+        error_message: str,
         zigbee_error_code: str,
-        message: dict[str, Any],
     ) -> None:
         """Send zigbee error result prompted by a client zigbee request."""
-        message[SUCCESS] = False
-        message[MESSAGE_ID] = message_id
-        message[ERROR_CODE] = error_code
-        message[ZIGBEE_ERROR_CODE] = zigbee_error_code
-        message[MESSAGE_TYPE] = MessageTypes.RESULT
+        message = {
+            SUCCESS: False,
+            MESSAGE_ID: request_message[MESSAGE_ID],
+            MESSAGE_TYPE: MessageTypes.RESULT,
+            COMMAND: request_message[COMMAND],
+            ERROR_CODE: error_code,
+            ERROR_MESSAGE: error_message,
+            ZIGBEE_ERROR_CODE: zigbee_error_code,
+        }
         self._send_data(message)
 
     def _send_data(self, data: dict[str, Any]) -> None:
@@ -104,7 +113,7 @@ class Client:
         handlers: dict[str, Awaitable] = self._client_manager.server.data[WEBSOCKET_API]
 
         message = json.loads(message)
-        _LOGGER.info(
+        _LOGGER.debug(
             "Received message: %s on websocket: %s", message, self._websocket.id
         )
 
@@ -128,10 +137,8 @@ class Client:
         try:
             handler(self._client_manager.server, self, schema(msg))
         except Exception as err:  # pylint: disable=broad-except
-            # TODO Fix this
-            _LOGGER.error(
-                "Error invoking handler: {}".format(msg[COMMAND]), exc_info=err
-            )
+            # TODO Fix this - make real error codes with error messages
+            self.send_result_error(message, "INTERNAL_ERROR", f"Internal error: {err}")
 
     async def listen(self) -> Awaitable[None]:
         async for message in self._websocket:
