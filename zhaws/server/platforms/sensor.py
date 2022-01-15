@@ -172,7 +172,8 @@ class Battery(Sensor):
         battery_percent_remaining attribute, but zha-device-handlers takes care of it
         so create the entity regardless
         """
-
+        if device.is_mains_powered:
+            return None
         return cls(unique_id, cluster_handlers, endpoint, device, **kwargs)
 
     @staticmethod
