@@ -62,7 +62,7 @@ class Client(EventBase):
 
     async def async_send_command_no_wait(self, message: Dict[str, Any]) -> None:
         """Send a command without waiting for the response."""
-        message["messageId"] = uuid.uuid4().int
+        message["message_id"] = uuid.uuid4().int
         await self._send_json_message(message)
 
     async def connect(self) -> None:
@@ -175,11 +175,13 @@ class Client(EventBase):
                 future.set_result(message)
                 return
 
-            if msg["errorCode"] != "zwave_error":
-                err = Exception(msg["messageId"], msg["errorCode"])
+            if msg["error_code"] != "zigbee_error":
+                err = Exception(msg["message_id"], msg["error_code"])
             else:
                 err = Exception(
-                    msg["messageId"], msg["zwaveErrorCode"], msg["zwaveErrorMessage"]
+                    msg["message_id"],
+                    msg["zigbee_error_code"],
+                    msg["zigbee_error_message"],
                 )
 
             future.set_exception(err)

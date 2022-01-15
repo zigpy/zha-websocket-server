@@ -4,7 +4,7 @@ from typing import Any, Awaitable, Dict
 from backports.strenum.strenum import StrEnum
 import voluptuous as vol
 
-from zhaws.server.const import ATTR_UNIQUE_ID, COMMAND, IEEE, MESSAGE_ID
+from zhaws.server.const import ATTR_UNIQUE_ID, COMMAND, IEEE
 from zhaws.server.websocket.api import decorators, register_api_command
 from zhaws.server.websocket.types import ClientType, ServerType
 
@@ -40,7 +40,9 @@ async def execute_platform_entity_command(
         device = server.controller.get_device(request_message[IEEE])
         platform_entity = device.get_platform_entity(request_message[ATTR_UNIQUE_ID])
     except ValueError as err:
-        client.send_error(request_message[MESSAGE_ID], str(err))
+        client.send_result_error(
+            request_message, "PLATFORM_ENTITY_COMMAND_ERROR", str(err)
+        )
         return None
 
     try:
@@ -50,7 +52,9 @@ async def execute_platform_entity_command(
         else:
             await action(**request_message)
     except Exception as err:
-        client.send_error(request_message[MESSAGE_ID], str(err))
+        client.send_result_error(
+            request_message, "PLATFORM_ENTITY_ACTION_ERROR", str(err)
+        )
 
     result = {}
     result[IEEE] = request_message[IEEE]

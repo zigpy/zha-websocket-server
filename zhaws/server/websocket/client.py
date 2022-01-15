@@ -95,7 +95,6 @@ class Client:
     def send_result_zigbee_error(
         self,
         request_message: dict[str, Any],
-        error_code: str,
         error_message: str,
         zigbee_error_code: str,
     ) -> None:
@@ -105,7 +104,7 @@ class Client:
             MESSAGE_ID: request_message[MESSAGE_ID],
             MESSAGE_TYPE: MessageTypes.RESULT,
             COMMAND: request_message[COMMAND],
-            ERROR_CODE: error_code,
+            ERROR_CODE: "zigbee_error",
             ERROR_MESSAGE: error_message,
             ZIGBEE_ERROR_CODE: zigbee_error_code,
         }

@@ -47,93 +47,107 @@ async def main():
             _LOGGER.info("Entity: %s", entity)
 
     if test_lights:
-        light_turn_on = LightTurnOnCommand.parse_obj(
-            {
-                "ieee": "b0:ce:18:14:03:09:c6:15",
-                "unique_id": "b0:ce:18:14:03:09:c6:15-1",
-            }
-        )
+        try:
+            light_turn_on = LightTurnOnCommand.parse_obj(
+                {
+                    "ieee": "b0:ce:18:14:03:09:c6:15",
+                    "unique_id": "b0:ce:18:14:03:09:c6:15-1",
+                }
+            )
 
-        light_turn_off = LightTurnOffCommand.parse_obj(
-            {
-                "ieee": "b0:ce:18:14:03:09:c6:15",
-                "unique_id": "b0:ce:18:14:03:09:c6:15-1",
-            }
-        )
+            light_turn_off = LightTurnOffCommand.parse_obj(
+                {
+                    "ieee": "b0:ce:18:14:03:09:c6:15",
+                    "unique_id": "b0:ce:18:14:03:09:c6:15-1",
+                }
+            )
 
-        await controller.send_command(light_turn_off)
+            await controller.send_command(light_turn_off)
 
-        await asyncio.sleep(3)
+            await asyncio.sleep(3)
 
-        await controller.send_command(light_turn_on)
+            await controller.send_command(light_turn_on)
 
-        await asyncio.sleep(3)
+            await asyncio.sleep(3)
 
-        light_platform_entity = devices["b0:ce:18:14:03:09:c6:15"].device.entities[
-            "b0:ce:18:14:03:09:c6:15-1"
-        ]
+            light_platform_entity = devices["b0:ce:18:14:03:09:c6:15"].device.entities[
+                "b0:ce:18:14:03:09:c6:15-1"
+            ]
 
-        await controller.lights.turn_off(light_platform_entity)
+            await controller.lights.turn_off(light_platform_entity)
 
-        await asyncio.sleep(3)
+            await asyncio.sleep(3)
 
-        await controller.lights.turn_on(light_platform_entity)
+            await controller.lights.turn_on(light_platform_entity)
 
-        await asyncio.sleep(3)
+            await asyncio.sleep(3)
+        except Exception as err:
+            _LOGGER.error(err)
 
     if test_switches:
+        try:
+            switch_platform_entity = devices["00:15:8d:00:02:82:d0:78"].device.entities[
+                "00:15:8d:00:02:82:d0:78-1"
+            ]
 
-        switch_platform_entity = devices["00:15:8d:00:02:82:d0:78"].device.entities[
-            "00:15:8d:00:02:82:d0:78-1"
-        ]
+            await controller.switches.turn_off(switch_platform_entity)
 
-        await controller.switches.turn_off(switch_platform_entity)
+            await asyncio.sleep(3)
 
-        await asyncio.sleep(3)
+            await controller.switches.turn_on(switch_platform_entity)
 
-        await controller.switches.turn_on(switch_platform_entity)
+            await asyncio.sleep(3)
 
-        await asyncio.sleep(3)
+            await controller.entities.refresh_state(switch_platform_entity)
 
-        await controller.entities.refresh_state(switch_platform_entity)
-
-        await asyncio.sleep(3)
+            await asyncio.sleep(3)
+        except Exception as err:
+            _LOGGER.error(err)
 
     if test_alarm_control_panel:
 
-        alarm_control_panel_platform_entity = devices[
-            "00:0d:6f:00:05:65:83:f2"
-        ].device.entities["00:0d:6f:00:05:65:83:f2-1"]
+        try:
+            alarm_control_panel_platform_entity = devices[
+                "00:0d:6f:00:05:65:83:f2"
+            ].device.entities["00:0d:6f:00:05:65:83:f2-1"]
 
-        await controller.alarm_control_panels.trigger(
-            alarm_control_panel_platform_entity
-        )
+            await controller.alarm_control_panels.trigger(
+                alarm_control_panel_platform_entity
+            )
 
-        await asyncio.sleep(3)
+            await asyncio.sleep(3)
+        except Exception as err:
+            _LOGGER.error(err)
 
     if test_locks:
 
-        lock_platform_entity = devices["68:0a:e2:ff:fe:6a:22:af"].device.entities[
-            "68:0a:e2:ff:fe:6a:22:af-1-257"
-        ]
+        try:
+            lock_platform_entity = devices["68:0a:e2:ff:fe:6a:22:af"].device.entities[
+                "68:0a:e2:ff:fe:6a:22:af-1-257"
+            ]
 
-        await controller.locks.lock(lock_platform_entity)
+            await controller.locks.lock(lock_platform_entity)
 
-        await asyncio.sleep(3)
+            await asyncio.sleep(3)
 
-        await controller.locks.unlock(lock_platform_entity)
+            await controller.locks.unlock(lock_platform_entity)
 
-        await asyncio.sleep(3)
+            await asyncio.sleep(3)
+        except Exception as err:
+            _LOGGER.error(err)
 
     if test_buttons:
 
-        button_platform_entity = devices["04:cf:8c:df:3c:7f:c5:a7"].device.entities[
-            "04:cf:8c:df:3c:7f:c5:a7-1-3"
-        ]
+        try:
+            button_platform_entity = devices["04:cf:8c:df:3c:7f:c5:a7"].device.entities[
+                "04:cf:8c:df:3c:7f:c5:a7-1-3"
+            ]
 
-        await controller.buttons.press(button_platform_entity)
+            await controller.buttons.press(button_platform_entity)
 
-        await asyncio.sleep(3)
+            await asyncio.sleep(3)
+        except Exception as err:
+            _LOGGER.error(err)
 
     await waiter
 
