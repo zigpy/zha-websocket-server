@@ -45,6 +45,7 @@ class PlatformEntity(LogMixin):
         self._name: str = f"{device.name} {ieeetail} {ch_names}"
         if self.unique_id_suffix:
             self._name += f" {self.unique_id_suffix}"
+            self._unique_id += f"-{self.unique_id_suffix}"
         self._cluster_handlers: List[ClusterHandlerType] = cluster_handlers
         self.cluster_handlers: dict[str, ClusterHandlerType] = {}
         for cluster_handler in cluster_handlers:
