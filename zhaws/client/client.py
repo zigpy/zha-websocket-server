@@ -10,6 +10,7 @@ from aiohttp import ClientSession, ClientWebSocketResponse, client_exceptions
 from aiohttp.http_websocket import WSMsgType
 
 from zhaws.client.event import EventBase
+from zhaws.client.model.commands import CommandResponse
 from zhaws.client.model.messages import Message
 
 SIZE_PARSE_JSON_EXECUTOR = 8192
@@ -49,9 +50,9 @@ class Client(EventBase):
     async def async_send_command(
         self,
         message: Dict[str, Any],
-    ) -> dict:
+    ) -> CommandResponse:
         """Send a command and get a response."""
-        future: "asyncio.Future[dict]" = self._loop.create_future()
+        future: "asyncio.Future[CommandResponse]" = self._loop.create_future()
         message_id = message["message_id"] = uuid.uuid4().int
         self._result_futures[message_id] = future
         await self._send_json_message(message)
