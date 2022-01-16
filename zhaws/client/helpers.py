@@ -44,6 +44,7 @@ from zhaws.client.model.commands import (
     SwitchTurnOnCommand,
 )
 from zhaws.client.model.types import BasePlatformEntity
+from zhaws.server.platforms.registries import Platform
 
 if TYPE_CHECKING:
     from zhaws.client.controller import Controller
@@ -69,7 +70,10 @@ class LightHelper:
         color_temp: int | None = None,
     ) -> CommandResponse:
         """Turn on a light."""
-        if light_platform_entity is None or light_platform_entity.platform != "LIGHT":
+        if (
+            light_platform_entity is None
+            or light_platform_entity.platform != Platform.LIGHT
+        ):
             raise ValueError(
                 "light_platform_entity must be provided and it must be a light platform entity"
             )
@@ -93,7 +97,10 @@ class LightHelper:
         flash: bool | None = None,
     ) -> CommandResponse:
         """Turn off a light."""
-        if light_platform_entity is None or light_platform_entity.platform != "LIGHT":
+        if (
+            light_platform_entity is None
+            or light_platform_entity.platform != Platform.LIGHT
+        ):
             raise ValueError(
                 "light_platform_entity must be provided and it must be a light platform entity"
             )
@@ -122,7 +129,7 @@ class SwitchHelper:
         """Turn on a switch."""
         if (
             switch_platform_entity is None
-            or switch_platform_entity.platform != "SWITCH"
+            or switch_platform_entity.platform != Platform.SWITCH
         ):
             raise ValueError(
                 "switch_platform_entity must be provided and it must be a switch platform entity"
@@ -140,7 +147,7 @@ class SwitchHelper:
         """Turn off a switch."""
         if (
             switch_platform_entity is None
-            or switch_platform_entity.platform != "SWITCH"
+            or switch_platform_entity.platform != Platform.SWITCH
         ):
             raise ValueError(
                 "switch_platform_entity must be provided and it must be a switch platform entity"
@@ -170,7 +177,10 @@ class SirenHelper:
         tone: Optional[str] = None,
     ) -> CommandResponse:
         """Turn on a siren."""
-        if siren_platform_entity is None or siren_platform_entity.platform != "SIREN":
+        if (
+            siren_platform_entity is None
+            or siren_platform_entity.platform != Platform.SIREN
+        ):
             raise ValueError(
                 "siren_platform_entity must be provided and it must be a siren platform entity"
             )
@@ -188,7 +198,10 @@ class SirenHelper:
         self, siren_platform_entity: BasePlatformEntity
     ) -> CommandResponse:
         """Turn off a siren."""
-        if siren_platform_entity is None or siren_platform_entity.platform != "SIREN":
+        if (
+            siren_platform_entity is None
+            or siren_platform_entity.platform != Platform.SIREN
+        ):
             raise ValueError(
                 "siren_platform_entity must be provided and it must be a siren platform entity"
             )
@@ -215,7 +228,7 @@ class ButtonHelper:
         """Press a button."""
         if (
             button_platform_entity is None
-            or button_platform_entity.platform != "BUTTON"
+            or button_platform_entity.platform != Platform.BUTTON
         ):
             raise ValueError(
                 "button_platform_entity must be provided and it must be a button platform entity"
@@ -241,7 +254,10 @@ class CoverHelper:
         self, cover_platform_entity: BasePlatformEntity
     ) -> CommandResponse:
         """Open a cover."""
-        if cover_platform_entity is None or cover_platform_entity.platform != "COVER":
+        if (
+            cover_platform_entity is None
+            or cover_platform_entity.platform != Platform.COVER
+        ):
             raise ValueError(
                 "cover_platform_entity must be provided and it must be a cover platform entity"
             )
@@ -256,7 +272,10 @@ class CoverHelper:
         self, cover_platform_entity: BasePlatformEntity
     ) -> CommandResponse:
         """Close a cover."""
-        if cover_platform_entity is None or cover_platform_entity.platform != "COVER":
+        if (
+            cover_platform_entity is None
+            or cover_platform_entity.platform != Platform.COVER
+        ):
             raise ValueError(
                 "cover_platform_entity must be provided and it must be a cover platform entity"
             )
@@ -271,7 +290,10 @@ class CoverHelper:
         self, cover_platform_entity: BasePlatformEntity
     ) -> CommandResponse:
         """Stop a cover."""
-        if cover_platform_entity is None or cover_platform_entity.platform != "COVER":
+        if (
+            cover_platform_entity is None
+            or cover_platform_entity.platform != Platform.COVER
+        ):
             raise ValueError(
                 "cover_platform_entity must be provided and it must be a cover platform entity"
             )
@@ -288,7 +310,10 @@ class CoverHelper:
         position: int,
     ) -> CommandResponse:
         """Set a cover position."""
-        if cover_platform_entity is None or cover_platform_entity.platform != "COVER":
+        if (
+            cover_platform_entity is None
+            or cover_platform_entity.platform != Platform.COVER
+        ):
             raise ValueError(
                 "cover_platform_entity must be provided and it must be a cover platform entity"
             )
@@ -318,7 +343,7 @@ class FanHelper:
         preset_mode: Optional[str] = None,
     ) -> CommandResponse:
         """Turn on a fan."""
-        if fan_platform_entity is None or fan_platform_entity.platform != "FAN":
+        if fan_platform_entity is None or fan_platform_entity.platform != Platform.FAN:
             raise ValueError(
                 "fan_platform_entity must be provided and it must be a fan platform entity"
             )
@@ -336,7 +361,7 @@ class FanHelper:
         self, fan_platform_entity: BasePlatformEntity
     ) -> CommandResponse:
         """Turn off a fan."""
-        if fan_platform_entity is None or fan_platform_entity.platform != "FAN":
+        if fan_platform_entity is None or fan_platform_entity.platform != Platform.FAN:
             raise ValueError(
                 "fan_platform_entity must be provided and it must be a fan platform entity"
             )
@@ -353,7 +378,7 @@ class FanHelper:
         percentage: int,
     ) -> CommandResponse:
         """Set a fan percentage."""
-        if fan_platform_entity is None or fan_platform_entity.platform != "FAN":
+        if fan_platform_entity is None or fan_platform_entity.platform != Platform.FAN:
             raise ValueError(
                 "fan_platform_entity must be provided and it must be a fan platform entity"
             )
@@ -371,7 +396,7 @@ class FanHelper:
         preset_mode: str,
     ) -> CommandResponse:
         """Set a fan preset mode."""
-        if fan_platform_entity is None or fan_platform_entity.platform != "FAN":
+        if fan_platform_entity is None or fan_platform_entity.platform != Platform.FAN:
             raise ValueError(
                 "fan_platform_entity must be provided and it must be a fan platform entity"
             )
@@ -395,7 +420,10 @@ class LockHelper:
 
     async def lock(self, lock_platform_entity: BasePlatformEntity) -> CommandResponse:
         """Lock a lock."""
-        if lock_platform_entity is None or lock_platform_entity.platform != "LOCK":
+        if (
+            lock_platform_entity is None
+            or lock_platform_entity.platform != Platform.LOCK
+        ):
             raise ValueError(
                 "lock_platform_entity must be provided and it must be a lock platform entity"
             )
@@ -408,7 +436,10 @@ class LockHelper:
 
     async def unlock(self, lock_platform_entity: BasePlatformEntity) -> CommandResponse:
         """Unlock a lock."""
-        if lock_platform_entity is None or lock_platform_entity.platform != "LOCK":
+        if (
+            lock_platform_entity is None
+            or lock_platform_entity.platform != Platform.LOCK
+        ):
             raise ValueError(
                 "lock_platform_entity must be provided and it must be a lock platform entity"
             )
@@ -426,7 +457,10 @@ class LockHelper:
         user_code: str,
     ) -> CommandResponse:
         """Set a user lock code."""
-        if lock_platform_entity is None or lock_platform_entity.platform != "LOCK":
+        if (
+            lock_platform_entity is None
+            or lock_platform_entity.platform != Platform.LOCK
+        ):
             raise ValueError(
                 "lock_platform_entity must be provided and it must be a lock platform entity"
             )
@@ -445,7 +479,10 @@ class LockHelper:
         code_slot: int,
     ) -> CommandResponse:
         """Clear a user lock code."""
-        if lock_platform_entity is None or lock_platform_entity.platform != "LOCK":
+        if (
+            lock_platform_entity is None
+            or lock_platform_entity.platform != Platform.LOCK
+        ):
             raise ValueError(
                 "lock_platform_entity must be provided and it must be a lock platform entity"
             )
@@ -463,7 +500,10 @@ class LockHelper:
         code_slot: int,
     ) -> CommandResponse:
         """Enable a user lock code."""
-        if lock_platform_entity is None or lock_platform_entity.platform != "LOCK":
+        if (
+            lock_platform_entity is None
+            or lock_platform_entity.platform != Platform.LOCK
+        ):
             raise ValueError(
                 "lock_platform_entity must be provided and it must be a lock platform entity"
             )
@@ -481,7 +521,10 @@ class LockHelper:
         code_slot: int,
     ) -> CommandResponse:
         """Disable a user lock code."""
-        if lock_platform_entity is None or lock_platform_entity.platform != "LOCK":
+        if (
+            lock_platform_entity is None
+            or lock_platform_entity.platform != Platform.LOCK
+        ):
             raise ValueError(
                 "lock_platform_entity must be provided and it must be a lock platform entity"
             )
@@ -511,7 +554,7 @@ class NumberHelper:
         """Set a number."""
         if (
             number_platform_entity is None
-            or number_platform_entity.platform != "NUMBER"
+            or number_platform_entity.platform != Platform.NUMBER
         ):
             raise ValueError(
                 "number_platform_entity must be provided and it must be a number platform entity"
@@ -542,7 +585,7 @@ class SelectHelper:
         """Set a select."""
         if (
             select_platform_entity is None
-            or select_platform_entity.platform != "SELECT"
+            or select_platform_entity.platform != Platform.SELECT
         ):
             raise ValueError(
                 "select_platform_entity must be provided and it must be a select platform entity"
@@ -575,7 +618,7 @@ class ClimateHelper:
         """Set a climate."""
         if (
             climate_platform_entity is None
-            or climate_platform_entity.platform != "CLIMATE"
+            or climate_platform_entity.platform != Platform.CLIMATE
         ):
             raise ValueError(
                 "climate_platform_entity must be provided and it must be a climate platform entity"
@@ -601,7 +644,7 @@ class ClimateHelper:
         """Set a climate."""
         if (
             climate_platform_entity is None
-            or climate_platform_entity.platform != "CLIMATE"
+            or climate_platform_entity.platform != Platform.CLIMATE
         ):
             raise ValueError(
                 "climate_platform_entity must be provided and it must be a climate platform entity"
@@ -625,7 +668,7 @@ class ClimateHelper:
         """Set a climate."""
         if (
             climate_platform_entity is None
-            or climate_platform_entity.platform != "CLIMATE"
+            or climate_platform_entity.platform != Platform.CLIMATE
         ):
             raise ValueError(
                 "climate_platform_entity must be provided and it must be a climate platform entity"
@@ -646,7 +689,7 @@ class ClimateHelper:
         """Set a climate."""
         if (
             climate_platform_entity is None
-            or climate_platform_entity.platform != "CLIMATE"
+            or climate_platform_entity.platform != Platform.CLIMATE
         ):
             raise ValueError(
                 "climate_platform_entity must be provided and it must be a climate platform entity"
@@ -675,7 +718,8 @@ class AlarmControlPanelHelper:
         """Disarm an alarm control panel."""
         if (
             alarm_control_panel_platform_entity is None
-            or alarm_control_panel_platform_entity.platform != "ALARM_CONTROL_PANEL"
+            or alarm_control_panel_platform_entity.platform
+            != Platform.ALARM_CONTROL_PANEL
         ):
             raise ValueError(
                 "alarm_control_panel_platform_entity must be provided and it must be an alarm control panel platform entity"
@@ -694,7 +738,8 @@ class AlarmControlPanelHelper:
         """Arm an alarm control panel in home mode."""
         if (
             alarm_control_panel_platform_entity is None
-            or alarm_control_panel_platform_entity.platform != "ALARM_CONTROL_PANEL"
+            or alarm_control_panel_platform_entity.platform
+            != Platform.ALARM_CONTROL_PANEL
         ):
             raise ValueError(
                 "alarm_control_panel_platform_entity must be provided and it must be an alarm control panel platform entity"
@@ -713,7 +758,8 @@ class AlarmControlPanelHelper:
         """Arm an alarm control panel in away mode."""
         if (
             alarm_control_panel_platform_entity is None
-            or alarm_control_panel_platform_entity.platform != "ALARM_CONTROL_PANEL"
+            or alarm_control_panel_platform_entity.platform
+            != Platform.ALARM_CONTROL_PANEL
         ):
             raise ValueError(
                 "alarm_control_panel_platform_entity must be provided and it must be an alarm control panel platform entity"
@@ -732,7 +778,8 @@ class AlarmControlPanelHelper:
         """Arm an alarm control panel in night mode."""
         if (
             alarm_control_panel_platform_entity is None
-            or alarm_control_panel_platform_entity.platform != "ALARM_CONTROL_PANEL"
+            or alarm_control_panel_platform_entity.platform
+            != Platform.ALARM_CONTROL_PANEL
         ):
             raise ValueError(
                 "alarm_control_panel_platform_entity must be provided and it must be an alarm control panel platform entity"
@@ -752,7 +799,8 @@ class AlarmControlPanelHelper:
         """Trigger an alarm control panel alarm."""
         if (
             alarm_control_panel_platform_entity is None
-            or alarm_control_panel_platform_entity.platform != "ALARM_CONTROL_PANEL"
+            or alarm_control_panel_platform_entity.platform
+            != Platform.ALARM_CONTROL_PANEL
         ):
             raise ValueError(
                 "alarm_control_panel_platform_entity must be provided and it must be an alarm control panel platform entity"

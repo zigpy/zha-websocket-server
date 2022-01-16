@@ -28,8 +28,8 @@ async def main():
         )
     )
 
-    test_lights = True
-    test_switches = False
+    test_lights = False
+    test_switches = True
     test_alarm_control_panel = False
     test_locks = False
     test_buttons = False
@@ -89,6 +89,8 @@ async def main():
             switch_platform_entity = devices["00:15:8d:00:02:82:d0:78"].device.entities[
                 "00:15:8d:00:02:82:d0:78-1"
             ]
+
+            _LOGGER.warning("Switch: %s", switch_platform_entity)
 
             await controller.switches.turn_off(switch_platform_entity)
 
