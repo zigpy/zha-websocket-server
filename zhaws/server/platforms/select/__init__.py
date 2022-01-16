@@ -29,7 +29,7 @@ class Strobe(t.enum8):  # type: ignore #TODO fix type
 class EnumSelect(PlatformEntity):
 
     PLATFORM = Platform.SELECT
-    _enum: Enum
+    _enum: type[Enum]
 
     def __init__(
         self,

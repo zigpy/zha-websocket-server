@@ -203,7 +203,7 @@ class BaseLight(PlatformEntity):
         return self._effect
 
     @property
-    def supported_features(self) -> int | None:
+    def supported_features(self) -> int:
         """Flag supported features."""
         return self._supported_features
 

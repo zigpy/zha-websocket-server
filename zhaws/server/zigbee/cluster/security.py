@@ -131,7 +131,7 @@ class IasAce(ClusterHandler):
             self.armed_state = AceCluster.PanelStatus.In_Alarm
         self._send_panel_status_changed()
 
-    def _disarm(self, code: str) -> None:
+    def _disarm(self, code: str) -> asyncio.Future:
         """Test the code and disarm the panel if the code is correct."""
         if (
             code != self.panel_code
@@ -162,7 +162,7 @@ class IasAce(ClusterHandler):
             self.alarm_status = AceCluster.AlarmStatus.No_Alarm
         return zigbee_reply
 
-    def _arm_day(self, code: str) -> None:
+    def _arm_day(self, code: str) -> asyncio.Future:
         """Arm the panel for day / home zones."""
         return self._handle_arm(
             code,
@@ -170,7 +170,7 @@ class IasAce(ClusterHandler):
             AceCluster.ArmNotification.Only_Day_Home_Zones_Armed,
         )
 
-    def _arm_night(self, code: str) -> None:
+    def _arm_night(self, code: str) -> asyncio.Future:
         """Arm the panel for night / sleep zones."""
         return self._handle_arm(
             code,
@@ -178,7 +178,7 @@ class IasAce(ClusterHandler):
             AceCluster.ArmNotification.Only_Night_Sleep_Zones_Armed,
         )
 
-    def _arm_away(self, code: str) -> None:
+    def _arm_away(self, code: str) -> asyncio.Future:
         """Arm the panel for away mode."""
         return self._handle_arm(
             code,
@@ -191,7 +191,7 @@ class IasAce(ClusterHandler):
         code: str,
         panel_status: AceCluster.PanelStatus,
         armed_type: AceCluster.ArmNotification,
-    ) -> None:
+    ) -> asyncio.Future:
         """Arm the panel with the specified statuses."""
         if self.code_required_arm_actions and code != self.panel_code:
             self.warning("Invalid code supplied to IAS ACE")
@@ -204,7 +204,7 @@ class IasAce(ClusterHandler):
             zigbee_reply = self.arm_response(armed_type)
         return zigbee_reply
 
-    def _bypass(self, zone_list: Any, code: str) -> None:
+    def _bypass(self, zone_list: Any, code: str) -> asyncio.Future:
         """Handle the IAS ACE bypass command."""
         """TODO figure out events
         self.zha_send_event(
@@ -213,32 +213,32 @@ class IasAce(ClusterHandler):
         )
         """
 
-    def _emergency(self) -> None:
+    def _emergency(self) -> asyncio.Future:
         """Handle the IAS ACE emergency command."""
         self._set_alarm(AceCluster.AlarmStatus.Emergency)
 
-    def _fire(self) -> None:
+    def _fire(self) -> asyncio.Future:
         """Handle the IAS ACE fire command."""
         self._set_alarm(AceCluster.AlarmStatus.Fire)
 
-    def _panic(self) -> None:
+    def _panic(self) -> asyncio.Future:
         """Handle the IAS ACE panic command."""
         self._set_alarm(AceCluster.AlarmStatus.Emergency_Panic)
 
-    def _set_alarm(self, status: AceCluster.AlarmStatus) -> None:
+    def _set_alarm(self, status: AceCluster.AlarmStatus) -> asyncio.Future:
         """Set the specified alarm status."""
         self.alarm_status = status
         self.armed_state = AceCluster.PanelStatus.In_Alarm
         self.listener_event("cluster_handler_state_changed")
         self._send_panel_status_changed()
 
-    def _get_zone_id_map(self) -> None:
+    def _get_zone_id_map(self) -> asyncio.Future:
         """Handle the IAS ACE zone id map command."""
 
-    def _get_zone_info(self, zone_id: int) -> None:
+    def _get_zone_info(self, zone_id: int) -> asyncio.Future:
         """Handle the IAS ACE zone info command."""
 
-    def _send_panel_status_response(self) -> None:
+    def _send_panel_status_response(self) -> asyncio.Future:
         """Handle the IAS ACE panel status response command."""
         response = self.panel_status_response(
             self.armed_state,
@@ -248,7 +248,7 @@ class IasAce(ClusterHandler):
         )
         asyncio.create_task(response)
 
-    def _send_panel_status_changed(self) -> None:
+    def _send_panel_status_changed(self) -> asyncio.Future:
         """Handle the IAS ACE panel status changed command."""
         response = self.panel_status_changed(
             self.armed_state,
@@ -259,7 +259,7 @@ class IasAce(ClusterHandler):
         asyncio.create_task(response)
         self.listener_event("cluster_handler_state_changed")
 
-    def _get_bypassed_zone_list(self) -> None:
+    def _get_bypassed_zone_list(self) -> asyncio.Future:
         """Handle the IAS ACE bypassed zone list command."""
 
     def _get_zone_status(
@@ -268,7 +268,7 @@ class IasAce(ClusterHandler):
         max_zone_ids: int,
         zone_status_mask_flag: int,
         zone_status_mask: int,
-    ) -> None:
+    ) -> asyncio.Future:
         """Handle the IAS ACE zone status command."""
 
 

@@ -1,20 +1,20 @@
 """Utils for zhawss."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
-from zigpy.zcl import Cluster as ZigpyClusterType
+from zigpy.zcl import Cluster as ZigpyCluster
 
 if TYPE_CHECKING:
     from zhaws.server.zigbee.cluster import ClusterHandler
 
 
 async def safe_read(
-    cluster: ZigpyClusterType,
+    cluster: ZigpyCluster,
     attributes: list,
     allow_cache: bool = True,
     only_cache: bool = False,
-    manufacturer: Optional[int] = None,
+    manufacturer: int | None = None,
 ) -> dict:
     """Swallow all exceptions from network read.
     If we throw during initialization, setup fails. Rather have an entity that

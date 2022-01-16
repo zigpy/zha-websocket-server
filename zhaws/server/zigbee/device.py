@@ -5,7 +5,7 @@ import asyncio
 from enum import Enum
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Callable, Final, Iterable, Literal
 
 from zigpy import types
 from zigpy.device import Device as ZigpyDevice
@@ -13,6 +13,7 @@ import zigpy.exceptions
 from zigpy.profiles import PROFILES
 import zigpy.quirks
 from zigpy.types.named import EUI64
+from zigpy.zcl import Cluster
 from zigpy.zcl.clusters.general import Groups
 import zigpy.zdo.types as zdo_types
 
@@ -22,9 +23,6 @@ from zhaws.server.platforms import PlatformEntity
 from zhaws.server.util import LogMixin
 from zhaws.server.zigbee.cluster import ZDOClusterHandler
 from zhaws.server.zigbee.endpoint import Endpoint
-
-if TYPE_CHECKING:
-    from zhaws.server.zigbee.controller import Controller
 
 _LOGGER = logging.getLogger(__name__)
 _UPDATE_ALIVE_INTERVAL = (60, 90)
@@ -84,6 +82,13 @@ CLUSTER_TYPE_OUT: Final[str] = "out"
 CONF_DEFAULT_CONSIDER_UNAVAILABLE_MAINS: Final[int] = 60 * 60 * 2  # 2 hours
 CONF_DEFAULT_CONSIDER_UNAVAILABLE_BATTERY: Final[int] = 60 * 60 * 6  # 6 hours
 
+if TYPE_CHECKING:
+    from typing_extensions import TypeAlias
+
+    from zhaws.server.zigbee.controller import Controller
+
+    CLUSTER_TYPE = Literal[TypeAlias[CLUSTER_TYPE_IN], TypeAlias[CLUSTER_TYPE_OUT]]
+
 
 class DeviceStatus(Enum):
     """Status of a device."""
@@ -108,7 +113,7 @@ class Device(LogMixin):
         self._available: bool = False
         #       self._available_signal = f"{self.name}_{self.ieee}_{SIGNAL_AVAILABLE}"
         self._checkins_missed_count: int = 0
-        self.unsubs = []
+        self.unsubs: list[Callable[[], Any]] = []
         self.quirk_applied: bool = isinstance(
             self._zigpy_device, zigpy.quirks.CustomDevice
         )
@@ -224,7 +229,7 @@ class Device(LogMixin):
         return self._zigpy_device.node_desc.logical_type.name
 
     @property
-    def power_source(self) -> int:
+    def power_source(self) -> str:
         """Return the power source for the device."""
         return (
             POWER_MAINS_POWERED if self.is_mains_powered else POWER_BATTERY_OR_UNKNOWN
@@ -257,9 +262,12 @@ class Device(LogMixin):
     @property
     def is_groupable(self) -> bool:
         """Return true if this device has a group cluster."""
-        return self.is_coordinator or (
-            self.available and self.async_get_groupable_endpoints()
-        )
+        if self.is_coordinator:
+            return True
+        elif self.available:
+            return bool(self.async_get_groupable_endpoints())
+
+        return False
 
     @property
     def skip_configuration(self) -> bool:
@@ -272,7 +280,7 @@ class Device(LogMixin):
         return self._controller
 
     @property
-    def device_automation_triggers(self):
+    def device_automation_triggers(self) -> dict:
         """Return the device automation triggers for this device."""
         triggers = {
             ("device_offline", "device_offline"): {
@@ -286,7 +294,7 @@ class Device(LogMixin):
         return triggers
 
     @property
-    def available_signal(self):
+    def available_signal(self) -> str:
         """Signal to use to subscribe to device availability changes."""
         return self._available_signal
 
@@ -472,7 +480,7 @@ class Device(LogMixin):
             )
         """
 
-    async def async_initialize(self, from_cache=False) -> None:
+    async def async_initialize(self, from_cache: bool = False) -> None:
         """Initialize cluster handlers."""
         self.debug("started initialization")
         await self._zdo_handler.async_initialize(from_cache)
@@ -492,7 +500,7 @@ class Device(LogMixin):
         for unsubscribe in self.unsubs:
             unsubscribe()
 
-    def async_update_last_seen(self, last_seen) -> None:
+    def async_update_last_seen(self, last_seen: float) -> None:
         """Set last seen on the zigpy device."""
         if self._zigpy_device.last_seen is None and last_seen is not None:
             self._zigpy_device.last_seen = last_seen
@@ -541,7 +549,7 @@ class Device(LogMixin):
 
         return device_info
 
-    def async_get_clusters(self):
+    def async_get_clusters(self) -> dict[int, dict[CLUSTER_TYPE, list[int]]]:
         """Get all clusters for this device."""
         return {
             ep_id: {
@@ -560,7 +568,7 @@ class Device(LogMixin):
             if Groups.cluster_id in clusters[CLUSTER_TYPE_IN]
         ]
 
-    def async_get_std_clusters(self):
+    def async_get_std_clusters(self) -> dict[str, dict[CLUSTER_TYPE, int]]:
         """Get ZHA and ZLL clusters for this device."""
 
         return {
@@ -572,14 +580,22 @@ class Device(LogMixin):
             if ep_id != 0 and endpoint.profile_id in PROFILES
         }
 
-    def async_get_cluster(self, endpoint_id, cluster_id, cluster_type=CLUSTER_TYPE_IN):
+    def async_get_cluster(
+        self,
+        endpoint_id: int,
+        cluster_id: int,
+        cluster_type: CLUSTER_TYPE = CLUSTER_TYPE_IN,
+    ) -> Cluster:
         """Get zigbee cluster from this entity."""
         clusters = self.async_get_clusters()
         return clusters[endpoint_id][cluster_type][cluster_id]
 
     def async_get_cluster_attributes(
-        self, endpoint_id, cluster_id, cluster_type=CLUSTER_TYPE_IN
-    ):
+        self,
+        endpoint_id: int,
+        cluster_id: int,
+        cluster_type: CLUSTER_TYPE = CLUSTER_TYPE_IN,
+    ) -> dict | None:
         """Get zigbee attributes for specified cluster."""
         cluster = self.async_get_cluster(endpoint_id, cluster_id, cluster_type)
         if cluster is None:
@@ -587,8 +603,11 @@ class Device(LogMixin):
         return cluster.attributes
 
     def async_get_cluster_commands(
-        self, endpoint_id, cluster_id, cluster_type=CLUSTER_TYPE_IN
-    ):
+        self,
+        endpoint_id: int,
+        cluster_id: int,
+        cluster_type: CLUSTER_TYPE = CLUSTER_TYPE_IN,
+    ) -> dict | None:
         """Get zigbee commands for specified cluster."""
         cluster = self.async_get_cluster(endpoint_id, cluster_id, cluster_type)
         if cluster is None:
@@ -600,13 +619,13 @@ class Device(LogMixin):
 
     async def write_zigbee_attribute(
         self,
-        endpoint_id,
-        cluster_id,
-        attribute,
-        value,
-        cluster_type=CLUSTER_TYPE_IN,
-        manufacturer=None,
-    ):
+        endpoint_id: int,
+        cluster_id: int,
+        attribute: str | int,
+        value: Any,
+        cluster_type: CLUSTER_TYPE = CLUSTER_TYPE_IN,
+        manufacturer: int | None = None,
+    ) -> list | None:
         """Write a value to a zigbee attribute for a cluster in this entity."""
         cluster = self.async_get_cluster(endpoint_id, cluster_id, cluster_type)
         if cluster is None:
@@ -638,14 +657,14 @@ class Device(LogMixin):
 
     async def issue_cluster_command(
         self,
-        endpoint_id,
-        cluster_id,
-        command,
+        endpoint_id: int,
+        cluster_id: int,
+        command: int,
         command_type,
         *args,
-        cluster_type=CLUSTER_TYPE_IN,
-        manufacturer=None,
-    ):
+        cluster_type: CLUSTER_TYPE = CLUSTER_TYPE_IN,
+        manufacturer: int | None = None,
+    ) -> Any | None:
         """Issue a command against specified zigbee cluster on this entity."""
         cluster = self.async_get_cluster(endpoint_id, cluster_id, cluster_type)
         if cluster is None:
@@ -669,7 +688,7 @@ class Device(LogMixin):
         )
         return response
 
-    async def async_add_to_group(self, group_id) -> None:
+    async def async_add_to_group(self, group_id: int) -> None:
         """Add this device to the provided zigbee group."""
         try:
             await self._zigpy_device.add_to_group(group_id)
@@ -681,7 +700,7 @@ class Device(LogMixin):
                 str(ex),
             )
 
-    async def async_remove_from_group(self, group_id) -> None:
+    async def async_remove_from_group(self, group_id: int) -> None:
         """Remove this device from the provided zigbee group."""
         try:
             await self._zigpy_device.remove_from_group(group_id)
@@ -693,7 +712,9 @@ class Device(LogMixin):
                 str(ex),
             )
 
-    async def async_add_endpoint_to_group(self, endpoint_id, group_id) -> None:
+    async def async_add_endpoint_to_group(
+        self, endpoint_id: int, group_id: int
+    ) -> None:
         """Add the device endpoint to the provided zigbee group."""
         try:
             await self._zigpy_device.endpoints[int(endpoint_id)].add_to_group(group_id)
@@ -706,7 +727,9 @@ class Device(LogMixin):
                 str(ex),
             )
 
-    async def async_remove_endpoint_from_group(self, endpoint_id, group_id) -> None:
+    async def async_remove_endpoint_from_group(
+        self, endpoint_id: int, group_id: int
+    ) -> None:
         """Remove the device endpoint from the provided zigbee group."""
         try:
             await self._zigpy_device.endpoints[int(endpoint_id)].remove_from_group(
@@ -721,20 +744,24 @@ class Device(LogMixin):
                 str(ex),
             )
 
-    async def async_bind_to_group(self, group_id, cluster_bindings) -> None:
+    async def async_bind_to_group(
+        self, group_id: int, cluster_bindings: Iterable
+    ) -> None:
         """Directly bind this device to a group for the given clusters."""
         await self._async_group_binding_operation(
             group_id, zdo_types.ZDOCmd.Bind_req, cluster_bindings
         )
 
-    async def async_unbind_from_group(self, group_id, cluster_bindings) -> None:
+    async def async_unbind_from_group(
+        self, group_id: int, cluster_bindings: Iterable
+    ) -> None:
         """Unbind this device from a group for the given clusters."""
         await self._async_group_binding_operation(
             group_id, zdo_types.ZDOCmd.Unbind_req, cluster_bindings
         )
 
     async def _async_group_binding_operation(
-        self, group_id: int, operation, cluster_bindings
+        self, group_id: int, operation, cluster_bindings: Iterable
     ) -> None:
         """Create or remove a direct zigbee binding between a device and a group."""
 
