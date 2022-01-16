@@ -1,10 +1,11 @@
 """Sensor platform for zhawss."""
+from __future__ import annotations
 
 import asyncio
 import functools
 import logging
 import numbers
-from typing import Any, Final, List, Union
+from typing import TYPE_CHECKING, Any, Final, Type, Union
 
 from zhaws.server.decorators import periodic
 from zhaws.server.platforms import PlatformEntity
@@ -23,9 +24,12 @@ from zhaws.server.zigbee.cluster.const import (
     CLUSTER_HANDLER_TEMPERATURE,
     CLUSTER_HANDLER_THERMOSTAT,
 )
-from zhaws.server.zigbee.cluster.types import ClusterHandlerType
 from zhaws.server.zigbee.registries import SMARTTHINGS_HUMIDITY_CLUSTER
-from zhaws.server.zigbee.types import DeviceType, EndpointType
+
+if TYPE_CHECKING:
+    from zhaws.server.zigbee.cluster import ClusterHandler
+    from zhaws.server.zigbee.device import Device
+    from zhaws.server.zigbee.endpoint import Endpoint
 
 MULTI_MATCH = functools.partial(PLATFORM_ENTITIES.multipass_match, Platform.SENSOR)
 CLUSTER_HANDLER_ST_HUMIDITY_CLUSTER = f"channel_0x{SMARTTHINGS_HUMIDITY_CLUSTER:04x}"
@@ -64,17 +68,17 @@ class Sensor(PlatformEntity):
     _REFRESH_INTERVAL = (30, 45)
     _decimals: int = 1
     _divisor: int = 1
-    _multiplier: int = 1
+    _multiplier: int | float = 1
     _unit: Union[str, None] = None
 
     @classmethod
     def create_platform_entity(
-        cls,
+        cls: Type[Sensor],
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
-        **kwargs,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
+        **kwargs: Any,
     ) -> Union[PlatformEntity, None]:
         """Entity Factory.
         Return a platform entity if it is a supported configuration, otherwise return None
@@ -88,13 +92,13 @@ class Sensor(PlatformEntity):
     def __init__(
         self,
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
     ):
         """Initialize the sensor."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
-        self._cluster_handler: ClusterHandlerType = cluster_handlers[0]
+        self._cluster_handler: ClusterHandler = cluster_handlers[0]
         self._cluster_handler.add_listener(self)
         if self.should_poll:
             self.poller_task = asyncio.create_task(self._refresh())
@@ -115,12 +119,14 @@ class Sensor(PlatformEntity):
             )
         return round(float(value * self._multiplier) / self._divisor)
 
-    def cluster_handler_attribute_updated(self, attr_id, attr_name, value):
+    def cluster_handler_attribute_updated(
+        self, attr_id: int, attr_name: str, value: Any
+    ) -> None:
         """handle attribute updates from the cluster handler."""
         self.send_state_changed_event()
 
     @periodic(_REFRESH_INTERVAL)
-    async def _refresh(self):
+    async def _refresh(self) -> None:
         """Refresh the sensor."""
         await self.async_update()
 
@@ -160,12 +166,12 @@ class Battery(Sensor):
 
     @classmethod
     def create_platform_entity(
-        cls,
+        cls: Type[Battery],
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
-        **kwargs,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
+        **kwargs: Any,
     ) -> Union[PlatformEntity, None]:
         """Entity Factory.
         Unlike any other entity, PowerConfiguration cluster may not support
@@ -348,7 +354,7 @@ class SmartEnergyMetering(Sensor):
         state = {"state": super().get_state()}
         if self._cluster_handler.device_type is not None:
             state["device_type"] = self._cluster_handler.device_type
-        if (status := self._cluster_handler.status) is not None:
+        if (status := self._cluster_handler.metering_status) is not None:
             state["status"] = str(status)[len(status.__class__.__name__) + 1 :]
         return state
 
@@ -446,12 +452,12 @@ class ThermostatHVACAction(Sensor, id_suffix="hvac_action"):
 
     @classmethod
     def create_platform_entity(
-        cls,
+        cls: Type[ThermostatHVACAction],
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
-        **kwargs,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
+        **kwargs: Any,
     ) -> Union[PlatformEntity, None]:
         """Entity Factory.
         Return entity if it is a supported configuration, otherwise return None
@@ -560,12 +566,12 @@ class RSSISensor(Sensor, id_suffix="rssi"):
 
     @classmethod
     def create_platform_entity(
-        cls,
+        cls: Type[RSSISensor],
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
-        **kwargs,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
+        **kwargs: Any,
     ) -> Union[PlatformEntity, None]:
         """Entity Factory.
         Return entity if it is a supported configuration, otherwise return None
@@ -577,7 +583,7 @@ class RSSISensor(Sensor, id_suffix="rssi"):
 
     def get_state(self) -> int:
         """Return the state of the sensor."""
-        return getattr(self.device.device, self.unique_id_suffix)
+        return getattr(self.device.device, self.unique_id_suffix)  # type: ignore #TODO fix type hint
 
     @property
     def should_poll(self) -> bool:

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Coroutine
-from typing import Any, Awaitable
+from typing import TYPE_CHECKING, Any
 
 import zigpy.exceptions
 from zigpy.zcl import Cluster as ZigpyClusterType
@@ -23,7 +23,9 @@ from zhaws.server.zigbee.cluster.const import (
     REPORT_CONFIG_IMMEDIATE,
 )
 from zhaws.server.zigbee.cluster.util import parse_and_log_command
-from zhaws.server.zigbee.types import EndpointType
+
+if TYPE_CHECKING:
+    from zhaws.server.zigbee.endpoint import Endpoint
 
 
 @registries.CLUSTER_HANDLER_REGISTRY.register(general.Alarms.cluster_id)
@@ -43,7 +45,7 @@ class AnalogInput(ClusterHandler):
 class AnalogOutput(ClusterHandler):
     """Analog Output cluster handler."""
 
-    REPORT_CONFIG = ({"attr": "present_value", "config": REPORT_CONFIG_DEFAULT},)
+    REPORT_CONFIG = [{"attr": "present_value", "config": REPORT_CONFIG_DEFAULT}]
     ZCL_INIT_ATTRS = {
         "min_present_value": True,
         "max_present_value": True,
@@ -94,7 +96,7 @@ class AnalogOutput(ClusterHandler):
         """Return cached value of application_type."""
         return self.cluster.get("application_type")
 
-    async def async_set_present_value(self, value: float) -> Awaitable[bool]:
+    async def async_set_present_value(self, value: float) -> bool:
         """Update present_value."""
         try:
             res = await self.cluster.write_attributes({"present_value": value})
@@ -191,12 +193,11 @@ class Identify(ClusterHandler):
 
     BIND: bool = False
 
-    def cluster_command(self, tsn, command_id, args) -> None:
+    def cluster_command(self, tsn: int, command_id: int, args: Any) -> None:
         """Handle commands received to this cluster."""
-        cmd = parse_and_log_command(self, tsn, command_id, args)
-
-        if cmd == "trigger_effect":
-            self.send_event(f"{self.unique_id}_{cmd}", args[0])
+        # TODO cmd = parse_and_log_command(self, tsn, command_id, args)
+        # TODO if cmd == "trigger_effect":
+        # TODO self.send_event(f"{self.unique_id}_{cmd}", args[0])
 
 
 @registries.CLIENT_CLUSTER_HANDLER_REGISTRY.register(general.LevelControl.cluster_id)
@@ -210,14 +211,14 @@ class LevelControlClusterHandler(ClusterHandler):
     """Cluster handler for the LevelControl Zigbee cluster."""
 
     CURRENT_LEVEL = 0
-    REPORT_CONFIG = ({"attr": "current_level", "config": REPORT_CONFIG_ASAP},)
+    REPORT_CONFIG = [{"attr": "current_level", "config": REPORT_CONFIG_ASAP}]
 
     @property
     def current_level(self) -> int | None:
         """Return cached value of the current_level attribute."""
         return self.cluster.get("current_level")
 
-    def cluster_command(self, tsn, command_id, args) -> None:
+    def cluster_command(self, tsn: int, command_id: int, args: Any) -> None:
         """Handle commands received to this cluster."""
         cmd = parse_and_log_command(self, tsn, command_id, args)
 
@@ -233,14 +234,14 @@ class LevelControlClusterHandler(ClusterHandler):
             # Step (technically may change on/off)
             self.dispatch_level_change("move_level", -args[1] if args[0] else args[1])
 
-    def attribute_updated(self, attrid, value) -> None:
+    def attribute_updated(self, attrid: int, value: Any) -> None:
         """Handle attribute updates on this cluster."""
         self.debug("received attribute: %s update with value: %s", attrid, value)
         if attrid == self.CURRENT_LEVEL:
             self.dispatch_level_change("set_level", value)
             pass
 
-    def dispatch_level_change(self, command, level) -> None:
+    def dispatch_level_change(self, command: str, level: int) -> None:
         """Dispatch level change."""
         self.listener_event(f"cluster_handler_{command}", level)
 
@@ -277,20 +278,20 @@ class OnOffClusterHandler(ClusterHandler):
     """Cluster handler for the OnOff Zigbee cluster."""
 
     ON_OFF = 0
-    REPORT_CONFIG = ({"attr": "on_off", "config": REPORT_CONFIG_IMMEDIATE},)
+    REPORT_CONFIG = [{"attr": "on_off", "config": REPORT_CONFIG_IMMEDIATE}]
 
-    def __init__(self, cluster: ZigpyClusterType, endpoint: EndpointType) -> None:
+    def __init__(self, cluster: ZigpyClusterType, endpoint: Endpoint) -> None:
         """Initialize OnOffClusterHandler."""
         super().__init__(cluster, endpoint)
-        self._state = None
-        self._off_listener = None
+        self._state: bool | None = None
+        self._off_listener: asyncio.TimerHandle | None = None
 
     @property
     def on_off(self) -> bool | None:
         """Return cached value of on/off attribute."""
         return self.cluster.get("on_off")
 
-    def cluster_command(self, tsn, command_id, args) -> None:
+    def cluster_command(self, tsn: int, command_id: int, args: Any) -> None:
         """Handle commands received to this cluster."""
         cmd = parse_and_log_command(self, tsn, command_id, args)
 
@@ -304,7 +305,7 @@ class OnOffClusterHandler(ClusterHandler):
             # 0 is always accept 1 is only accept when already on
             if should_accept == 0 or (should_accept == 1 and self._state):
                 if self._off_listener is not None:
-                    self._off_listener()
+                    self._off_listener.cancel()
                     self._off_listener = None
                 self.attribute_updated(self.ON_OFF, True)
                 if on_time > 0:
@@ -315,12 +316,12 @@ class OnOffClusterHandler(ClusterHandler):
         elif cmd == "toggle":
             self.attribute_updated(self.ON_OFF, not bool(self._state))
 
-    def set_to_off(self, *_) -> None:
+    def set_to_off(self) -> None:
         """Set the state to off."""
         self._off_listener = None
         self.attribute_updated(self.ON_OFF, False)
 
-    def attribute_updated(self, attrid, value) -> None:
+    def attribute_updated(self, attrid: int, value: Any) -> None:
         """Handle attribute updates on this cluster."""
         if attrid == self.ON_OFF:
             self.listener_event(
@@ -331,13 +332,11 @@ class OnOffClusterHandler(ClusterHandler):
             )
             self._state = bool(value)
 
-    async def async_initialize_handler_specific(
-        self, from_cache: bool
-    ) -> Awaitable[None]:
+    async def async_initialize_handler_specific(self, from_cache: bool) -> None:
         """Initialize cluster handler."""
         self._state = self.on_off
 
-    async def async_update(self) -> Awaitable[None]:
+    async def async_update(self) -> None:
         """Initialize cluster handler."""
         if self.cluster.is_client:
             return
@@ -391,7 +390,7 @@ class PollControl(ClusterHandler):
         4476,
     }  # IKEA
 
-    async def async_configure_handler_specific(self) -> Awaitable[None]:
+    async def async_configure_handler_specific(self) -> None:
         """Configure cluster handler: set check-in interval."""
         try:
             res = await self.cluster.write_attributes(
@@ -407,11 +406,11 @@ class PollControl(ClusterHandler):
         """Handle commands received to this cluster."""
         cmd_name = self.cluster.client_commands.get(command_id, [command_id])[0]
         self.debug("Received %s tsn command '%s': %s", tsn, cmd_name, args)
-        self.zha_send_event(cmd_name, args)
+        # TODO self.zha_send_event(cmd_name, args)
         if cmd_name == "checkin":
             self.cluster.create_catching_task(self.check_in_response(tsn))
 
-    async def check_in_response(self, tsn: int) -> Awaitable[None]:
+    async def check_in_response(self, tsn: int) -> None:
         """Respond to checkin command."""
         await self.checkin_response(True, self.CHECKIN_FAST_POLL_TIMEOUT, tsn=tsn)
         if self._endpoint.device.manufacturer_code not in self._IGNORED_MANUFACTURER_ID:
@@ -427,10 +426,10 @@ class PollControl(ClusterHandler):
 class PowerConfigurationClusterHandler(ClusterHandler):
     """Cluster handler for the zigbee power configuration cluster."""
 
-    REPORT_CONFIG = (
+    REPORT_CONFIG = [
         {"attr": "battery_voltage", "config": REPORT_CONFIG_BATTERY_SAVE},
         {"attr": "battery_percentage_remaining", "config": REPORT_CONFIG_BATTERY_SAVE},
-    )
+    ]
 
     def async_initialize_handler_specific(self, from_cache: bool) -> Coroutine:
         """Initialize cluster handler specific attrs."""

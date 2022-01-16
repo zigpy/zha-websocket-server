@@ -1,6 +1,7 @@
 """Helper classes for zhaws.client."""
+from __future__ import annotations
 
-from typing import Awaitable, Literal, Optional, Union
+from typing import TYPE_CHECKING, Literal, Optional, Union
 
 from zhaws.client.client import Client
 from zhaws.client.model.commands import (
@@ -17,6 +18,7 @@ from zhaws.client.model.commands import (
     ClimateSetHvacModeCommand,
     ClimateSetPresetModeCommand,
     ClimateSetTemperatureCommand,
+    CommandResponse,
     CoverCloseCommand,
     CoverOpenCommand,
     CoverSetPositionCommand,
@@ -41,7 +43,10 @@ from zhaws.client.model.commands import (
     SwitchTurnOffCommand,
     SwitchTurnOnCommand,
 )
-from zhaws.client.model.types import ControllerType
+from zhaws.client.model.types import BasePlatformEntity
+
+if TYPE_CHECKING:
+    from zhaws.client.controller import Controller
 
 
 class LightHelper:
@@ -55,14 +60,14 @@ class LightHelper:
 
     async def turn_on(
         self,
-        light_platform_entity,
-        brightness=None,
-        transition=None,
-        flash=None,
-        effect=None,
-        hs_color=None,
-        color_temp=None,
-    ) -> Awaitable[None]:
+        light_platform_entity: BasePlatformEntity,
+        brightness: int | None = None,
+        transition: int | None = None,
+        flash: bool | None = None,
+        effect: str | None = None,
+        hs_color: tuple | None = None,
+        color_temp: int | None = None,
+    ) -> CommandResponse:
         """Turn on a light."""
         if light_platform_entity is None or light_platform_entity.platform != "LIGHT":
             raise ValueError(
@@ -82,8 +87,11 @@ class LightHelper:
         return await self._client.async_send_command(command.dict(exclude_none=True))
 
     async def turn_off(
-        self, light_platform_entity, transition=None, flash=None
-    ) -> Awaitable[None]:
+        self,
+        light_platform_entity: BasePlatformEntity,
+        transition: int | None = None,
+        flash: bool | None = None,
+    ) -> CommandResponse:
         """Turn off a light."""
         if light_platform_entity is None or light_platform_entity.platform != "LIGHT":
             raise ValueError(
@@ -108,7 +116,9 @@ class SwitchHelper:
         """Initialize the switch helper."""
         self._client: Client = client
 
-    async def turn_on(self, switch_platform_entity) -> Awaitable[None]:
+    async def turn_on(
+        self, switch_platform_entity: BasePlatformEntity
+    ) -> CommandResponse:
         """Turn on a switch."""
         if (
             switch_platform_entity is None
@@ -124,7 +134,9 @@ class SwitchHelper:
         )
         return await self._client.async_send_command(command.dict(exclude_none=True))
 
-    async def turn_off(self, switch_platform_entity) -> Awaitable[None]:
+    async def turn_off(
+        self, switch_platform_entity: BasePlatformEntity
+    ) -> CommandResponse:
         """Turn off a switch."""
         if (
             switch_platform_entity is None
@@ -152,11 +164,11 @@ class SirenHelper:
 
     async def turn_on(
         self,
-        siren_platform_entity,
+        siren_platform_entity: BasePlatformEntity,
         duration: Optional[int] = None,
         volume_level: Optional[int] = None,
         tone: Optional[str] = None,
-    ) -> Awaitable[None]:
+    ) -> CommandResponse:
         """Turn on a siren."""
         if siren_platform_entity is None or siren_platform_entity.platform != "SIREN":
             raise ValueError(
@@ -172,7 +184,9 @@ class SirenHelper:
         )
         return await self._client.async_send_command(command.dict(exclude_none=True))
 
-    async def turn_off(self, siren_platform_entity) -> Awaitable[None]:
+    async def turn_off(
+        self, siren_platform_entity: BasePlatformEntity
+    ) -> CommandResponse:
         """Turn off a siren."""
         if siren_platform_entity is None or siren_platform_entity.platform != "SIREN":
             raise ValueError(
@@ -195,7 +209,9 @@ class ButtonHelper:
         """Initialize the button helper."""
         self._client: Client = client
 
-    async def press(self, button_platform_entity) -> Awaitable[None]:
+    async def press(
+        self, button_platform_entity: BasePlatformEntity
+    ) -> CommandResponse:
         """Press a button."""
         if (
             button_platform_entity is None
@@ -221,7 +237,9 @@ class CoverHelper:
         """Initialize the cover helper."""
         self._client: Client = client
 
-    async def open_cover(self, cover_platform_entity) -> Awaitable[None]:
+    async def open_cover(
+        self, cover_platform_entity: BasePlatformEntity
+    ) -> CommandResponse:
         """Open a cover."""
         if cover_platform_entity is None or cover_platform_entity.platform != "COVER":
             raise ValueError(
@@ -234,7 +252,9 @@ class CoverHelper:
         )
         return await self._client.async_send_command(command.dict(exclude_none=True))
 
-    async def close_cover(self, cover_platform_entity) -> Awaitable[None]:
+    async def close_cover(
+        self, cover_platform_entity: BasePlatformEntity
+    ) -> CommandResponse:
         """Close a cover."""
         if cover_platform_entity is None or cover_platform_entity.platform != "COVER":
             raise ValueError(
@@ -247,7 +267,9 @@ class CoverHelper:
         )
         return await self._client.async_send_command(command.dict(exclude_none=True))
 
-    async def stop_cover(self, cover_platform_entity) -> Awaitable[None]:
+    async def stop_cover(
+        self, cover_platform_entity: BasePlatformEntity
+    ) -> CommandResponse:
         """Stop a cover."""
         if cover_platform_entity is None or cover_platform_entity.platform != "COVER":
             raise ValueError(
@@ -262,9 +284,9 @@ class CoverHelper:
 
     async def set_cover_position(
         self,
-        cover_platform_entity,
+        cover_platform_entity: BasePlatformEntity,
         position: int,
-    ) -> Awaitable[None]:
+    ) -> CommandResponse:
         """Set a cover position."""
         if cover_platform_entity is None or cover_platform_entity.platform != "COVER":
             raise ValueError(
@@ -290,11 +312,11 @@ class FanHelper:
 
     async def turn_on(
         self,
-        fan_platform_entity,
+        fan_platform_entity: BasePlatformEntity,
         speed: Optional[str] = None,
         percentage: Optional[int] = None,
         preset_mode: Optional[str] = None,
-    ) -> Awaitable[None]:
+    ) -> CommandResponse:
         """Turn on a fan."""
         if fan_platform_entity is None or fan_platform_entity.platform != "FAN":
             raise ValueError(
@@ -310,7 +332,9 @@ class FanHelper:
         )
         return await self._client.async_send_command(command.dict(exclude_none=True))
 
-    async def turn_off(self, fan_platform_entity) -> Awaitable[None]:
+    async def turn_off(
+        self, fan_platform_entity: BasePlatformEntity
+    ) -> CommandResponse:
         """Turn off a fan."""
         if fan_platform_entity is None or fan_platform_entity.platform != "FAN":
             raise ValueError(
@@ -325,9 +349,9 @@ class FanHelper:
 
     async def set_fan_percentage(
         self,
-        fan_platform_entity,
+        fan_platform_entity: BasePlatformEntity,
         percentage: int,
-    ) -> Awaitable[None]:
+    ) -> CommandResponse:
         """Set a fan percentage."""
         if fan_platform_entity is None or fan_platform_entity.platform != "FAN":
             raise ValueError(
@@ -343,9 +367,9 @@ class FanHelper:
 
     async def set_fan_preset_mode(
         self,
-        fan_platform_entity,
+        fan_platform_entity: BasePlatformEntity,
         preset_mode: str,
-    ) -> Awaitable[None]:
+    ) -> CommandResponse:
         """Set a fan preset mode."""
         if fan_platform_entity is None or fan_platform_entity.platform != "FAN":
             raise ValueError(
@@ -369,7 +393,7 @@ class LockHelper:
         """Initialize the lock helper."""
         self._client: Client = client
 
-    async def lock(self, lock_platform_entity) -> Awaitable[None]:
+    async def lock(self, lock_platform_entity: BasePlatformEntity) -> CommandResponse:
         """Lock a lock."""
         if lock_platform_entity is None or lock_platform_entity.platform != "LOCK":
             raise ValueError(
@@ -382,7 +406,7 @@ class LockHelper:
         )
         return await self._client.async_send_command(command.dict(exclude_none=True))
 
-    async def unlock(self, lock_platform_entity) -> Awaitable[None]:
+    async def unlock(self, lock_platform_entity: BasePlatformEntity) -> CommandResponse:
         """Unlock a lock."""
         if lock_platform_entity is None or lock_platform_entity.platform != "LOCK":
             raise ValueError(
@@ -397,10 +421,10 @@ class LockHelper:
 
     async def set_user_lock_code(
         self,
-        lock_platform_entity,
+        lock_platform_entity: BasePlatformEntity,
         code_slot: int,
         user_code: str,
-    ) -> Awaitable[None]:
+    ) -> CommandResponse:
         """Set a user lock code."""
         if lock_platform_entity is None or lock_platform_entity.platform != "LOCK":
             raise ValueError(
@@ -417,9 +441,9 @@ class LockHelper:
 
     async def clear_user_lock_code(
         self,
-        lock_platform_entity,
+        lock_platform_entity: BasePlatformEntity,
         code_slot: int,
-    ) -> Awaitable[None]:
+    ) -> CommandResponse:
         """Clear a user lock code."""
         if lock_platform_entity is None or lock_platform_entity.platform != "LOCK":
             raise ValueError(
@@ -435,9 +459,9 @@ class LockHelper:
 
     async def enable_user_lock_code(
         self,
-        lock_platform_entity,
+        lock_platform_entity: BasePlatformEntity,
         code_slot: int,
-    ) -> Awaitable[None]:
+    ) -> CommandResponse:
         """Enable a user lock code."""
         if lock_platform_entity is None or lock_platform_entity.platform != "LOCK":
             raise ValueError(
@@ -453,9 +477,9 @@ class LockHelper:
 
     async def disable_user_lock_code(
         self,
-        lock_platform_entity,
+        lock_platform_entity: BasePlatformEntity,
         code_slot: int,
-    ) -> Awaitable[None]:
+    ) -> CommandResponse:
         """Disable a user lock code."""
         if lock_platform_entity is None or lock_platform_entity.platform != "LOCK":
             raise ValueError(
@@ -481,9 +505,9 @@ class NumberHelper:
 
     async def set_value(
         self,
-        number_platform_entity,
+        number_platform_entity: BasePlatformEntity,
         value: Union[int, float],
-    ) -> Awaitable[None]:
+    ) -> CommandResponse:
         """Set a number."""
         if (
             number_platform_entity is None
@@ -512,9 +536,9 @@ class SelectHelper:
 
     async def select_option(
         self,
-        select_platform_entity,
+        select_platform_entity: BasePlatformEntity,
         option: Union[str, int],
-    ) -> Awaitable[None]:
+    ) -> CommandResponse:
         """Set a select."""
         if (
             select_platform_entity is None
@@ -543,11 +567,11 @@ class ClimateHelper:
 
     async def set_hvac_mode(
         self,
-        climate_platform_entity,
+        climate_platform_entity: BasePlatformEntity,
         hvac_mode: Literal[
             "heat_cool", "heat", "cool", "auto", "dry", "fan_only", "off"
         ],
-    ) -> Awaitable[None]:
+    ) -> CommandResponse:
         """Set a climate."""
         if (
             climate_platform_entity is None
@@ -566,14 +590,14 @@ class ClimateHelper:
 
     async def set_temperature(
         self,
-        climate_platform_entity,
+        climate_platform_entity: BasePlatformEntity,
         hvac_mode: Optional[
             Literal["heat_cool", "heat", "cool", "auto", "dry", "fan_only", "off"]
         ] = None,
         temperature: Optional[float] = None,
         target_temp_high: Optional[float] = None,
         target_temp_low: Optional[float] = None,
-    ) -> Awaitable[None]:
+    ) -> CommandResponse:
         """Set a climate."""
         if (
             climate_platform_entity is None
@@ -595,9 +619,9 @@ class ClimateHelper:
 
     async def set_fan_mode(
         self,
-        climate_platform_entity,
+        climate_platform_entity: BasePlatformEntity,
         fan_mode: str,
-    ) -> Awaitable[None]:
+    ) -> CommandResponse:
         """Set a climate."""
         if (
             climate_platform_entity is None
@@ -616,9 +640,9 @@ class ClimateHelper:
 
     async def set_preset_mode(
         self,
-        climate_platform_entity,
+        climate_platform_entity: BasePlatformEntity,
         preset_mode: str,
-    ) -> Awaitable[None]:
+    ) -> CommandResponse:
         """Set a climate."""
         if (
             climate_platform_entity is None
@@ -646,8 +670,8 @@ class AlarmControlPanelHelper:
         self._client: Client = client
 
     async def disarm(
-        self, alarm_control_panel_platform_entity, code: str
-    ) -> Awaitable[None]:
+        self, alarm_control_panel_platform_entity: BasePlatformEntity, code: str
+    ) -> CommandResponse:
         """Disarm an alarm control panel."""
         if (
             alarm_control_panel_platform_entity is None
@@ -665,8 +689,8 @@ class AlarmControlPanelHelper:
         return await self._client.async_send_command(command.dict(exclude_none=True))
 
     async def arm_home(
-        self, alarm_control_panel_platform_entity, code: str
-    ) -> Awaitable[None]:
+        self, alarm_control_panel_platform_entity: BasePlatformEntity, code: str
+    ) -> CommandResponse:
         """Arm an alarm control panel in home mode."""
         if (
             alarm_control_panel_platform_entity is None
@@ -684,8 +708,8 @@ class AlarmControlPanelHelper:
         return await self._client.async_send_command(command.dict(exclude_none=True))
 
     async def arm_away(
-        self, alarm_control_panel_platform_entity, code: str
-    ) -> Awaitable[None]:
+        self, alarm_control_panel_platform_entity: BasePlatformEntity, code: str
+    ) -> CommandResponse:
         """Arm an alarm control panel in away mode."""
         if (
             alarm_control_panel_platform_entity is None
@@ -703,8 +727,8 @@ class AlarmControlPanelHelper:
         return await self._client.async_send_command(command.dict(exclude_none=True))
 
     async def arm_night(
-        self, alarm_control_panel_platform_entity, code: str
-    ) -> Awaitable[None]:
+        self, alarm_control_panel_platform_entity: BasePlatformEntity, code: str
+    ) -> CommandResponse:
         """Arm an alarm control panel in night mode."""
         if (
             alarm_control_panel_platform_entity is None
@@ -723,8 +747,8 @@ class AlarmControlPanelHelper:
 
     async def trigger(
         self,
-        alarm_control_panel_platform_entity,
-    ) -> Awaitable[None]:
+        alarm_control_panel_platform_entity: BasePlatformEntity,
+    ) -> CommandResponse:
         """Trigger an alarm control panel alarm."""
         if (
             alarm_control_panel_platform_entity is None
@@ -750,7 +774,9 @@ class PlatformEntityHelper:
         """Initialize the platform entity helper."""
         self._client: Client = client
 
-    async def refresh_state(self, platform_entity) -> Awaitable[None]:
+    async def refresh_state(
+        self, platform_entity: BasePlatformEntity
+    ) -> CommandResponse:
         """Refresh the state of a platform entity."""
         command = PlatformEntityRefreshStateCommand(
             ieee=platform_entity.device_ieee,
@@ -768,23 +794,23 @@ class ClientHelper:
         """Initialize the client helper."""
         self._client: Client = client
 
-    async def listen(self) -> Awaitable[None]:
+    async def listen(self) -> CommandResponse:
         """Listen for incoming messages."""
         command = ClientListenCommand()
         return await self._client.async_send_command(command.dict(exclude_none=True))
 
-    async def listen_raw_zcl(self) -> Awaitable[None]:
+    async def listen_raw_zcl(self) -> CommandResponse:
         """Listen for incoming raw ZCL messages."""
         command = ClientListenRawZCLCommand()
         return await self._client.async_send_command(command.dict(exclude_none=True))
 
-    async def disconnect(self) -> Awaitable[None]:
+    async def disconnect(self) -> CommandResponse:
         """Disconnect this client from the server."""
         command = ClientDisconnectCommand()
         return await self._client.async_send_command(command.dict(exclude_none=True))
 
 
-def attach_platform_entity_helpers(controller: ControllerType, client: Client) -> None:
+def attach_platform_entity_helpers(controller: Controller, client: Client) -> None:
     """Attach helper methods to the controller."""
     setattr(controller, LightHelper.CONTROLLER_ATTRIBUTE, LightHelper(client))
     setattr(controller, SwitchHelper.CONTROLLER_ATTRIBUTE, SwitchHelper(client))

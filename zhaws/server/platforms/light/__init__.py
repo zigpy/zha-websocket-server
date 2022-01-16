@@ -1,9 +1,10 @@
 """Light platform for zhawss."""
+from __future__ import annotations
 
 import asyncio
 import enum
 import functools
-from typing import Any, Dict, Final, List, Union
+from typing import TYPE_CHECKING, Any, Final, Optional, Union
 
 from zigpy.zcl.foundation import Status
 
@@ -17,8 +18,11 @@ from zhaws.server.zigbee.cluster.const import (
     CLUSTER_HANDLER_LEVEL,
     CLUSTER_HANDLER_ON_OFF,
 )
-from zhaws.server.zigbee.cluster.types import ClusterHandlerType
-from zhaws.server.zigbee.types import DeviceType, EndpointType
+
+if TYPE_CHECKING:
+    from zhaws.server.zigbee.cluster import ClusterHandler
+    from zhaws.server.zigbee.device import Device
+    from zhaws.server.zigbee.endpoint import Endpoint
 
 STRICT_MATCH = functools.partial(PLATFORM_ENTITIES.strict_match, Platform.LIGHT)
 
@@ -89,7 +93,7 @@ EFFECT_BREATHE: Final[int] = 0x01
 EFFECT_OKAY: Final[int] = 0x02
 EFFECT_DEFAULT_VARIANT: Final[int] = 0x00
 
-FLASH_EFFECTS: Final[Dict[str, int]] = {
+FLASH_EFFECTS: Final[dict[str, int]] = {
     FLASH_SHORT: EFFECT_BLINK,
     FLASH_LONG: EFFECT_BREATHE,
 }
@@ -115,9 +119,9 @@ class BaseLight(PlatformEntity):
     def __init__(
         self,
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
     ):
         """Initialize the light."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
@@ -131,16 +135,16 @@ class BaseLight(PlatformEntity):
         self._effect_list: Union[list[str], None] = None
         self._effect: Union[str, None] = None
         self._supported_features: int = 0
-        self._state: bool = False
-        self._on_off_cluster_handler = None
-        self._level_cluster_handler = None
-        self._color_cluster_handler = None
-        self._identify_cluster_handler = None
-        self._default_transition = None
+        self._state: bool | None = None
+        self._on_off_cluster_handler: ClusterHandler
+        self._level_cluster_handler: Optional[ClusterHandler] = None
+        self._color_cluster_handler: Optional[ClusterHandler] = None
+        self._identify_cluster_handler: Optional[ClusterHandler] = None
+        self._default_transition: int | None = None
 
     def get_state(self) -> dict[str, Any]:
         """Return the state of the light."""
-        state = {}
+        state: dict[str, Any] = {}
         state["on"] = self.is_on
         state["brightness"] = self.brightness
         state["hs_color"] = self.hs_color
@@ -157,21 +161,21 @@ class BaseLight(PlatformEntity):
         return self._state
 
     @property
-    def brightness(self):
+    def brightness(self) -> int | None:
         """Return the brightness of this light."""
         return self._brightness
 
     @property
-    def min_mireds(self):
+    def min_mireds(self) -> int | None:
         """Return the coldest color_temp that this light supports."""
         return self._min_mireds
 
     @property
-    def max_mireds(self):
+    def max_mireds(self) -> int | None:
         """Return the warmest color_temp that this light supports."""
         return self._max_mireds
 
-    def cluster_handler_set_level(self, value):
+    def cluster_handler_set_level(self, value: int) -> None:
         """Set the brightness of this light between 0..254.
         brightness level 255 is a special value instructing the device to come
         on at `on_level` Zigbee attribute value, regardless of the last set
@@ -182,31 +186,31 @@ class BaseLight(PlatformEntity):
         self.send_state_changed_event()
 
     @property
-    def hs_color(self):
+    def hs_color(self) -> Optional[tuple[float, float]]:
         """Return the hs color value [int, int]."""
         return self._hs_color
 
     @property
-    def color_temp(self):
+    def color_temp(self) -> int | None:
         """Return the CT color value in mireds."""
         return self._color_temp
 
     @property
-    def effect_list(self):
+    def effect_list(self) -> list[str] | None:
         """Return the list of supported effects."""
         return self._effect_list
 
     @property
-    def effect(self):
+    def effect(self) -> str | None:
         """Return the current effect."""
         return self._effect
 
     @property
-    def supported_features(self):
+    def supported_features(self) -> int | None:
         """Flag supported features."""
         return self._supported_features
 
-    async def async_turn_on(self, **kwargs):
+    async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the entity on."""
         transition = kwargs.get(ATTR_TRANSITION)
         duration = (
@@ -348,13 +352,13 @@ class Light(BaseLight):
     def __init__(
         self,
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
     ):
         """Initialize the light."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
-        self._on_off_cluster_handler = self.cluster_handlers.get(CLUSTER_HANDLER_ON_OFF)
+        self._on_off_cluster_handler = self.cluster_handlers[CLUSTER_HANDLER_ON_OFF]
         self._state = bool(self._on_off_cluster_handler.on_off)
         self._level_cluster_handler = self.cluster_handlers.get(CLUSTER_HANDLER_LEVEL)
         self._color_cluster_handler = self.cluster_handlers.get(CLUSTER_HANDLER_COLOR)
@@ -414,7 +418,7 @@ class Light(BaseLight):
         self._level_cluster_handler.add_listener(self)
 
         @periodic(self._REFRESH_INTERVAL)
-        async def _refresh():
+        async def _refresh() -> None:
             """Call async_get_state at an interval."""
             await self.async_update()
             self.send_state_changed_event()
@@ -430,14 +434,16 @@ class Light(BaseLight):
         )
         """
 
-    def cluster_handler_attribute_updated(self, attr_id, attr_name, value):
+    def cluster_handler_attribute_updated(
+        self, attr_id: int, attr_name: str, value: Any
+    ) -> None:
         """Set the state."""
         self._state = bool(value)
         if value:
             self._off_brightness = None
         self.send_state_changed_event()
 
-    async def async_update(self):
+    async def async_update(self) -> None:
         """Attempt to retrieve the state from the light."""
         if not self.available:
             return

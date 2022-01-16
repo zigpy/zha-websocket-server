@@ -1,9 +1,9 @@
 """Representation of a Zigbee endpoint for zhawss."""
-
+from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, Awaitable, Final
+from typing import TYPE_CHECKING, Any, Awaitable, Final
 
 import zigpy
 from zigpy.typing import EndpointType as ZigpyEndpointType
@@ -13,13 +13,14 @@ from zhaws.server.platforms.registries import Platform
 from zhaws.server.zigbee import registries
 from zhaws.server.zigbee.cluster import ClusterHandler
 from zhaws.server.zigbee.cluster.general import MultistateInput
-from zhaws.server.zigbee.cluster.types import (
-    ClientClusterHandlerType,
-    ClusterHandlerDictType,
-    ClusterHandlerType,
-)
+
+if TYPE_CHECKING:
+    from zhaws.server.zigbee.cluster import (
+        ClientClusterHandler,
+    )
+    from zhaws.server.zigbee.device import Device
+
 from zhaws.server.zigbee.decorators import CALLABLE_T
-from zhaws.server.zigbee.types import DeviceType, EndpointType
 
 ATTR_DEVICE_TYPE: Final[str] = "device_type"
 ATTR_PROFILE_ID: Final[str] = "profile_id"
@@ -32,32 +33,32 @@ _LOGGER = logging.getLogger(__name__)
 class Endpoint:
     """Endpoint for zhawss."""
 
-    def __init__(self, zigpy_endpoint: ZigpyEndpointType, device: DeviceType) -> None:
+    def __init__(self, zigpy_endpoint: ZigpyEndpointType, device: Device) -> None:
         """Initialize instance."""
         self._zigpy_endpoint: ZigpyEndpointType = zigpy_endpoint
-        self._device: DeviceType = device
-        self._all_cluster_handlers: ClusterHandlerDictType = {}
-        self._claimed_cluster_handlers: ClusterHandlerDictType = {}
-        self._client_cluster_handlers: dict[str, ClientClusterHandlerType] = {}
+        self._device: Device = device
+        self._all_cluster_handlers: dict[str, ClusterHandler] = {}
+        self._claimed_cluster_handlers: dict[str, ClusterHandler] = {}
+        self._client_cluster_handlers: dict[str, ClientClusterHandler] = {}
         self._unique_id: str = f"{str(device.ieee)}-{zigpy_endpoint.endpoint_id}"
 
     @property
-    def device(self) -> DeviceType:
+    def device(self) -> Device:
         """Return the device this endpoint belongs to."""
         return self._device
 
     @property
-    def all_cluster_handlers(self) -> ClusterHandlerDictType:
+    def all_cluster_handlers(self) -> dict[str, ClusterHandler]:
         """All server cluster handlers of an endpoint."""
         return self._all_cluster_handlers
 
     @property
-    def claimed_cluster_handlers(self) -> ClusterHandlerDictType:
+    def claimed_cluster_handlers(self) -> dict[str, ClusterHandler]:
         """Cluster handlers in use."""
         return self._claimed_cluster_handlers
 
     @property
-    def client_cluster_handlers(self) -> dict[str, ClientClusterHandlerType]:
+    def client_cluster_handlers(self) -> dict[str, ClientClusterHandler]:
         """Return a dict of client cluster handlers."""
         return self._client_cluster_handlers
 
@@ -72,7 +73,7 @@ class Endpoint:
         return self._zigpy_endpoint.endpoint_id
 
     @property
-    def unique_id(self):
+    def unique_id(self) -> str:
         """Return the unique id for this endpoint."""
         return self._unique_id
 
@@ -98,7 +99,7 @@ class Endpoint:
         )
 
     @classmethod
-    def new(cls, zigpy_endpoint: ZigpyEndpointType, device: DeviceType) -> EndpointType:
+    def new(cls, zigpy_endpoint: ZigpyEndpointType, device: Device) -> Endpoint:
         """Create new endpoint and populate cluster handlers."""
         endpoint = cls(zigpy_endpoint, device)
         endpoint.add_all_cluster_handlers()
@@ -152,20 +153,18 @@ class Endpoint:
                 cluster_handler = cluster_handler_class(cluster, self)
                 self.client_cluster_handlers[cluster_handler.id] = cluster_handler
 
-    async def async_initialize(self, from_cache: bool = False) -> Awaitable[None]:
+    async def async_initialize(self, from_cache: bool = False) -> None:
         """Initialize claimed cluster handlers."""
         await self._execute_handler_tasks("async_initialize", from_cache)
 
-    async def async_configure(self) -> Awaitable[None]:
+    async def async_configure(self) -> None:
         """Configure claimed cluster handlers."""
         await self._execute_handler_tasks("async_configure")
 
-    async def _execute_handler_tasks(
-        self, func_name: str, *args: Any
-    ) -> Awaitable[None]:
+    async def _execute_handler_tasks(self, func_name: str, *args: Any) -> None:
         """Add a throttled cluster handler task and swallow exceptions."""
 
-        async def _throttle(coro):
+        async def _throttle(coro: Awaitable) -> None:
             async with self._device.semaphore:
                 return await coro
 
@@ -188,8 +187,8 @@ class Endpoint:
         platform: Platform,
         entity_class: CALLABLE_T,
         unique_id: str,
-        cluster_handlers: list[ClusterHandlerType],
-    ):
+        cluster_handlers: list[ClusterHandler],
+    ) -> None:
         from zhaws.server.zigbee.device import DeviceStatus
 
         if self.device.status == DeviceStatus.INITIALIZED:
@@ -207,13 +206,11 @@ class Endpoint:
         # signal["endpoint_id"] = self.id
         self.device.send_event(signal)
 
-    def claim_cluster_handlers(
-        self, cluster_handlers: list[ClusterHandlerType]
-    ) -> None:
+    def claim_cluster_handlers(self, cluster_handlers: list[ClusterHandler]) -> None:
         """Claim cluster handlers."""
         self.claimed_cluster_handlers.update({ch.id: ch for ch in cluster_handlers})
 
-    def unclaimed_cluster_handlers(self) -> list[ClusterHandlerType]:
+    def unclaimed_cluster_handlers(self) -> list[ClusterHandler]:
         """Return a list of available (unclaimed) cluster handlers."""
         claimed = set(self.claimed_cluster_handlers)
         available = set(self.all_cluster_handlers)

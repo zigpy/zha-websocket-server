@@ -1,15 +1,20 @@
 """WS API for the fan platform entity."""
-from typing import Any, Awaitable
+from __future__ import annotations
 
-from backports.strenum.strenum import StrEnum
+from typing import TYPE_CHECKING, Any
+
 import voluptuous as vol
 
+from zhaws.backports.enum import StrEnum
 from zhaws.server.platforms.api import (
     execute_platform_entity_command,
     platform_entity_command_schema,
 )
 from zhaws.server.websocket.api import decorators, register_api_command
-from zhaws.server.websocket.types import ClientType, ServerType
+
+if TYPE_CHECKING:
+    from zhaws.server.websocket.client import Client
+    from zhaws.server.websocket.server import Server
 
 ATTR_SPEED = "speed"
 ATTR_PERCENTAGE = "percentage"
@@ -25,7 +30,6 @@ class FanAPICommands(StrEnum):
     SET_PRESET_MODE = "fan_set_preset_mode"
 
 
-@decorators.async_response
 @decorators.websocket_command(
     platform_entity_command_schema(
         FanAPICommands.TURN_ON,
@@ -38,23 +42,19 @@ class FanAPICommands(StrEnum):
         },
     )
 )
-async def turn_on(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+@decorators.async_response
+async def turn_on(server: Server, client: Client, message: dict[str, Any]) -> None:
     """Turn fan on."""
     await execute_platform_entity_command(server, client, message, "async_turn_on")
 
 
-@decorators.async_response
 @decorators.websocket_command(platform_entity_command_schema(FanAPICommands.TURN_OFF))
-async def turn_off(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+@decorators.async_response
+async def turn_off(server: Server, client: Client, message: dict[str, Any]) -> None:
     """Turn fan off."""
     await execute_platform_entity_command(server, client, message, "async_turn_off")
 
 
-@decorators.async_response
 @decorators.websocket_command(
     platform_entity_command_schema(
         FanAPICommands.SET_PERCENTAGE,
@@ -65,16 +65,16 @@ async def turn_off(
         },
     )
 )
+@decorators.async_response
 async def set_percentage(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+    server: Server, client: Client, message: dict[str, Any]
+) -> None:
     """Set the fan speed percentage."""
     await execute_platform_entity_command(
         server, client, message, "async_set_percentage"
     )
 
 
-@decorators.async_response
 @decorators.websocket_command(
     platform_entity_command_schema(
         FanAPICommands.TURN_OFF,
@@ -83,16 +83,17 @@ async def set_percentage(
         },
     )
 )
+@decorators.async_response
 async def set_preset_mode(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+    server: Server, client: Client, message: dict[str, Any]
+) -> None:
     """Set the fan preset mode."""
     await execute_platform_entity_command(
         server, client, message, "async_set_preset_mode"
     )
 
 
-def load_api(server: ServerType) -> None:
+def load_api(server: Server) -> None:
     """Load the api command handlers."""
     register_api_command(server, turn_on)
     register_api_command(server, turn_off)

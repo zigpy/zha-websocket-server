@@ -28,9 +28,9 @@ if __name__ == "__main__":
         )
     )
 
-    async def main():
+    async def main() -> None:
         from zhaws.server.websocket.server import Server
 
-        await Server().start_server()
+        await Server().start_server()  # noqa
 
     asyncio.get_event_loop().run_until_complete(main())

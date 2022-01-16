@@ -1,6 +1,5 @@
 """Lightlink cluster handlers module for zhawss."""
 import asyncio
-from typing import Awaitable
 
 import zigpy.exceptions
 from zigpy.zcl.clusters import lightlink
@@ -16,7 +15,7 @@ class LightLink(ClusterHandler):
 
     BIND: bool = False
 
-    async def async_configure(self) -> Awaitable[None]:
+    async def async_configure(self) -> None:
         """Add Coordinator to LightLink group ."""
 
         if self._endpoint.device.skip_configuration:

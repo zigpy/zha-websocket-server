@@ -1,4 +1,6 @@
 """Manufacturer specific cluster handlers module for zhawss."""
+from typing import Any
+
 from zhaws.server.zigbee import registries
 from zhaws.server.zigbee.cluster import ClusterHandler
 from zhaws.server.zigbee.cluster.const import (
@@ -25,23 +27,17 @@ class SmartThingsHumidity(ClusterHandler):
 class OsramButton(ClusterHandler):
     """Osram button cluster handler."""
 
-    REPORT_CONFIG = []
-
 
 @registries.HANDLER_ONLY_CLUSTERS.register(registries.PHILLIPS_REMOTE_CLUSTER)
 @registries.CLUSTER_HANDLER_REGISTRY.register(registries.PHILLIPS_REMOTE_CLUSTER)
 class PhillipsRemote(ClusterHandler):
     """Phillips remote cluster handler."""
 
-    REPORT_CONFIG = []
-
 
 @registries.HANDLER_ONLY_CLUSTERS.register(0xFCC0)
 @registries.CLUSTER_HANDLER_REGISTRY.register(0xFCC0)
 class OppleRemote(ClusterHandler):
     """Opple button cluster handler."""
-
-    REPORT_CONFIG = []
 
 
 @registries.CLUSTER_HANDLER_REGISTRY.register(
@@ -57,7 +53,7 @@ class SmartThingsAcceleration(ClusterHandler):
         {"attr": "z_axis", "config": REPORT_CONFIG_ASAP},
     ]
 
-    def attribute_updated(self, attrid, value) -> None:
+    def attribute_updated(self, attrid: int, value: Any) -> None:
         """Handle attribute updates on this cluster."""
         if attrid == self.value_attribute:
             """TODO

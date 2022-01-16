@@ -1,12 +1,17 @@
 """WS API for common platform entity functionality."""
-from typing import Any, Awaitable, Dict
+from __future__ import annotations
 
-from backports.strenum.strenum import StrEnum
+from typing import TYPE_CHECKING, Any, Optional
+
 import voluptuous as vol
 
+from zhaws.backports.enum import StrEnum
 from zhaws.server.const import ATTR_UNIQUE_ID, COMMAND, IEEE
 from zhaws.server.websocket.api import decorators, register_api_command
-from zhaws.server.websocket.types import ClientType, ServerType
+
+if TYPE_CHECKING:
+    from zhaws.server.websocket.client import Client
+    from zhaws.server.websocket.server import Server
 
 
 class PlatformEntityCommands(StrEnum):
@@ -16,8 +21,8 @@ class PlatformEntityCommands(StrEnum):
 
 
 def platform_entity_command_schema(
-    command: str, schema: Dict[str, Any] = None
-) -> Dict[str, Any]:
+    command: str, schema: Optional[dict[str, Any]] = None
+) -> dict[str, Any]:
     """Return the schema for a platform entity command."""
     full_schema = {
         vol.Required(COMMAND): str(command),
@@ -30,11 +35,11 @@ def platform_entity_command_schema(
 
 
 async def execute_platform_entity_command(
-    server: ServerType,
-    client: ClientType,
+    server: Server,
+    client: Client,
     request_message: dict[str, Any],
     command: str,
-) -> Awaitable[None]:
+) -> None:
     """Get the platform entity and execute a command."""
     try:
         device = server.controller.get_device(request_message[IEEE])
@@ -62,18 +67,18 @@ async def execute_platform_entity_command(
     client.send_result_success(request_message, result)
 
 
-@decorators.async_response
 @decorators.websocket_command(
     platform_entity_command_schema(PlatformEntityCommands.REFRESH_STATE)
 )
+@decorators.async_response
 async def refresh_state(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+    server: Server, client: Client, message: dict[str, Any]
+) -> None:
     """Refresh the state of the platform entity."""
     await execute_platform_entity_command(server, client, message, "async_update")
 
 
-def load_platform_entity_apis(server: ServerType):
+def load_platform_entity_apis(server: Server) -> None:
     """Load the ws apis for all platform entities types."""
     from zhaws.server.platforms.alarm_control_panel.api import (
         load_api as load_alarm_control_panel_api,

@@ -1,16 +1,20 @@
 """Device Tracker platform for zhawss."""
+from __future__ import annotations
 
 import functools
 import time
-from typing import Dict, List, Union
+from typing import TYPE_CHECKING, Any
 
 from zhaws.server.decorators import periodic
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhaws.server.platforms.sensor import Battery
 from zhaws.server.zigbee.cluster.const import CLUSTER_HANDLER_POWER_CONFIGURATION
-from zhaws.server.zigbee.cluster.types import ClusterHandlerType
-from zhaws.server.zigbee.types import DeviceType, EndpointType
+
+if TYPE_CHECKING:
+    from zhaws.server.zigbee.cluster import ClusterHandler
+    from zhaws.server.zigbee.device import Device
+    from zhaws.server.zigbee.endpoint import Endpoint
 
 STRICT_MATCH = functools.partial(
     PLATFORM_ENTITIES.strict_match, Platform.DEVICE_TRACKER
@@ -26,22 +30,22 @@ class DeviceTracker(PlatformEntity):
     def __init__(
         self,
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
     ):
         """Initialize the binary sensor."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
-        self._battery_cluster_handler: ClusterHandlerType = self.cluster_handlers.get(
+        self._battery_cluster_handler: ClusterHandler = self.cluster_handlers[
             CLUSTER_HANDLER_POWER_CONFIGURATION
-        )
-        self._connected = False
-        self._keepalive_interval = 60
-        self._should_poll = True
-        self._battery_level = None
+        ]
+        self._connected: bool = False
+        self._keepalive_interval: int = 60
+        self._should_poll: bool = True
+        self._battery_level: int | None = None
         self._battery_cluster_handler.add_listener(self)
 
-    async def async_update(self):
+    async def async_update(self) -> None:
         """Handle polling."""
         previous_state = self._connected
         if self.device.last_seen is None:
@@ -56,16 +60,18 @@ class DeviceTracker(PlatformEntity):
             self.send_state_changed_event()
 
     @periodic((30, 45))
-    async def _refresh(self):
+    async def _refresh(self) -> None:
         """Refresh the state of the device tracker."""
         await self.async_update()
 
     @property
-    def is_connected(self):
+    def is_connected(self) -> bool:
         """Return true if the device is connected to the network."""
         return self._connected
 
-    def cluster_handler_attribute_updated(self, attr_id, attr_name, value):
+    def cluster_handler_attribute_updated(
+        self, attr_id: int, attr_name: str, value: Any
+    ) -> None:
         """Handle tracking."""
         if attr_name != "battery_percentage_remaining":
             return
@@ -75,11 +81,11 @@ class DeviceTracker(PlatformEntity):
         self.send_state_changed_event()
 
     @property
-    def battery_level(self):
+    def battery_level(self) -> int | None:
         """Return the battery level of the device.
         Percentage from 0-100.
         """
         return self._battery_level
 
-    def get_state(self) -> Union[str, Dict, None]:
+    def get_state(self) -> bool:
         return self._connected

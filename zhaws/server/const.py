@@ -4,10 +4,7 @@ from typing import Final
 
 import voluptuous
 
-try:
-    from enum import StrEnum
-except ImportError:
-    from backports.strenum import StrEnum
+from zhaws.backports.enum import StrEnum
 
 
 class APICommands(StrEnum):

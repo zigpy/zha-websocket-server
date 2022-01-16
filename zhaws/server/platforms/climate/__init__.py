@@ -1,14 +1,15 @@
 """Climate platform for zhawss."""
+from __future__ import annotations
 
 import asyncio
 from datetime import datetime
 import functools
 import logging
-from typing import Awaitable, Final, List, Union
+from typing import TYPE_CHECKING, Any, Final, Optional, Union
 
-from backports.strenum.strenum import StrEnum
 from zigpy.zcl.clusters.hvac import Fan as FanCluster, Thermostat as ThermostatCluster
 
+from zhaws.backports.enum import StrEnum
 from zhaws.server.decorators import periodic
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
@@ -16,8 +17,11 @@ from zhaws.server.zigbee.cluster.const import (
     CLUSTER_HANDLER_FAN,
     CLUSTER_HANDLER_THERMOSTAT,
 )
-from zhaws.server.zigbee.cluster.types import ClusterHandlerType
-from zhaws.server.zigbee.types import DeviceType, EndpointType
+
+if TYPE_CHECKING:
+    from zhaws.server.zigbee.cluster import ClusterHandler
+    from zhaws.server.zigbee.device import Device
+    from zhaws.server.zigbee.endpoint import Endpoint
 
 STRICT_MATCH = functools.partial(PLATFORM_ENTITIES.strict_match, Platform.CLIMATE)
 MULTI_MATCH = functools.partial(PLATFORM_ENTITIES.multipass_match, Platform.CLIMATE)
@@ -172,19 +176,21 @@ class Thermostat(PlatformEntity):
     def __init__(
         self,
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
     ):
         """Initialize the thermostat."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
-        self._thermostat_cluster_handler: ClusterHandlerType = (
-            self.cluster_handlers.get(CLUSTER_HANDLER_THERMOSTAT)
-        )
+        if CLUSTER_HANDLER_THERMOSTAT not in self.cluster_handlers:
+            raise ValueError("No Thermostat cluster handler found")
+        self._thermostat_cluster_handler: ClusterHandler = self.cluster_handlers[
+            CLUSTER_HANDLER_THERMOSTAT
+        ]
         self._preset: Preset = Preset.NONE
-        self._presets: List[Preset] = []
+        self._presets: list[Preset] = []
         self._supported_flags = SUPPORT_TARGET_TEMPERATURE
-        self._fan_cluster_handler: ClusterHandlerType = self.cluster_handlers.get(
+        self._fan_cluster_handler: Optional[ClusterHandler] = self.cluster_handlers.get(
             CLUSTER_HANDLER_FAN
         )
 
@@ -193,14 +199,14 @@ class Thermostat(PlatformEntity):
         # self._fan_cluster_handler.add_listener(self)
 
     @property
-    def current_temperature(self):
+    def current_temperature(self) -> Union[float, None]:
         """Return the current temperature."""
         if self._thermostat_cluster_handler.local_temp is None:
             return None
         return self._thermostat_cluster_handler.local_temp / ZCL_TEMP
 
     @property
-    def extra_state_attributes(self):
+    def extra_state_attributes(self) -> dict:
         """Return device specific state attributes."""
         data = {}
         if self.hvac_mode:
@@ -329,7 +335,7 @@ class Thermostat(PlatformEntity):
         )
 
     @property
-    def precision(self):
+    def precision(self) -> float:
         """Return the precision of the system."""
         return PRECISION_TENTHS
 
@@ -344,7 +350,7 @@ class Thermostat(PlatformEntity):
         return self._presets
 
     @property
-    def supported_features(self):
+    def supported_features(self) -> int:
         """Return the list of supported features."""
         features = self._supported_flags
         if HVACMode.HEAT_COOL in self.hvac_modes:
@@ -354,7 +360,7 @@ class Thermostat(PlatformEntity):
         return features
 
     @property
-    def target_temperature(self):
+    def target_temperature(self) -> Union[float, None]:
         """Return the temperature we try to reach."""
         temp = None
         if self.hvac_mode == HVACMode.COOL:
@@ -372,7 +378,7 @@ class Thermostat(PlatformEntity):
         return round(temp / ZCL_TEMP, 1)
 
     @property
-    def target_temperature_high(self):
+    def target_temperature_high(self) -> Union[float, None]:
         """Return the upper bound temperature we try to reach."""
         if self.hvac_mode != HVACMode.HEAT_COOL:
             return None
@@ -387,7 +393,7 @@ class Thermostat(PlatformEntity):
         return round(temp / ZCL_TEMP, 1)
 
     @property
-    def target_temperature_low(self):
+    def target_temperature_low(self) -> Union[float, None]:
         """Return the lower bound temperature we try to reach."""
         if self.hvac_mode != HVACMode.HEAT_COOL:
             return None
@@ -401,7 +407,7 @@ class Thermostat(PlatformEntity):
         return round(temp / ZCL_TEMP, 1)
 
     @property
-    def temperature_unit(self):
+    def temperature_unit(self) -> str:
         """Return the unit of measurement used by the platform."""
         return TEMP_CELSIUS
 
@@ -431,7 +437,7 @@ class Thermostat(PlatformEntity):
             return self.DEFAULT_MIN_TEMP
         return round(min(temps) / ZCL_TEMP, 1)
 
-    async def cluster_handler_attribute_updated(self, record):
+    async def cluster_handler_attribute_updated(self, record) -> None:
         """Handle attribute update from device."""
         if (
             record.attr_name in (ATTR_OCCP_COOL_SETPT, ATTR_OCCP_HEAT_SETPT)
@@ -499,7 +505,7 @@ class Thermostat(PlatformEntity):
         self._preset = preset_mode
         self.send_state_changed_event()
 
-    async def async_set_temperature(self, **kwargs):
+    async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperature."""
         low_temp = kwargs.get(ATTR_TARGET_TEMP_LOW)
         high_temp = kwargs.get(ATTR_TARGET_TEMP_HIGH)
@@ -565,20 +571,20 @@ class SinopeTechnologiesThermostat(Thermostat):
     def __init__(
         self,
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
     ):
         """Initialize the thermostat."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
-        self._presets: List[Preset] = [Preset.AWAY, Preset.NONE]
+        self._presets: list[Preset] = [Preset.AWAY, Preset.NONE]
         self._supported_flags |= SUPPORT_PRESET_MODE
-        self._manufacturer_ch: ClusterHandlerType = self.cluster_handlers[
+        self._manufacturer_ch: ClusterHandler = self.cluster_handlers[
             "sinope_manufacturer_specific"
         ]
 
         @periodic(self.update_time_interval)
-        async def _update_time() -> Awaitable[None]:
+        async def _update_time() -> None:
             await self._async_update_time()
 
         self._update_time_task = asyncio.create_task(_update_time())
@@ -681,13 +687,13 @@ class MoesThermostat(Thermostat):
     def __init__(
         self,
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
     ):
         """Initialize the thermostat."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
-        self._presets: List[Preset] = [
+        self._presets: list[Preset] = [
             Preset.NONE,
             Preset.AWAY,
             Preset.SCHEDULE,
@@ -769,13 +775,13 @@ class BecaThermostat(Thermostat):
     def __init__(
         self,
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
     ):
         """Initialize the thermostat."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
-        self._presets: List[Preset] = [
+        self._presets: list[Preset] = [
             Preset.NONE,
             Preset.AWAY,
             Preset.SCHEDULE,
@@ -790,7 +796,7 @@ class BecaThermostat(Thermostat):
         """Return only the heat mode, because the device can't be turned off."""
         return (HVACMode.HEAT,)
 
-    async def cluster_handler_attribute_updated(self, record):
+    async def cluster_handler_attribute_updated(self, record) -> None:
         """Handle attribute update from device."""
         if record.attr_name == "operation_preset":
             if record.value == 0:

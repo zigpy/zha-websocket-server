@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import enum
-from typing import Awaitable
 
 from zigpy.zcl.clusters import homeautomation
 
@@ -62,7 +61,7 @@ class ElectricalMeasurementClusterHandler(ClusterHandler):
         HARMONICS_MEASUREMENT = 128
         POWER_QUALITY_MEASUREMENT = 256
 
-    REPORT_CONFIG = (
+    REPORT_CONFIG = [
         {"attr": "active_power", "config": REPORT_CONFIG_OP},
         {"attr": "active_power_max", "config": REPORT_CONFIG_DEFAULT},
         {"attr": "apparent_power", "config": REPORT_CONFIG_OP},
@@ -70,7 +69,7 @@ class ElectricalMeasurementClusterHandler(ClusterHandler):
         {"attr": "rms_current_max", "config": REPORT_CONFIG_DEFAULT},
         {"attr": "rms_voltage", "config": REPORT_CONFIG_OP},
         {"attr": "rms_voltage_max", "config": REPORT_CONFIG_DEFAULT},
-    )
+    ]
     ZCL_INIT_ATTRS = {
         "ac_current_divisor": True,
         "ac_current_multiplier": True,
@@ -83,7 +82,7 @@ class ElectricalMeasurementClusterHandler(ClusterHandler):
         "power_multiplier": True,
     }
 
-    async def async_update(self) -> Awaitable[None]:
+    async def async_update(self) -> None:
         """Retrieve latest state."""
         self.debug("async_update")
 
@@ -144,7 +143,7 @@ class ElectricalMeasurementClusterHandler(ClusterHandler):
             return None
 
         meas_type = self.MeasurementType(meas_type)
-        return ", ".join(m.name for m in self.MeasurementType if m in meas_type)
+        return ", ".join(m.name for m in self.MeasurementType if m in meas_type)  # type: ignore #TODO
 
 
 @registries.CLUSTER_HANDLER_REGISTRY.register(

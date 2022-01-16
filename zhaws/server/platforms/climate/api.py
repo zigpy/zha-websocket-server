@@ -1,9 +1,11 @@
 """WS api for the climate platform entity."""
-from typing import Any, Awaitable
+from __future__ import annotations
 
-from backports.strenum.strenum import StrEnum
+from typing import TYPE_CHECKING, Any
+
 import voluptuous as vol
 
+from zhaws.backports.enum import StrEnum
 from zhaws.server.platforms.api import (
     execute_platform_entity_command,
     platform_entity_command_schema,
@@ -16,7 +18,10 @@ from zhaws.server.platforms.climate import (
     ATTR_TEMPERATURE,
 )
 from zhaws.server.websocket.api import decorators, register_api_command
-from zhaws.server.websocket.types import ClientType, ServerType
+
+if TYPE_CHECKING:
+    from zhaws.server.websocket.client import Client
+    from zhaws.server.websocket.server import Server
 
 # All activity disabled / Device is off/standby
 HVAC_MODE_OFF = "off"
@@ -62,7 +67,6 @@ class ClimateCommands(StrEnum):
     SET_TEMPERATURE = "climate_set_temperature"
 
 
-@decorators.async_response
 @decorators.websocket_command(
     platform_entity_command_schema(
         ClimateCommands.SET_FAN_MODE,
@@ -71,14 +75,12 @@ class ClimateCommands(StrEnum):
         },
     )
 )
-async def set_fan_mode(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+@decorators.async_response
+async def set_fan_mode(server: Server, client: Client, message: dict[str, Any]) -> None:
     """Set the fan mode for the climate platform entity."""
     await execute_platform_entity_command(server, client, message, "async_set_fan_mode")
 
 
-@decorators.async_response
 @decorators.websocket_command(
     platform_entity_command_schema(
         ClimateCommands.SET_HVAC_MODE,
@@ -87,16 +89,16 @@ async def set_fan_mode(
         },
     )
 )
+@decorators.async_response
 async def set_hvac_mode(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+    server: Server, client: Client, message: dict[str, Any]
+) -> None:
     """Set the hvac mode for the climate platform entity."""
     await execute_platform_entity_command(
         server, client, message, "async_set_hvac_mode"
     )
 
 
-@decorators.async_response
 @decorators.websocket_command(
     platform_entity_command_schema(
         ClimateCommands.SET_PRESET_MODE,
@@ -105,16 +107,16 @@ async def set_hvac_mode(
         },
     )
 )
+@decorators.async_response
 async def set_preset_mode(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+    server: Server, client: Client, message: dict[str, Any]
+) -> None:
     """Set the preset mode for the climate platform entity."""
     await execute_platform_entity_command(
         server, client, message, "async_set_preset_mode"
     )
 
 
-@decorators.async_response
 @decorators.websocket_command(
     platform_entity_command_schema(
         ClimateCommands.SET_TEMPERATURE,
@@ -126,16 +128,17 @@ async def set_preset_mode(
         },
     )
 )
+@decorators.async_response
 async def set_temperature(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+    server: Server, client: Client, message: dict[str, Any]
+) -> None:
     """Set the temperature and hvac mode for the climate platform entity."""
     await execute_platform_entity_command(
         server, client, message, "async_set_temperature"
     )
 
 
-def load_api(server: ServerType) -> None:
+def load_api(server: Server) -> None:
     """Load the api command handlers."""
     register_api_command(server, set_fan_mode)
     register_api_command(server, set_hvac_mode)

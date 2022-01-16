@@ -1,6 +1,6 @@
 """Models that represent commands and command responses."""
 
-from typing import Annotated, Dict, Literal, Optional, Tuple, Union
+from typing import Annotated, Literal, Optional, Tuple, Union
 
 from pydantic import conint
 from pydantic.fields import Field
@@ -134,7 +134,7 @@ class FanTurnOnCommand(PlatformEntityCommand):
 
     command: Literal["fan_turn_on"] = "fan_turn_on"
     speed: Optional[str]
-    percentage: Optional[conint(ge=0, le=100)]
+    percentage: Optional[conint(ge=0, le=100)]  # type: ignore #TODO see if there is a way to make this work mypy
     preset_mode: Optional[str]
 
 
@@ -148,7 +148,7 @@ class FanSetPercentageCommand(PlatformEntityCommand):
     """Command to set the speed percentage for a fan platform entity."""
 
     command: Literal["fan_set_percentage"] = "fan_set_percentage"
-    percentage: Optional[conint(ge=0, le=100)]
+    percentage: Optional[conint(ge=0, le=100)]  # type: ignore #TODO see if there is a way to make this work mypy
 
 
 class FanSetPresetModeCommand(PlatformEntityCommand):
@@ -346,7 +346,7 @@ class GetDevicesResponse(CommandResponse):
     """Get devices response."""
 
     command: Literal["get_devices"] = "get_devices"
-    devices: Dict[str, Device] = None
+    devices: dict[str, Device]
 
 
 CommandResponses = Annotated[

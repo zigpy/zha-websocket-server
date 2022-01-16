@@ -4,24 +4,29 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable
 from functools import wraps
-from typing import Any
+import logging
+from typing import TYPE_CHECKING, Any
 
 import voluptuous as vol
 
 from zhaws.server.const import COMMAND, MINIMAL_MESSAGE_SCHEMA
-from zhaws.server.websocket.api.types import (
-    AsyncWebSocketCommandHandler,
-    WebSocketCommandHandler,
-)
-from zhaws.server.websocket.types import ClientType, ServerType
+
+if TYPE_CHECKING:
+    from zhaws.server.websocket.api.types import (
+        AsyncWebSocketCommandHandler,
+        WebSocketCommandHandler,
+    )
+    from zhaws.server.websocket.client import Client
+    from zhaws.server.websocket.server import Server
 
 POSITIVE_INT = vol.All(vol.Coerce(int), vol.Range(min=0))
+_LOGGER = logging.getLogger(__name__)
 
 
 async def _handle_async_response(
     func: AsyncWebSocketCommandHandler,
-    server: ServerType,
-    client: ClientType,
+    server: Server,
+    client: Client,
     msg: dict[str, Any],
 ) -> None:
     """Create a response and handle exception."""
@@ -29,6 +34,7 @@ async def _handle_async_response(
         await func(server, client, msg)
     except Exception as err:  # pylint: disable=broad-except
         # TODO fix this to send a real error code and message
+        _LOGGER.exception("Error handling message: %s", err, exc_info=err)
         client.send_result_error(msg, "API_COMMAND_HANDLER_ERROR", str(err))
 
 
@@ -38,9 +44,7 @@ def async_response(
     """Decorate an async function to handle WebSocket API messages."""
 
     @wraps(func)
-    def schedule_handler(
-        server: ServerType, client: ClientType, msg: dict[str, Any]
-    ) -> None:
+    def schedule_handler(server: Server, client: Client, msg: dict[str, Any]) -> None:
         """Schedule the handler."""
         # As the webserver is now started before the start
         # event we do not want to block for websocket responders

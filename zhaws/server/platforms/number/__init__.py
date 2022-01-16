@@ -1,14 +1,18 @@
 """Number platform for zhawss."""
+from __future__ import annotations
 
 import functools
 import logging
-from typing import Dict, List, Union
+from typing import TYPE_CHECKING, Any
 
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhaws.server.zigbee.cluster.const import CLUSTER_HANDLER_ANALOG_OUTPUT
-from zhaws.server.zigbee.cluster.types import ClusterHandlerType
-from zhaws.server.zigbee.types import DeviceType, EndpointType
+
+if TYPE_CHECKING:
+    from zhaws.server.zigbee.cluster import ClusterHandler
+    from zhaws.server.zigbee.device import Device
+    from zhaws.server.zigbee.endpoint import Endpoint
 
 STRICT_MATCH = functools.partial(PLATFORM_ENTITIES.strict_match, Platform.NUMBER)
 
@@ -24,24 +28,24 @@ class Number(PlatformEntity):
     def __init__(
         self,
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
     ):
         """Initialize the number."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
-        self._analog_output_cluster_handler: ClusterHandlerType = (
-            self.cluster_handlers.get(CLUSTER_HANDLER_ANALOG_OUTPUT)
-        )
+        self._analog_output_cluster_handler: ClusterHandler = self.cluster_handlers[
+            CLUSTER_HANDLER_ANALOG_OUTPUT
+        ]
         self._analog_output_cluster_handler.add_listener(self)
 
     @property
-    def value(self):
+    def value(self) -> float:
         """Return the current value."""
         return self._analog_output_cluster_handler.present_value
 
     @property
-    def min_value(self):
+    def min_value(self) -> float:
         """Return the minimum value."""
         min_present_value = self._analog_output_cluster_handler.min_present_value
         if min_present_value is not None:
@@ -49,7 +53,7 @@ class Number(PlatformEntity):
         return 0
 
     @property
-    def max_value(self):
+    def max_value(self) -> float:
         """Return the maximum value."""
         max_present_value = self._analog_output_cluster_handler.max_present_value
         if max_present_value is not None:
@@ -57,32 +61,31 @@ class Number(PlatformEntity):
         return 1023
 
     @property
-    def step(self):
+    def step(self) -> float | None:
         """Return the value step."""
-        resolution = self._analog_output_cluster_handler.resolution
-        if resolution is not None:
-            return resolution
-        return super().step
+        return self._analog_output_cluster_handler.resolution
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Return the name of the number entity."""
         description = self._analog_output_cluster_handler.description
         if description is not None and len(description) > 0:
             return f"{super().name} {description}"
         return super().name
 
-    def cluster_handler_attribute_updated(self, attr_id, attr_name, value):
+    def cluster_handler_attribute_updated(
+        self, attr_id: int, attr_name: str, value: Any
+    ) -> None:
         """Handle value update from cluster handler."""
         self.send_state_changed_event()
 
-    async def async_set_value(self, value):
+    async def async_set_value(self, value: Any) -> None:
         """Update the current value from service."""
         num_value = float(value)
         if await self._analog_output_cluster_handler.async_set_present_value(num_value):
             self.send_state_changed_event()
 
-    async def async_update(self):
+    async def async_update(self) -> None:
         """Attempt to retrieve the state of the entity."""
         await super().async_update()
         _LOGGER.debug("polling current state")
@@ -102,5 +105,5 @@ class Number(PlatformEntity):
         json["name"] = self.name
         return json
 
-    def get_state(self) -> Union[str, Dict, None]:
+    def get_state(self) -> float:
         return self.value

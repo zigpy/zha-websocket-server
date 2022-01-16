@@ -1,11 +1,11 @@
 """Websocket API for zhawss."""
+from __future__ import annotations
 
 import logging
-from typing import Any, Awaitable
+from typing import TYPE_CHECKING, Any
 
 import voluptuous as vol
 from zigpy.config import CONF_DEVICE, CONF_DEVICE_PATH
-from zigpy.device import Device
 from zigpy.types.named import EUI64
 
 from zhaws.server.const import (
@@ -21,12 +21,14 @@ from zhaws.server.const import (
     APICommands,
 )
 from zhaws.server.websocket.api import decorators, register_api_command
-from zhaws.server.websocket.types import ClientType, ServerType
+
+if TYPE_CHECKING:
+    from zhaws.server.websocket.client import Client
+    from zhaws.server.websocket.server import Server
 
 _LOGGER = logging.getLogger(__name__)
 
 
-@decorators.async_response
 @decorators.websocket_command(
     {
         vol.Required(COMMAND): str(APICommands.START_NETWORK),
@@ -42,53 +44,50 @@ _LOGGER = logging.getLogger(__name__)
         vol.Required(CONF_ENABLE_QUIRKS): bool,
     }
 )
+@decorators.async_response
 async def start_network(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+    server: Server, client: Client, message: dict[str, Any]
+) -> None:
     """Start the Zigbee network."""
     await server.controller.start_network(message)
     client.send_result_success(message)
 
 
-@decorators.async_response
 @decorators.websocket_command(
     {
         vol.Required(COMMAND): str(APICommands.STOP_NETWORK),
     }
 )
-async def stop_network(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+@decorators.async_response
+async def stop_network(server: Server, client: Client, message: dict[str, Any]) -> None:
     """Stop the Zigbee network."""
     await server.controller.stop_network()
     client.send_result_success(message)
 
 
-@decorators.async_response
 @decorators.websocket_command(
     {
         vol.Required(COMMAND): str(APICommands.GET_DEVICES),
     }
 )
-async def get_devices(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+@decorators.async_response
+async def get_devices(server: Server, client: Client, message: dict[str, Any]) -> None:
     """Get Zigbee devices."""
-    devices: list[Device] = server.controller.get_devices()
+    devices: dict[str, Any] = server.controller.get_devices()
     _LOGGER.info("devices: %s", devices)
     client.send_result_success(message, {DEVICES: devices})
 
 
-@decorators.async_response
 @decorators.websocket_command(
     {
         vol.Required(COMMAND): str(APICommands.PERMIT_JOINING),
         vol.Optional(DURATION, default=60): vol.All(vol.Coerce(int), vol.Range(0, 254)),
     }
 )
+@decorators.async_response
 async def permit_joining(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+    server: Server, client: Client, message: dict[str, Any]
+) -> None:
     """Permit joining devices to the Zigbee network."""
     await server.controller.application_controller.permit(message[DURATION])
     client.send_result_success(
@@ -97,16 +96,16 @@ async def permit_joining(
     )
 
 
-@decorators.async_response
 @decorators.websocket_command(
     {
         vol.Required(COMMAND): str(APICommands.REMOVE_DEVICE),
         vol.Required(IEEE): str,
     }
 )
+@decorators.async_response
 async def remove_device(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+    server: Server, client: Client, message: dict[str, Any]
+) -> None:
     """Permit joining devices to the Zigbee network."""
     await server.controller.application_controller.remove(
         EUI64.convert(message["ieee"])
@@ -114,7 +113,7 @@ async def remove_device(
     client.send_result_success(message)
 
 
-def load_api(server: ServerType) -> None:
+def load_api(server: Server) -> None:
     """Load the api command handlers."""
     register_api_command(server, start_network)
     register_api_command(server, stop_network)

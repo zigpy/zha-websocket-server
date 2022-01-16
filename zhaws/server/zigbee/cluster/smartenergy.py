@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import enum
 from functools import partialmethod
-from typing import Awaitable
+from typing import TYPE_CHECKING
 
 from zigpy.zcl import Cluster as ZigpyClusterType
 from zigpy.zcl.clusters import smartenergy
@@ -15,7 +15,9 @@ from zhaws.server.zigbee.cluster.const import (
     REPORT_CONFIG_DEFAULT,
     REPORT_CONFIG_OP,
 )
-from zhaws.server.zigbee.types import EndpointType
+
+if TYPE_CHECKING:
+    from zhaws.server.zigbee.endpoint import Endpoint
 
 
 @registries.CLUSTER_HANDLER_REGISTRY.register(smartenergy.Calendar.cluster_id)
@@ -62,11 +64,12 @@ class Messaging(ClusterHandler):
 class Metering(ClusterHandler):
     """Metering cluster handler."""
 
-    REPORT_CONFIG = (
+    REPORT_CONFIG = [
         {"attr": "instantaneous_demand", "config": REPORT_CONFIG_OP},
         {"attr": "current_summ_delivered", "config": REPORT_CONFIG_DEFAULT},
         {"attr": "status", "config": REPORT_CONFIG_ASAP},
-    )
+    ]
+
     ZCL_INIT_ATTRS = {
         "demand_formatting": True,
         "divisor": True,
@@ -116,11 +119,11 @@ class Metering(ClusterHandler):
         DEMAND = 0
         SUMMATION = 1
 
-    def __init__(self, cluster: ZigpyClusterType, endpoint: EndpointType) -> None:
+    def __init__(self, cluster: ZigpyClusterType, endpoint: Endpoint) -> None:
         """Initialize Metering."""
         super().__init__(cluster, endpoint)
-        self._format_spec = None
-        self._summa_format = None
+        self._format_spec
+        self._summa_format
 
     @property
     def divisor(self) -> int:
@@ -128,7 +131,7 @@ class Metering(ClusterHandler):
         return self.cluster.get("divisor") or 1
 
     @property
-    def device_type(self) -> int | None:
+    def device_type(self) -> str | int | None:
         """Return metering device type."""
         dev_type = self.cluster.get("metering_device_type")
         if dev_type is None:
@@ -141,7 +144,7 @@ class Metering(ClusterHandler):
         return self.cluster.get("multiplier") or 1
 
     @property
-    def status(self) -> int | None:
+    def metering_status(self) -> int | None:
         """Return metering device status."""
         if (status := self.cluster.get("status")) is None:
             return None
@@ -151,13 +154,11 @@ class Metering(ClusterHandler):
         return self.DeviceStatusDefault(status)
 
     @property
-    def unit_of_measurement(self) -> str:
+    def unit_of_measurement(self) -> str | int:
         """Return unit of measurement."""
         return self.cluster.get("unit_of_measure")
 
-    async def async_initialize_handler_specific(
-        self, from_cache: bool
-    ) -> Awaitable[None]:
+    async def async_initialize_handler_specific(self, from_cache: bool) -> None:
         """Fetch config from device and updates format specifier."""
 
         fmting = self.cluster.get(
@@ -190,18 +191,20 @@ class Metering(ClusterHandler):
 
         return f"{{:0{width}.{r_digits}f}}"
 
-    def _formatter_function(self, selector: FormatSelector, value: int) -> int | float:
+    def _formatter_function(
+        self, selector: FormatSelector, value: int
+    ) -> int | float | str:
         """Return formatted value for display."""
-        value = value * self.multiplier / self.divisor
+        val = value * self.multiplier / self.divisor
         if self.unit_of_measurement == 0:
             # Zigbee spec power unit is kW, but we show the value in W
-            value_watt = value * 1000
+            value_watt = val * 1000
             if value_watt < 100:
                 return round(value_watt, 1)
             return round(value_watt)
         if selector == self.FormatSelector.SUMMATION:
-            return self._summa_format.format(value).lstrip()
-        return self._format_spec.format(value).lstrip()
+            return self._summa_format.format(val).lstrip()
+        return self._format_spec.format(val).lstrip()
 
     demand_formatter = partialmethod(_formatter_function, FormatSelector.DEMAND)
     summa_formatter = partialmethod(_formatter_function, FormatSelector.SUMMATION)

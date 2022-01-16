@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING, Any
 
 from zhaws.server.platforms import (  # noqa: F401 pylint: disable=unused-import,
     alarm_control_panel,
@@ -27,7 +28,11 @@ from zhaws.server.platforms.registries import (
     SINGLE_OUTPUT_CLUSTER_DEVICE_CLASS,
     Platform,
 )
-from zhaws.server.websocket.types import ServerType
+
+if TYPE_CHECKING:
+    from zhaws.server.websocket.server import Server
+    from zhaws.server.zigbee.endpoint import Endpoint
+
 from zhaws.server.zigbee.cluster import (  # noqa: F401
     ClusterHandler,
     closures,
@@ -42,12 +47,10 @@ from zhaws.server.zigbee.cluster import (  # noqa: F401
     security,
     smartenergy,
 )
-from zhaws.server.zigbee.cluster.types import ClusterHandlerType
 from zhaws.server.zigbee.registries import (
     CLUSTER_HANDLER_REGISTRY,
     HANDLER_ONLY_CLUSTERS,
 )
-from zhaws.server.zigbee.types import EndpointType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -75,16 +78,16 @@ class ProbeEndpoint:
 
     def __init__(self):
         """Initialize instance."""
-        self._device_configs = {}
+        self._device_configs: dict[str, Any] = {}
 
-    def discover_entities(self, endpoint: EndpointType) -> None:
+    def discover_entities(self, endpoint: Endpoint) -> None:
         """Process an endpoint on a zigpy device."""
         self.discover_by_device_type(endpoint)
         self.discover_multi_entities(endpoint)
         self.discover_by_cluster_id(endpoint)
         PLATFORM_ENTITIES.clean_up()
 
-    def discover_by_device_type(self, endpoint: EndpointType) -> None:
+    def discover_by_device_type(self, endpoint: Endpoint) -> None:
         """Process an endpoint on a zigpy device."""
 
         unique_id = endpoint.unique_id
@@ -113,7 +116,7 @@ class ProbeEndpoint:
                 platform, platform_entity_class, unique_id, claimed
             )
 
-    def discover_by_cluster_id(self, endpoint: EndpointType) -> None:
+    def discover_by_cluster_id(self, endpoint: Endpoint) -> None:
         """Process an endpoint on a zigpy device."""
 
         items = SINGLE_INPUT_CLUSTER_DEVICE_CLASS.items()
@@ -145,8 +148,8 @@ class ProbeEndpoint:
     @staticmethod
     def probe_single_cluster(
         platform: Platform,
-        cluster_handler: ClusterHandlerType,
-        endpoint: EndpointType,
+        cluster_handler: ClusterHandler,
+        endpoint: Endpoint,
     ) -> None:
         """Probe specified cluster for specific platform."""
         if platform is None or platform not in PLATFORMS:
@@ -167,7 +170,7 @@ class ProbeEndpoint:
 
     def handle_on_off_output_cluster_exception(
         self,
-        endpoint: EndpointType,
+        endpoint: Endpoint,
     ) -> None:
         """Process output clusters of the endpoint."""
 
@@ -188,7 +191,7 @@ class ProbeEndpoint:
             self.probe_single_cluster(platform, cluster_handler, endpoint)
 
     @staticmethod
-    def discover_multi_entities(endpoint: EndpointType) -> None:
+    def discover_multi_entities(endpoint: Endpoint) -> None:
         """Process an endpoint on and discover multiple entities."""
 
         ep_profile_id = endpoint.zigpy_endpoint.profile_id
@@ -230,7 +233,7 @@ class ProbeEndpoint:
                     entity_and_handler.claimed_cluster_handlers,
                 )
 
-    def initialize(self, server: ServerType) -> None:
+    def initialize(self, server: Server) -> None:
         """Update device overrides config."""
         """TODO
         zha_config = server.data[zha_const.DATA_ZHA].get(zha_const.DATA_ZHA_CONFIG, {})
@@ -341,7 +344,7 @@ class GroupProbe:
         return entity_domains
 
 """
-PROBE = ProbeEndpoint()
+PROBE: ProbeEndpoint = ProbeEndpoint()
 """ TODO
 GROUP_PROBE = GroupProbe()
 """

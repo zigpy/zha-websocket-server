@@ -1,11 +1,11 @@
 """WS API for the light platform entity."""
+from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any
 
-from typing import Any, Awaitable
-
-from backports.strenum.strenum import StrEnum
 import voluptuous as vol
 
+from zhaws.backports.enum import StrEnum
 from zhaws.server.platforms.api import (
     execute_platform_entity_command,
     platform_entity_command_schema,
@@ -19,7 +19,10 @@ from zhaws.server.platforms.light import (
     ATTR_TRANSITION,
 )
 from zhaws.server.websocket.api import decorators, register_api_command
-from zhaws.server.websocket.types import ClientType, ServerType
+
+if TYPE_CHECKING:
+    from zhaws.server.websocket.client import Client
+    from zhaws.server.websocket.server import Server
 
 
 class LightAPICommands(StrEnum):
@@ -39,7 +42,6 @@ VALID_BRIGHTNESS = vol.All(vol.Coerce(int), vol.Clamp(min=0, max=255))
 VALID_FLASH = vol.In([FLASH_SHORT, FLASH_LONG])
 
 
-@decorators.async_response
 @decorators.websocket_command(
     platform_entity_command_schema(
         LightAPICommands.LIGHT_TURN_ON,
@@ -63,14 +65,12 @@ VALID_FLASH = vol.In([FLASH_SHORT, FLASH_LONG])
         },
     )
 )
-async def turn_on(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+@decorators.async_response
+async def turn_on(server: Server, client: Client, message: dict[str, Any]) -> None:
     """Turn on the light."""
     await execute_platform_entity_command(server, client, message, "async_turn_on")
 
 
-@decorators.async_response
 @decorators.websocket_command(
     platform_entity_command_schema(
         LightAPICommands.LIGHT_TURN_OFF,
@@ -80,14 +80,13 @@ async def turn_on(
         },
     )
 )
-async def turn_off(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+@decorators.async_response
+async def turn_off(server: Server, client: Client, message: dict[str, Any]) -> None:
     """Turn on the light."""
     await execute_platform_entity_command(server, client, message, "async_turn_off")
 
 
-def load_api(server: ServerType) -> None:
+def load_api(server: Server) -> None:
     """Load the api command handlers."""
     register_api_command(server, turn_on)
     register_api_command(server, turn_off)

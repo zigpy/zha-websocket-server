@@ -3,7 +3,7 @@ import asyncio
 import logging
 import pprint
 from types import TracebackType
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 import uuid
 
 from aiohttp import ClientSession, ClientWebSocketResponse, client_exceptions
@@ -34,7 +34,7 @@ class Client(EventBase):
         # The WebSocket client
         self._client: Optional[ClientWebSocketResponse] = None
         self._loop = asyncio.get_running_loop()
-        self._result_futures: Dict[str, asyncio.Future] = {}
+        self._result_futures: dict[int, asyncio.Future] = {}
         self._shutdown_complete_event: Optional[asyncio.Event] = None
 
     def __repr__(self) -> str:
@@ -49,7 +49,7 @@ class Client(EventBase):
 
     async def async_send_command(
         self,
-        message: Dict[str, Any],
+        message: dict[str, Any],
     ) -> CommandResponse:
         """Send a command and get a response."""
         future: "asyncio.Future[CommandResponse]" = self._loop.create_future()
@@ -61,7 +61,7 @@ class Client(EventBase):
         finally:
             self._result_futures.pop(message_id)
 
-    async def async_send_command_no_wait(self, message: Dict[str, Any]) -> None:
+    async def async_send_command_no_wait(self, message: dict[str, Any]) -> None:
         """Send a command without waiting for the response."""
         message["message_id"] = uuid.uuid4().int
         await self._send_json_message(message)
@@ -177,20 +177,20 @@ class Client(EventBase):
                 return
 
             if msg["error_code"] != "zigbee_error":
-                err = Exception(msg["message_id"], msg["error_code"])
+                error = Exception(msg["message_id"], msg["error_code"])
             else:
-                err = Exception(
+                error = Exception(
                     msg["message_id"],
                     msg["zigbee_error_code"],
                     msg["zigbee_error_message"],
                 )
 
-            future.set_exception(err)
+            future.set_exception(error)
             return
 
         if message.message_type != "event":
             # Can't handle
-            _LOGGER.debug(
+            _LOGGER.debug(  # type: ignore #TODO why does mypy thins this is unreachable
                 "Received message with unknown type '%s': %s",
                 msg["message_type"],
                 msg,
@@ -201,7 +201,7 @@ class Client(EventBase):
         except Exception as err:
             _LOGGER.error("Error handling event: %s", err, exc_info=err)
 
-    async def _send_json_message(self, message: Dict[str, Any]) -> None:
+    async def _send_json_message(self, message: dict[str, Any]) -> None:
         """Send a message.
 
         Raises NotConnected if client not connected.

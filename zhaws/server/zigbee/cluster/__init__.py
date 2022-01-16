@@ -5,8 +5,9 @@ import asyncio
 from enum import Enum
 from functools import partialmethod
 import logging
-from typing import Any, Awaitable, Dict, Final
+from typing import TYPE_CHECKING, Any, Callable, Final
 
+from zigpy.device import Device as ZigpyDevice
 import zigpy.exceptions
 from zigpy.util import ListenableMixin
 from zigpy.zcl import Cluster as ZigpyCluster
@@ -21,7 +22,10 @@ from zhaws.server.zigbee.cluster.const import (
 )
 from zhaws.server.zigbee.cluster.decorators import decorate_command, retryable_request
 from zhaws.server.zigbee.cluster.util import safe_read
-from zhaws.server.zigbee.types import DeviceType, EndpointType
+
+if TYPE_CHECKING:
+    from zhaws.server.zigbee.device import Device
+    from zhaws.server.zigbee.endpoint import Endpoint
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,7 +43,7 @@ class ClusterHandlerStatus(Enum):
 class ClusterHandler(ListenableMixin, LogMixin):
     """Base cluster handler for a Zigbee cluster handler."""
 
-    REPORT_CONFIG: tuple[dict[int | str, tuple[int, int, int | float]]] = ()
+    REPORT_CONFIG: list[dict[int | str, str | tuple[int, int, int | float]]] = []
     BIND: bool = True
 
     # Dict of attributes to read on cluster handler initialization.
@@ -47,10 +51,10 @@ class ClusterHandler(ListenableMixin, LogMixin):
     # attribute read is acceptable.
     ZCL_INIT_ATTRS: dict[int | str, bool] = {}
 
-    def __init__(self, cluster: ZigpyCluster, endpoint: EndpointType) -> None:
+    def __init__(self, cluster: ZigpyCluster, endpoint: Endpoint):
         """Initialize ClusterHandler."""
         self._generic_id: str = f"channel_0x{cluster.cluster_id:04x}"
-        self._endpoint: EndpointType = endpoint
+        self._endpoint: Endpoint = endpoint
         self._cluster: ZigpyCluster = cluster
         self._id: str = f"{endpoint.id}:0x{cluster.cluster_id:04x}"
         unique_id: str = endpoint.unique_id.replace("-", ":")
@@ -63,8 +67,8 @@ class ClusterHandler(ListenableMixin, LogMixin):
                 self.value_attribute = attr
         self._status: ClusterHandlerStatus = ClusterHandlerStatus.CREATED
         self._cluster.add_listener(self)
-        self.data_cache: Dict[str, Any] = {}
-        self._listeners = {}
+        self.data_cache: dict[str, Any] = {}
+        self._listeners: dict[Any, Callable] = {}
 
     @property
     def id(self) -> str:
@@ -113,7 +117,7 @@ class ClusterHandler(ListenableMixin, LogMixin):
         }
         self._endpoint.send_event(signal)
 
-    async def bind(self) -> Awaitable[None]:
+    async def bind(self) -> None:
         """Bind a zigbee cluster.
 
         This also swallows ZigbeeException exceptions that are thrown when
@@ -155,7 +159,7 @@ class ClusterHandler(ListenableMixin, LogMixin):
             )
             """
 
-    async def configure_reporting(self) -> Awaitable[None]:
+    async def configure_reporting(self) -> None:
         """Configure attribute reporting for a cluster.
 
         This also swallows ZigbeeException exceptions that are thrown when
@@ -190,7 +194,7 @@ class ClusterHandler(ListenableMixin, LogMixin):
             reports = {rec["attr"]: rec["config"] for rec in chunk}
             try:
                 res = await self.cluster.configure_reporting_multiple(reports, **kwargs)
-                self._configure_reporting_status(reports, res[0])
+                self._configure_reporting_status(reports, res[0])  # type: ignore
                 # if we get a response, then it's a success
                 for attr_stat in event_data.values():
                     attr_stat["success"] = True
@@ -248,10 +252,10 @@ class ClusterHandler(ListenableMixin, LogMixin):
             for r in res
             if r.status != Status.SUCCESS
         ]
-        attrs = {self.cluster.attributes.get(r, [r])[0] for r in attrs}
+        attrs = {self.cluster.attributes.get(r, [r])[0] for r in attrs}  # type: ignore
         self.debug(
             "Successfully configured reporting for '%s' on '%s' cluster",
-            attrs - set(failed),
+            attrs - set(failed),  # type: ignore
             self.name,
         )
         self.debug(
@@ -261,7 +265,7 @@ class ClusterHandler(ListenableMixin, LogMixin):
             res,
         )
 
-    async def async_configure(self) -> Awaitable[None]:
+    async def async_configure(self) -> None:
         """Set cluster binding and attribute reporting."""
         if not self._endpoint.device.skip_configuration:
             if self.BIND:
@@ -277,7 +281,7 @@ class ClusterHandler(ListenableMixin, LogMixin):
         self._status = ClusterHandlerStatus.CONFIGURED
 
     @retryable_request(delays=(1, 1, 3))
-    async def async_initialize(self, from_cache: bool) -> Awaitable[None]:
+    async def async_initialize(self, from_cache: bool) -> None:
         """Initialize cluster handler."""
         if not from_cache and self._endpoint.device.skip_configuration:
             self._status = ClusterHandlerStatus.INITIALIZED
@@ -286,7 +290,7 @@ class ClusterHandler(ListenableMixin, LogMixin):
         self.debug("initializing cluster handler: from_cache: %s", from_cache)
         cached = [a for a, cached in self.ZCL_INIT_ATTRS.items() if cached]
         uncached = [a for a, cached in self.ZCL_INIT_ATTRS.items() if not cached]
-        uncached.extend([cfg["attr"] for cfg in self.REPORT_CONFIG])
+        uncached.extend([cfg["attr"] for cfg in self.REPORT_CONFIG])  # type: ignore #TODO see if this can be fixed
 
         if cached:
             await self._get_attributes(True, cached, from_cache=True)
@@ -300,11 +304,11 @@ class ClusterHandler(ListenableMixin, LogMixin):
         self.debug("finished cluster handler initialization")
         self._status = ClusterHandlerStatus.INITIALIZED
 
-    def cluster_command(self, tsn, command_id, args) -> None:
+    def cluster_command(self, tsn: int, command_id: int, args: Any) -> None:
         """Handle commands received to this cluster."""
         _LOGGER.info("received command %s args %s", command_id, args)
 
-    def attribute_updated(self, attrid, value) -> None:
+    def attribute_updated(self, attrid: int, value: Any) -> None:
         """Handle attribute updates on this cluster."""
         self.send_event(
             {
@@ -325,7 +329,7 @@ class ClusterHandler(ListenableMixin, LogMixin):
             value,
         )
 
-    def zdo_command(self, *args, **kwargs) -> None:
+    def zdo_command(self, *args: Any, **kwargs: Any) -> None:
         """Handle ZDO commands on this cluster."""
 
     def zha_send_event(self, command: str, args: int | dict) -> None:
@@ -341,10 +345,12 @@ class ClusterHandler(ListenableMixin, LogMixin):
         )
         """
 
-    async def async_update(self) -> Awaitable[None]:
+    async def async_update(self) -> None:
         """Retrieve latest state from cluster."""
 
-    async def get_attribute_value(self, attribute, from_cache=True) -> Awaitable[Any]:
+    async def get_attribute_value(
+        self, attribute: int | str, from_cache: bool = True
+    ) -> Any:
         """Get the value for an attribute."""
         manufacturer = None
         manufacturer_code = self._endpoint.device.manufacturer_code
@@ -420,16 +426,16 @@ class ClusterHandler(ListenableMixin, LogMixin):
 
         return json
 
-    def log(self, level, msg, *args) -> None:
+    def log(self, level: int, msg: str, *args: Any) -> None:
         """Log a message."""
         msg = f"[%s:%s]: {msg}"
         args = (self._endpoint.device.nwk, self._id) + args
         _LOGGER.log(level, msg, *args)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         """Get attribute or a decorated cluster command."""
         if hasattr(self._cluster, name) and callable(getattr(self._cluster, name)):
-            command = getattr(self._cluster, name)
+            command: Callable = getattr(self._cluster, name)
             command.__name__ = name
             return decorate_command(self, command)
         return self.__getattribute__(name)
@@ -438,11 +444,11 @@ class ClusterHandler(ListenableMixin, LogMixin):
 class ZDOClusterHandler(LogMixin):
     """Cluster handler for ZDO events."""
 
-    def __init__(self, device: DeviceType):
+    def __init__(self, device: Device):
         """Initialize ZDOClusterHandler."""
         self.name: str = CLUSTER_HANDLER_ZDO
         self._cluster: ZigpyCluster = device.device.endpoints[0]
-        self._device: DeviceType = device
+        self._device: Device = device
         self._status: ClusterHandlerStatus = ClusterHandlerStatus.CREATED
         self._unique_id: str = f"{str(device.ieee)}:{device.name}_ZDO"
         self._cluster.add_listener(self)
@@ -462,21 +468,21 @@ class ZDOClusterHandler(LogMixin):
         """Return the status of the cluster handler."""
         return self._status
 
-    def device_announce(self, zigpy_device) -> None:
+    def device_announce(self, zigpy_device: ZigpyDevice) -> None:
         """Device announce handler."""
 
-    def permit_duration(self, duration) -> None:
+    def permit_duration(self, duration: int) -> None:
         """Permit handler."""
 
-    async def async_initialize(self, from_cache) -> Awaitable[None]:
+    async def async_initialize(self, from_cache: bool) -> None:
         """Initialize cluster handler."""
         self._status = ClusterHandlerStatus.INITIALIZED
 
-    async def async_configure(self) -> Awaitable[None]:
+    async def async_configure(self) -> None:
         """Configure cluster handler."""
         self._status = ClusterHandlerStatus.CONFIGURED
 
-    def log(self, level, msg, *args) -> None:
+    def log(self, level: int, msg: str, *args: Any) -> None:
         """Log a message."""
         msg = f"[%s:ZDO](%s): {msg}"
         args = (self._device.nwk, self._device.model) + args
@@ -486,7 +492,7 @@ class ZDOClusterHandler(LogMixin):
 class ClientClusterHandler(ClusterHandler):
     """Cluster handler for Zigbee client (output) clusters."""
 
-    def attribute_updated(self, attrid, value) -> None:
+    def attribute_updated(self, attrid: int, value: Any) -> None:
         """Handle an attribute updated on this cluster."""
         """ TODO
         self.zha_send_event(
@@ -501,7 +507,7 @@ class ClientClusterHandler(ClusterHandler):
         )
         """
 
-    def cluster_command(self, tsn, command_id, args) -> None:
+    def cluster_command(self, tsn: int, command_id: int, args: Any) -> None:
         """Handle a cluster command received on this cluster."""
         if (
             self._cluster.server_commands is not None

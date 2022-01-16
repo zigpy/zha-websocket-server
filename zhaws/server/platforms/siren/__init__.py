@@ -1,8 +1,9 @@
 """Siren platform for zhawss."""
+from __future__ import annotations
 
 import asyncio
 import functools
-from typing import Any, Dict, Final, List, Union
+from typing import TYPE_CHECKING, Any, Final, Union
 
 import zigpy.types as t
 from zigpy.zcl.clusters.security import IasWd as WD
@@ -10,8 +11,11 @@ from zigpy.zcl.clusters.security import IasWd as WD
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhaws.server.zigbee.cluster.const import CLUSTER_HANDLER_IAS_WD
-from zhaws.server.zigbee.cluster.types import ClusterHandlerType
-from zhaws.server.zigbee.types import DeviceType, EndpointType
+
+if TYPE_CHECKING:
+    from zhaws.server.zigbee.cluster import ClusterHandler
+    from zhaws.server.zigbee.device import Device
+    from zhaws.server.zigbee.endpoint import Endpoint
 
 MULTI_MATCH = functools.partial(PLATFORM_ENTITIES.multipass_match, Platform.SIREN)
 DEFAULT_DURATION: Final[int] = 5  # seconds
@@ -52,7 +56,7 @@ SUPPORT_VOLUME_SET: Final[int] = 8
 SUPPORT_DURATION: Final[int] = 16
 
 
-class Strobe(t.enum8):
+class Strobe(t.enum8):  # type: ignore #TODO fix type
     """Strobe enum."""
 
     No_Strobe = 0x00
@@ -68,9 +72,9 @@ class Siren(PlatformEntity):
     def __init__(
         self,
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
     ):
         """Initialize the siren."""
         self._attr_supported_features = (
@@ -91,15 +95,15 @@ class Siren(PlatformEntity):
             WARNING_DEVICE_MODE_EMERGENCY_PANIC: "Emergency Panic",
         }
         super().__init__(unique_id, cluster_handlers, endpoint, device)
-        self._cluster_handler: ClusterHandlerType = cluster_handlers[0]
+        self._cluster_handler: ClusterHandler = cluster_handlers[0]
         self._attr_is_on: bool = False
-        self._off_listener = None
+        self._off_listener: asyncio.TimerHandle | None = None
         self._cluster_handler.add_listener(self)
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on siren."""
         if self._off_listener:
-            self._off_listener()
+            self._off_listener.cancel()
             self._off_listener = None
         tone_cache = self._cluster_handler.data_cache.get(
             WD.Warning.WarningMode.__name__
@@ -160,7 +164,7 @@ class Siren(PlatformEntity):
         """Set is_on to False and write HA state."""
         self._attr_is_on = False
         if self._off_listener:
-            self._off_listener()
+            self._off_listener.cancel()
             self._off_listener = None
         self.send_state_changed_event()
 
@@ -170,5 +174,5 @@ class Siren(PlatformEntity):
         json["supported_features"] = self._attr_supported_features
         return json
 
-    def get_state(self) -> Union[str, Dict, None]:
+    def get_state(self) -> bool:
         return self._attr_is_on

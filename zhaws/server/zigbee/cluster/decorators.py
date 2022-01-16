@@ -1,17 +1,23 @@
 """Decorators for zhawss."""
+from __future__ import annotations
+
 import asyncio
 from functools import wraps
 import itertools
 from random import uniform
+from typing import TYPE_CHECKING, Any, Callable
+
+if TYPE_CHECKING:
+    from zhaws.server.zigbee.cluster import ClusterHandler
 
 import zigpy.exceptions
 
 
-def decorate_command(cluster_handler, command):
+def decorate_command(cluster_handler: ClusterHandler, command: Callable) -> Callable:
     """Wrap a cluster command to make it safe."""
 
     @wraps(command)
-    async def wrapper(*args, **kwds):
+    async def wrapper(*args: Any, **kwds: Any) -> Any:
         try:
             result = await command(*args, **kwds)
             cluster_handler.debug(
@@ -37,17 +43,20 @@ def decorate_command(cluster_handler, command):
 
 
 def retryable_request(
-    delays=(1, 5, 10, 15, 30, 60, 120, 180, 360, 600, 900, 1800), raise_=False
-):
+    delays: tuple = (1, 5, 10, 15, 30, 60, 120, 180, 360, 600, 900, 1800),
+    raise_: bool = False,
+) -> Callable:
     """Make a method with ZCL requests retryable.
     This adds delays keyword argument to function.
     len(delays) is number of tries.
     raise_ if the final attempt should raise the exception.
     """
 
-    def decorator(func):
+    def decorator(func: Callable) -> Callable:
         @wraps(func)
-        async def wrapper(cluster_handler, *args, **kwargs):
+        async def wrapper(
+            cluster_handler: ClusterHandler, *args: Any, **kwargs: Any
+        ) -> Any:
 
             exceptions = (zigpy.exceptions.ZigbeeException, asyncio.TimeoutError)
             try_count, errors = 1, []

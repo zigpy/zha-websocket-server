@@ -1,7 +1,8 @@
 """Binary Sensor module for zhawss."""
+from __future__ import annotations
 
 import functools
-from typing import Dict, List, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
@@ -12,8 +13,11 @@ from zhaws.server.zigbee.cluster.const import (
     CLUSTER_HANDLER_ON_OFF,
     CLUSTER_HANDLER_ZONE,
 )
-from zhaws.server.zigbee.cluster.types import ClusterHandlerType
-from zhaws.server.zigbee.types import DeviceType, EndpointType
+
+if TYPE_CHECKING:
+    from zhaws.server.zigbee.cluster import ClusterHandler
+    from zhaws.server.zigbee.device import Device
+    from zhaws.server.zigbee.endpoint import Endpoint
 
 STRICT_MATCH = functools.partial(PLATFORM_ENTITIES.strict_match, Platform.BINARY_SENSOR)
 MULTI_MATCH = functools.partial(
@@ -24,19 +28,19 @@ MULTI_MATCH = functools.partial(
 class BinarySensor(PlatformEntity):
     """BinarySensor platform entity."""
 
-    SENSOR_ATTR = None
-    PLATFORM = Platform.BINARY_SENSOR
+    SENSOR_ATTR: Union[str, None] = None
+    PLATFORM: str = Platform.BINARY_SENSOR
 
     def __init__(
         self,
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
     ):
         """Initialize the binary sensor."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
-        self._cluster_handler: ClusterHandlerType = cluster_handlers[0]
+        self._cluster_handler: ClusterHandler = cluster_handlers[0]
         self._cluster_handler.add_listener(self)
         value = self._cluster_handler.cluster.get("zone_status")
         self._state: bool = value & 3 if value is not None else False
@@ -44,21 +48,21 @@ class BinarySensor(PlatformEntity):
     @property
     def is_on(self) -> bool:
         """Return True if the binary sensor is on."""
-        if self._state is None:
-            return False
         return self._state
 
-    def get_state(self) -> Union[str, Dict, None]:
+    def get_state(self) -> bool:
         return self.is_on
 
-    def cluster_handler_attribute_updated(self, attr_id, attr_name, value):
+    def cluster_handler_attribute_updated(
+        self, attr_id: int, attr_name: str, value: Any
+    ) -> None:
         """handle attribute updates from the cluster handler."""
         if self.SENSOR_ATTR is None or self.SENSOR_ATTR != attr_name:
             return
         self._state = bool(value)
         self.send_state_changed_event()
 
-    async def async_update(self):
+    async def async_update(self) -> None:
         """Attempt to retrieve on off state from the binary sensor."""
         await super().async_update()
         previous_state = self._state
@@ -128,7 +132,7 @@ class IASZone(BinarySensor):
 
     SENSOR_ATTR = "zone_status"
 
-    async def async_update(self):
+    async def async_update(self) -> None:
         """Attempt to retrieve on off state from the binary sensor."""
         await super().async_update()
         previous_state = self._state

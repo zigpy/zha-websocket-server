@@ -1,15 +1,19 @@
 """Fan platform for zhawss."""
+from __future__ import annotations
 
 from abc import abstractmethod
 import functools
 import math
-from typing import Dict, Final, List, Union
+from typing import TYPE_CHECKING, Any, Dict, Final, Union
 
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhaws.server.zigbee.cluster.const import CLUSTER_HANDLER_FAN
-from zhaws.server.zigbee.cluster.types import ClusterHandlerType
-from zhaws.server.zigbee.types import DeviceType, EndpointType
+
+if TYPE_CHECKING:
+    from zhaws.server.zigbee.cluster import ClusterHandler
+    from zhaws.server.zigbee.device import Device
+    from zhaws.server.zigbee.endpoint import Endpoint
 
 STRICT_MATCH = functools.partial(PLATFORM_ENTITIES.strict_match, Platform.FAN)
 
@@ -23,7 +27,7 @@ PRESET_MODE_AUTO: Final[str] = "auto"
 PRESET_MODE_SMART: Final[str] = "smart"
 
 SPEED_RANGE: Final = (1, 3)  # off is not included
-PRESET_MODES_TO_NAME: Final[Dict[int, str]] = {
+PRESET_MODES_TO_NAME: Final[dict[int, str]] = {
     4: PRESET_MODE_ON,
     5: PRESET_MODE_AUTO,
     6: PRESET_MODE_SMART,
@@ -104,18 +108,22 @@ class BaseFan(PlatformEntity):
         return int_states_in_range(SPEED_RANGE)
 
     async def async_turn_on(
-        self, speed=None, percentage=None, preset_mode=None, **kwargs
+        self,
+        speed: str | None = None,
+        percentage: int | None = None,
+        preset_mode: str | None = None,
+        **kwargs: Any,
     ) -> None:
         """Turn the entity on."""
         if percentage is None:
             percentage = DEFAULT_ON_PERCENTAGE
         await self.async_set_percentage(percentage)
 
-    async def async_turn_off(self, **kwargs) -> None:
+    async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the entity off."""
         await self.async_set_percentage(0)
 
-    async def async_set_percentage(self, percentage: Union[int, None]) -> None:
+    async def async_set_percentage(self, percentage: int) -> None:
         """Set the speed percenage of the fan."""
         fan_mode = math.ceil(percentage_to_ranged_value(SPEED_RANGE, percentage))
         await self._async_set_fan_mode(fan_mode)
@@ -132,7 +140,7 @@ class BaseFan(PlatformEntity):
     async def _async_set_fan_mode(self, fan_mode: int) -> None:
         """Set the fan mode for the fan."""
 
-    def async_set_state(self, attr_id, attr_name, value):
+    def async_set_state(self, attr_id: int, attr_name: str, value: Any) -> None:
         """Handle state update from cluster handler."""
 
     def to_json(self) -> dict:
@@ -151,15 +159,15 @@ class Fan(BaseFan):
     def __init__(
         self,
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
     ):
         """Initialize the fan."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
-        self._fan_cluster_handler: ClusterHandlerType = self.cluster_handlers.get(
+        self._fan_cluster_handler: ClusterHandler = self.cluster_handlers[
             CLUSTER_HANDLER_FAN
-        )
+        ]
         self._fan_cluster_handler.add_listener(self)
 
     @property
@@ -181,7 +189,7 @@ class Fan(BaseFan):
         """Return the current preset mode."""
         return PRESET_MODES_TO_NAME.get(self._fan_cluster_handler.fan_mode)
 
-    def async_set_state(self, attr_id, attr_name, value):
+    def async_set_state(self, attr_id: int, attr_name: str, value: Any) -> None:
         """Handle state update from cluster handler."""
         self.send_state_changed_event()
 

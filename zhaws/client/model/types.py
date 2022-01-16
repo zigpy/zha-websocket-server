@@ -2,23 +2,12 @@
 
 Types are representations of the objects that exist in zhawss.
 """
+from __future__ import annotations
 
-
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from zhaws.client.event import EventBase
 from zhaws.client.model import BaseModel
-
-ControllerType = "Controller"
-ClientType = "Client"
-
-
-if TYPE_CHECKING:
-    from zhaws.client.client import Client
-    from zhaws.client.controller import Controller
-
-    ClientType = Client
-    ControllerType = Controller
 
 
 class BaseEventedModel(EventBase, BaseModel):
@@ -33,7 +22,7 @@ class Cluster(BaseModel):
     name: str
     endpoint_id: int
     type: str
-    commands: List[str]
+    commands: list[str]
 
 
 class ClusterHandler(BaseModel):
@@ -44,7 +33,6 @@ class ClusterHandler(BaseModel):
     class_name: str
     generic_id: str
     endpoint_id: int
-    cluster: Cluster
     id: str
     status: str
 
@@ -71,8 +59,8 @@ class DeviceSignatureEndpoint(BaseModel):
 
     profile_id: Optional[str]
     device_type: Optional[str]
-    input_clusters: List[str]
-    output_clusters: List[str]
+    input_clusters: list[str]
+    output_clusters: list[str]
 
 
 class NodeDescriptor(BaseModel):
@@ -97,7 +85,7 @@ class DeviceSignature(BaseModel):
     node_descriptor: Optional[NodeDescriptor]
     manufacturer: Optional[str]
     model: Optional[str]
-    endpoints: Dict[int, DeviceSignatureEndpoint]
+    endpoints: dict[int, DeviceSignatureEndpoint]
 
 
 class BaseDevice(BaseModel):
@@ -123,5 +111,5 @@ class BaseDevice(BaseModel):
 class Device(BaseDevice):
     """Device model."""
 
-    entities: Dict[str, BasePlatformEntity]
-    neighbors: List[Any]
+    entities: dict[str, BasePlatformEntity]
+    neighbors: list[Any]

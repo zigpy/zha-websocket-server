@@ -3,13 +3,14 @@
 import asyncio
 import logging
 import random
+from typing import Any, Callable, Coroutine, Tuple
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def periodic(refresh_interval):
-    def scheduler(func):
-        async def wrapper(*args, **kwargs):
+def periodic(refresh_interval: Tuple) -> Callable:
+    def scheduler(func: Callable) -> Callable[[Any, Any], Coroutine[Any, Any, None]]:
+        async def wrapper(*args: Any, **kwargs: Any) -> None:
             sleep_time = random.randint(*refresh_interval)
             method_info = f"[{func.__module__}::{func.__qualname__}]"
             _LOGGER.info(

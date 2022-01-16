@@ -1,17 +1,20 @@
 """Platform module for zhawss."""
-
+from __future__ import annotations
 
 import abc
 import asyncio
 import logging
-from typing import Any, Awaitable, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Type, Union
 
 from zhaws.server.const import EVENT, EVENT_TYPE, EventTypes, PlatformEntityEvents
 from zhaws.server.platforms.registries import Platform
-from zhaws.server.platforms.types import PlatformEntityType
+
+if TYPE_CHECKING:
+    from zhaws.server.zigbee.cluster import ClusterHandler
+    from zhaws.server.zigbee.device import Device
+    from zhaws.server.zigbee.endpoint import Endpoint
+
 from zhaws.server.util import LogMixin
-from zhaws.server.zigbee.cluster.types import ClusterHandlerType
-from zhaws.server.zigbee.types import DeviceType, EndpointType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,10 +22,12 @@ _LOGGER = logging.getLogger(__name__)
 class PlatformEntity(LogMixin):
     """Class that represents an entity for a device platform."""
 
-    PLATFORM: Platform = Platform.UNKNOWN
+    PLATFORM: str = Platform.UNKNOWN
     unique_id_suffix: Union[str, None] = None
 
-    def __init_subclass__(cls, id_suffix: Union[str, None] = None, **kwargs) -> None:
+    def __init_subclass__(
+        cls: Type[PlatformEntity], id_suffix: Union[str, None] = None, **kwargs: Any
+    ):
         """Initialize subclass.
         :param id_suffix: suffix to add to the unique_id of the entity. Used for multi
                           entities using the same cluster handler/cluster id for the entity.
@@ -34,9 +39,9 @@ class PlatformEntity(LogMixin):
     def __init__(
         self,
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
     ):
         """Initialize the platform entity."""
         self._unique_id: str = unique_id
@@ -46,35 +51,35 @@ class PlatformEntity(LogMixin):
         if self.unique_id_suffix:
             self._name += f" {self.unique_id_suffix}"
             self._unique_id += f"-{self.unique_id_suffix}"
-        self._cluster_handlers: List[ClusterHandlerType] = cluster_handlers
-        self.cluster_handlers: dict[str, ClusterHandlerType] = {}
+        self._cluster_handlers: list[ClusterHandler] = cluster_handlers
+        self.cluster_handlers: dict[str, ClusterHandler] = {}
         for cluster_handler in cluster_handlers:
             self.cluster_handlers[cluster_handler.name] = cluster_handler
-        self._device: DeviceType = device
+        self._device: Device = device
         self._endpoint = endpoint
         self._device.platform_entities[self.unique_id] = self
 
     @classmethod
     def create_platform_entity(
-        cls,
+        cls: Type[PlatformEntity],
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
-        **kwargs,
-    ) -> Union[PlatformEntityType, None]:
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
+        **kwargs: Any,
+    ) -> Union[PlatformEntity, None]:
         """Entity Factory.
         Return a platform entity if it is a supported configuration, otherwise return None
         """
         return cls(unique_id, cluster_handlers, endpoint, device, **kwargs)
 
     @property
-    def device(self):
+    def device(self) -> Device:
         """Return the device."""
         return self._device
 
     @property
-    def endpoint(self) -> EndpointType:
+    def endpoint(self) -> Endpoint:
         """Return the endpoint."""
         return self._endpoint
 
@@ -93,12 +98,17 @@ class PlatformEntity(LogMixin):
         """Return true if the device this entity belongs to is available."""
         return self.device.available
 
+    @property
+    def name(self) -> str:
+        """Return the name of the platform entity."""
+        return self._name
+
     def send_event(self, signal: dict[str, Any]) -> None:
         """Broadcast an event from this platform entity."""
         signal["platform_entity"] = {
             "name": self._name,
             "unique_id": self._unique_id,
-            "platform": self.PLATFORM.name,
+            "platform": self.PLATFORM,
         }
         signal["endpoint"] = {
             "id": self._endpoint.id,
@@ -107,7 +117,7 @@ class PlatformEntity(LogMixin):
         self.device.send_event(signal)
 
     @abc.abstractmethod
-    def get_state(self) -> Union[str, Dict, None]:
+    def get_state(self) -> Union[float, bool, int, str, dict, None]:
         """Return the arguments to use in the command."""
 
     def send_state_changed_event(self) -> None:
@@ -128,11 +138,11 @@ class PlatformEntity(LogMixin):
             "cluster_handlers": [ch.to_json() for ch in self._cluster_handlers],
             "device_ieee": str(self._device.ieee),
             "endpoint_id": self._endpoint.id,
-            "platform": self.PLATFORM.name,
+            "platform": self.PLATFORM,
             "class_name": self.__class__.__name__,
         }
 
-    async def async_update(self) -> Awaitable[None]:
+    async def async_update(self) -> None:
         """Retrieve latest state."""
         tasks = [
             cluster_handler.async_update()
@@ -146,7 +156,7 @@ class PlatformEntity(LogMixin):
             if state != previous_state:
                 self.send_state_changed_event()
 
-    def log(self, level: int, msg: str, *args):
+    def log(self, level: int, msg: str, *args: Any) -> None:
         """Log a message."""
         msg = f"%s: {msg}"
         args = (self.unique_id,) + args

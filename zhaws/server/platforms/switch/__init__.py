@@ -1,7 +1,8 @@
 """Switch platform for zhawss."""
+from __future__ import annotations
 
 import functools
-from typing import Any, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from zigpy.zcl.foundation import Status
 
@@ -9,8 +10,11 @@ from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhaws.server.zigbee.cluster.const import CLUSTER_HANDLER_ON_OFF
 from zhaws.server.zigbee.cluster.general import OnOffClusterHandler
-from zhaws.server.zigbee.cluster.types import ClusterHandlerType
-from zhaws.server.zigbee.types import DeviceType, EndpointType
+
+if TYPE_CHECKING:
+    from zhaws.server.zigbee.cluster import ClusterHandler
+    from zhaws.server.zigbee.device import Device
+    from zhaws.server.zigbee.endpoint import Endpoint
 
 STRICT_MATCH = functools.partial(PLATFORM_ENTITIES.strict_match, Platform.SWITCH)
 
@@ -23,13 +27,13 @@ class BaseSwitch(PlatformEntity):
     def __init__(
         self,
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
     ):
         """Initialize the switch."""
-        self._on_off_cluster_handler: OnOffClusterHandler = None
-        self._state = None
+        self._on_off_cluster_handler: OnOffClusterHandler
+        self._state: bool | None = None
         super().__init__(unique_id, cluster_handlers, endpoint, device)
 
     @property
@@ -39,7 +43,7 @@ class BaseSwitch(PlatformEntity):
             return False
         return self._state
 
-    async def async_turn_on(self, **kwargs) -> None:
+    async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the entity on."""
         result = await self._on_off_cluster_handler.on()
         if not isinstance(result, list) or result[1] is not Status.SUCCESS:
@@ -47,7 +51,7 @@ class BaseSwitch(PlatformEntity):
         self._state = True
         self.send_state_changed_event()
 
-    async def async_turn_off(self, **kwargs) -> None:
+    async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the entity off."""
         result = await self._on_off_cluster_handler.off()
         if not isinstance(result, list) or result[1] is not Status.SUCCESS:
@@ -55,7 +59,7 @@ class BaseSwitch(PlatformEntity):
         self._state = False
         self.send_state_changed_event()
 
-    def get_state(self) -> Union[str, Dict, None]:
+    def get_state(self) -> Union[str, dict, None]:
         return {
             "state": self.is_on,
         }
@@ -66,21 +70,21 @@ class Switch(BaseSwitch):
     def __init__(
         self,
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
     ):
         """Initialize the switch."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
-        self._on_off_cluster_handler: OnOffClusterHandler = self.cluster_handlers.get(
+        self._on_off_cluster_handler: OnOffClusterHandler = self.cluster_handlers[
             CLUSTER_HANDLER_ON_OFF
-        )
+        ]
         self._state: bool = self._on_off_cluster_handler.cluster.get("on_off")
         self._on_off_cluster_handler.add_listener(self)
 
     def cluster_handler_attribute_updated(
         self, attr_id: int, attr_name: str, value: Any
-    ):
+    ) -> None:
         """Handle state update from cluster handler."""
         self._state = bool(value)
         self.send_state_changed_event()

@@ -4,6 +4,7 @@ from __future__ import annotations
 import collections
 from collections.abc import Callable
 import dataclasses
+from typing import TYPE_CHECKING
 
 import attr
 from zigpy import zcl
@@ -15,13 +16,12 @@ from zigpy.types.named import EUI64
 from zhaws.server.zigbee import (  # noqa: F401 pylint: disable=unused-import
     cluster as zha_cluster_handlers,
 )
-from zhaws.server.zigbee.cluster.types import ClusterHandlerType
-from zhaws.server.zigbee.decorators import CALLABLE_T
 
-try:
-    from enum import StrEnum
-except ImportError:
-    from backports.strenum import StrEnum
+if TYPE_CHECKING:
+    from zhaws.server.zigbee.cluster import ClusterHandler
+
+from zhaws.backports.enum import StrEnum
+from zhaws.server.zigbee.decorators import CALLABLE_T
 
 
 class Platform(StrEnum):
@@ -190,8 +190,8 @@ class MatchRule:
         return weight
 
     def claim_cluster_handlers(
-        self, endpoint: list[ClusterHandlerType]
-    ) -> list[ClusterHandlerType]:
+        self, endpoint: list[ClusterHandler]
+    ) -> list[ClusterHandler]:
         """Return a list of cluster handlers this rule matches + aux cluster handlers."""
         claimed = []
         if isinstance(self.cluster_handler_names, frozenset):
@@ -252,7 +252,7 @@ class EntityClassAndClusterHandlers:
     """Container for entity class and corresponding cluster handlers."""
 
     entity_class: CALLABLE_T
-    claimed_cluster_handlers: list[ClusterHandlerType]
+    claimed_cluster_handlers: list[ClusterHandler]
 
 
 class ZHAEntityRegistry:
@@ -278,9 +278,9 @@ class ZHAEntityRegistry:
         component: str,
         manufacturer: str,
         model: str,
-        cluster_handlers: list[ClusterHandlerType],
+        cluster_handlers: list[ClusterHandler],
         default: CALLABLE_T = None,
-    ) -> tuple[CALLABLE_T, list[ClusterHandlerType]]:
+    ) -> tuple[CALLABLE_T, list[ClusterHandler]]:
         """Match cluster handlers to a ZHA Entity class."""
         matches = self._strict_registry[component]
         for match in sorted(matches, key=lambda x: x.weight, reverse=True):
@@ -294,15 +294,13 @@ class ZHAEntityRegistry:
         self,
         manufacturer: str,
         model: str,
-        cluster_handlers: list[ClusterHandlerType],
-    ) -> tuple[
-        dict[str, list[EntityClassAndClusterHandlers]], list[ClusterHandlerType]
-    ]:
+        cluster_handlers: list[ClusterHandler],
+    ) -> tuple[dict[str, list[EntityClassAndClusterHandlers]], list[ClusterHandler]]:
         """Match ZHA cluster handlers to potentially multiple ZHA Entity classes."""
         result: dict[
             str, list[EntityClassAndClusterHandlers]
         ] = collections.defaultdict(list)
-        all_claimed: set[ClusterHandlerType] = set()
+        all_claimed: set[ClusterHandler] = set()
         for component, stop_match_groups in self._multi_entity_registry.items():
             for stop_match_grp, matches in stop_match_groups.items():
                 sorted_matches = sorted(matches, key=lambda x: x.weight, reverse=True)
@@ -396,7 +394,9 @@ class ZHAEntityRegistry:
 
         return decorator
 
-    def prevent_entity_creation(self, platform: Platform, ieee: EUI64, key: str):
+    def prevent_entity_creation(
+        self, platform: Platform, ieee: EUI64, key: str
+    ) -> bool:
         """Return True if the entity should not be created."""
         platform_restrictions = self.single_device_matches[platform]
         device_restrictions = platform_restrictions[ieee]

@@ -65,8 +65,8 @@ class PlatformEntityEvent(BaseEvent):
     """Platform entity event."""
 
     """TODO use this as a base and create specific events for each entity type where state and attributes is fully modeled out"""
-    event_type: Literal["platform_entity_event"]
-    event: Literal["platform_entity_state_changed"]
+    event_type: Literal["platform_entity_event"] = "platform_entity_event"
+    event: Literal["platform_entity_state_changed"] = "platform_entity_state_changed"
     platform_entity: MinimalPlatformEntity
     endpoint: MinimalEndpoint
     device: MinimalDevice
@@ -76,8 +76,8 @@ class PlatformEntityEvent(BaseEvent):
 class ZCLAttributeUpdatedEvent(BaseEvent):
     """ZCL attribute updated event."""
 
-    event_type: Literal["raw_zcl_event"]
-    event: Literal["attribute_updated"]
+    event_type: Literal["raw_zcl_event"] = "raw_zcl_event"
+    event: Literal["attribute_updated"] = "attribute_updated"
     device: MinimalDevice
     cluster_handler: MinimalClusterHandler
     attribute: Attribute
@@ -87,10 +87,10 @@ class ZCLAttributeUpdatedEvent(BaseEvent):
 class ControllerEvent(BaseEvent):
     """Controller event."""
 
-    event_type: Literal["controller_event"]
+    event_type: Literal["controller_event"] = "controller_event"
 
 
-class DevicePairingEvent(BaseEvent):
+class DevicePairingEvent(ControllerEvent):
     """Device pairing event."""
 
     pairing_status: str
@@ -99,7 +99,7 @@ class DevicePairingEvent(BaseEvent):
 class DeviceJoinedEvent(DevicePairingEvent):
     """Device joined event."""
 
-    event: Literal["device_joined"]
+    event: Literal["device_joined"] = "device_joined"
     ieee: str
     nwk: str
 
@@ -107,7 +107,7 @@ class DeviceJoinedEvent(DevicePairingEvent):
 class RawDeviceInitializedEvent(DevicePairingEvent):
     """Raw device initialized event."""
 
-    event: Literal["raw_device_initialized"]
+    event: Literal["raw_device_initialized"] = "raw_device_initialized"
     ieee: str
     nwk: str
     manufacturer: str
@@ -118,21 +118,21 @@ class RawDeviceInitializedEvent(DevicePairingEvent):
 class DeviceFullyInitializedEvent(DevicePairingEvent):
     """Device fully initialized event."""
 
-    event: Literal["device_fully_initialized"]
+    event: Literal["device_fully_initialized"] = "device_fully_initialized"
     device: Device
 
 
 class DeviceConfiguredEvent(DevicePairingEvent):
     """Device configured event."""
 
-    event: Literal["device_configured"]
+    event: Literal["device_configured"] = "device_configured"
     device: BaseDevice
 
 
 class DeviceLeftEvent(ControllerEvent):
     """Device left event."""
 
-    event: Literal["device_left"]
+    event: Literal["device_left"] = "device_left"
     ieee: str
     nwk: str
 
@@ -140,7 +140,7 @@ class DeviceLeftEvent(ControllerEvent):
 class DeviceRemovedEvent(ControllerEvent):
     """Device removed event."""
 
-    event: Literal["device_removed"]
+    event: Literal["device_removed"] = "device_removed"
     device: Device
 
 

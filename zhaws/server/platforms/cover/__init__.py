@@ -1,9 +1,10 @@
 """Cover platform for zhawss."""
+from __future__ import annotations
 
 import asyncio
 import functools
 import logging
-from typing import Dict, Final, List, Union
+from typing import TYPE_CHECKING, Any, Dict, Final, Union
 
 from zigpy.zcl.foundation import Status
 
@@ -15,8 +16,11 @@ from zhaws.server.zigbee.cluster.const import (
     CLUSTER_HANDLER_ON_OFF,
     CLUSTER_HANDLER_SHADE,
 )
-from zhaws.server.zigbee.cluster.types import ClusterHandlerType
-from zhaws.server.zigbee.types import DeviceType, EndpointType
+
+if TYPE_CHECKING:
+    from zhaws.server.zigbee.cluster import ClusterHandler
+    from zhaws.server.zigbee.device import Device
+    from zhaws.server.zigbee.endpoint import Endpoint
 
 MULTI_MATCH = functools.partial(PLATFORM_ENTITIES.multipass_match, Platform.COVER)
 
@@ -42,15 +46,15 @@ class Cover(PlatformEntity):
     def __init__(
         self,
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
     ):
         """Initialize the cover."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
-        self._cover_cluster_handler: ClusterHandlerType = self.cluster_handlers.get(
+        self._cover_cluster_handler: ClusterHandler = self.cluster_handlers[
             CLUSTER_HANDLER_COVER
-        )
+        ]
         self._current_position = None
         self._state = None
         if self._cover_cluster_handler:
@@ -64,30 +68,32 @@ class Cover(PlatformEntity):
         self._cover_cluster_handler.add_listener(self)
 
     @property
-    def is_closed(self):
+    def is_closed(self) -> bool | None:
         """Return if the cover is closed."""
         if self.current_cover_position is None:
             return None
         return self.current_cover_position == 0
 
     @property
-    def is_opening(self):
+    def is_opening(self) -> bool:
         """Return if the cover is opening or not."""
         return self._state == STATE_OPENING
 
     @property
-    def is_closing(self):
+    def is_closing(self) -> bool:
         """Return if the cover is closing or not."""
         return self._state == STATE_CLOSING
 
     @property
-    def current_cover_position(self):
+    def current_cover_position(self) -> int | None:
         """Return the current position of ZHA cover.
         None is unknown, 0 is closed, 100 is fully open.
         """
         return self._current_position
 
-    def cluster_handler_attribute_updated(self, attr_id, attr_name, value):
+    def cluster_handler_attribute_updated(
+        self, attr_id: int, attr_name: str, value: Any
+    ) -> None:
         """Handle position update from cluster handler."""
         _LOGGER.debug("setting position: %s", value)
         self._current_position = 100 - value
@@ -97,25 +103,25 @@ class Cover(PlatformEntity):
             self._state = STATE_OPEN
         self.send_state_changed_event()
 
-    def async_update_state(self, state):
+    def async_update_state(self, state: Any) -> None:
         """Handle state update from cluster handler."""
         _LOGGER.debug("state=%s", state)
         self._state = state
         self.send_state_changed_event()
 
-    async def async_open_cover(self, **kwargs):
+    async def async_open_cover(self, **kwargs: Any) -> None:
         """Open the window cover."""
         res = await self._cover_cluster_handler.up_open()
         if isinstance(res, list) and res[1] is Status.SUCCESS:
             self.async_update_state(STATE_OPENING)
 
-    async def async_close_cover(self, **kwargs):
+    async def async_close_cover(self, **kwargs: Any) -> None:
         """Close the window cover."""
         res = await self._cover_cluster_handler.down_close()
         if isinstance(res, list) and res[1] is Status.SUCCESS:
             self.async_update_state(STATE_CLOSING)
 
-    async def async_set_cover_position(self, **kwargs):
+    async def async_set_cover_position(self, **kwargs: Any) -> None:
         """Move the roller shutter to a specific position."""
         new_pos = kwargs[ATTR_POSITION]
         res = await self._cover_cluster_handler.go_to_lift_percentage(100 - new_pos)
@@ -124,19 +130,23 @@ class Cover(PlatformEntity):
                 STATE_CLOSING if new_pos < self._current_position else STATE_OPENING
             )
 
-    async def async_stop_cover(self, **kwargs):
+    async def async_stop_cover(self, **kwargs: Any) -> None:
         """Stop the window cover."""
         res = await self._cover_cluster_handler.stop()
         if isinstance(res, list) and res[1] is Status.SUCCESS:
-            self._state = STATE_OPEN if self._current_position > 0 else STATE_CLOSED
+            self._state = (
+                STATE_OPEN
+                if self._current_position is not None and self._current_position > 0
+                else STATE_CLOSED
+            )
             self.send_state_changed_event()
 
-    async def async_update(self):
+    async def async_update(self) -> None:
         """Attempt to retrieve the open/close state of the cover."""
         await super().async_update()
         await self.async_get_state()
 
-    async def async_get_state(self, from_cache=True):
+    async def async_get_state(self, from_cache: bool = True) -> None:
         """Fetch the current state."""
         _LOGGER.debug("polling current state")
         if self._cover_cluster_handler:
@@ -148,13 +158,16 @@ class Cover(PlatformEntity):
             if pos is not None:
                 self._current_position = 100 - pos
                 self._state = (
-                    STATE_OPEN if self.current_cover_position > 0 else STATE_CLOSED
+                    STATE_OPEN
+                    if self.current_cover_position is not None
+                    and self.current_cover_position > 0
+                    else STATE_CLOSED
                 )
             else:
                 self._current_position = None
                 self._state = None
 
-    def get_state(self) -> Union[str, Dict, None]:
+    def get_state(self) -> dict:
         """Get the state of the cover."""
         return {
             ATTR_CURRENT_POSITION: self.current_cover_position,
@@ -180,16 +193,16 @@ class Shade(PlatformEntity):
     def __init__(
         self,
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
     ):
         """Initialize the cover."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
-        self._on_off_cluster_handler: ClusterHandlerType = self.cluster_handlers[
+        self._on_off_cluster_handler: ClusterHandler = self.cluster_handlers[
             CLUSTER_HANDLER_ON_OFF
         ]
-        self._level_cluster_handler: ClusterHandlerType = self.cluster_handlers[
+        self._level_cluster_handler: ClusterHandler = self.cluster_handlers[
             CLUSTER_HANDLER_LEVEL
         ]
         self._is_open: Union[bool, None] = self._on_off_cluster_handler.cluster.get(
@@ -202,7 +215,7 @@ class Shade(PlatformEntity):
         self._level_cluster_handler.add_listener(self)
 
     @property
-    def current_cover_position(self):
+    def current_cover_position(self) -> int | None:
         """Return current position of cover.
         None is unknown, 0 is closed, 100 is fully open.
         """
@@ -228,7 +241,7 @@ class Shade(PlatformEntity):
         self._position = int(value * 100 / 255)
         self.send_state_changed_event()
 
-    async def async_open_cover(self, **kwargs):
+    async def async_open_cover(self, **kwargs: Any) -> None:
         """Open the window cover."""
         res = await self._on_off_cluster_handler.on()
         if not isinstance(res, list) or res[1] != Status.SUCCESS:
@@ -238,7 +251,7 @@ class Shade(PlatformEntity):
         self._is_open = True
         self.send_state_changed_event()
 
-    async def async_close_cover(self, **kwargs):
+    async def async_close_cover(self, **kwargs: Any) -> None:
         """Close the window cover."""
         res = await self._on_off_cluster_handler.off()
         if not isinstance(res, list) or res[1] != Status.SUCCESS:
@@ -248,7 +261,7 @@ class Shade(PlatformEntity):
         self._is_open = False
         self.send_state_changed_event()
 
-    async def async_set_cover_position(self, **kwargs):
+    async def async_set_cover_position(self, **kwargs: Any) -> None:
         """Move the roller shutter to a specific position."""
         new_pos = kwargs[ATTR_POSITION]
         res = await self._level_cluster_handler.move_to_level_with_on_off(
@@ -262,7 +275,7 @@ class Shade(PlatformEntity):
         self._position = new_pos
         self.send_state_changed_event()
 
-    async def async_stop_cover(self, **kwargs) -> None:
+    async def async_stop_cover(self, **kwargs: Any) -> None:
         """Stop the cover."""
         res = await self._level_cluster_handler.stop()
         if not isinstance(res, list) or res[1] != Status.SUCCESS:
@@ -284,7 +297,7 @@ class Shade(PlatformEntity):
 class KeenVent(Shade):
     """Keen vent cover."""
 
-    async def async_open_cover(self, **kwargs):
+    async def async_open_cover(self, **kwargs: Any) -> None:
         """Open the cover."""
         position = self._position or 100
         tasks = [

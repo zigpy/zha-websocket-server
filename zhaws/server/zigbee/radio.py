@@ -1,7 +1,7 @@
 """Zigbee radio utilities."""
 
 import enum
-from typing import Callable, Final, List
+from typing import Callable, Final
 
 import bellows.zigbee.application
 from zigpy.config import CONF_DEVICE_PATH  # noqa: F401 # pylint: disable=unused-import
@@ -10,7 +10,7 @@ import zigpy_xbee.zigbee.application
 import zigpy_zigate.zigbee.application
 import zigpy_znp.zigbee.application
 
-BAUD_RATES: Final[List[int]] = [
+BAUD_RATES: Final[list[int]] = [
     2400,
     4800,
     9600,

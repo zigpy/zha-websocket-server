@@ -1,6 +1,11 @@
 """Provide Event base classes for zhaws.client."""
+from __future__ import annotations
+
 import logging
-from typing import Callable, Dict, List
+from typing import TYPE_CHECKING, Any, Callable
+
+if TYPE_CHECKING:
+    from zhaws.client.model.events import BaseEvent, PlatformEntityEvent
 
 _LOGGER = logging.getLogger(__package__)
 
@@ -8,10 +13,10 @@ _LOGGER = logging.getLogger(__package__)
 class EventBase:
     """Represent a zhawssclient base class for event handling models."""
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize event base."""
         super().__init__(*args, **kwargs)
-        self._listeners: Dict[str, List[Callable]] = {}
+        self._listeners: dict[str, list[Callable]] = {}
 
     def on(  # pylint: disable=invalid-name
         self, event_name: str, callback: Callable
@@ -38,12 +43,12 @@ class EventBase:
 
         return unsub
 
-    def emit(self, event_name: str, data: dict) -> None:
+    def emit(self, event_name: str, data: BaseEvent) -> None:
         """Run all callbacks for an event."""
         for listener in self._listeners.get(event_name, []):
             listener(data)
 
-    def _handle_event_protocol(self, event) -> None:
+    def _handle_event_protocol(self, event: PlatformEntityEvent) -> None:
         """Process an event based on event protocol."""
         _LOGGER.debug("handling event protocol for event: %s", event)
         handler = getattr(self, f"handle_{event.event.replace(' ', '_')}", None)

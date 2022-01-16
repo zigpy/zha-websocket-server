@@ -1,5 +1,5 @@
 """Closures cluster handlers module for zhawss."""
-from typing import Awaitable
+from typing import Any, Awaitable
 
 from zigpy.zcl.clusters import closures
 
@@ -17,9 +17,9 @@ class DoorLockClusterHandler(ClusterHandler):
     """Door lock cluster handler."""
 
     _value_attribute = 0
-    REPORT_CONFIG = ({"attr": "lock_state", "config": REPORT_CONFIG_IMMEDIATE},)
+    REPORT_CONFIG = [{"attr": "lock_state", "config": REPORT_CONFIG_IMMEDIATE}]
 
-    async def async_update(self) -> Awaitable[None]:
+    async def async_update(self) -> None:
         """Retrieve latest state."""
         result = await self.get_attribute_value("lock_state", from_cache=True)
         if result is not None:
@@ -27,7 +27,7 @@ class DoorLockClusterHandler(ClusterHandler):
                 f"cluster_handler_{SIGNAL_ATTR_UPDATED}", 0, "lock_state", result
             )
 
-    def cluster_command(self, tsn, command_id, args) -> None:
+    def cluster_command(self, tsn: int, command_id: int, args: Any) -> None:
         """Handle a cluster command received on this cluster."""
 
         if (
@@ -47,7 +47,7 @@ class DoorLockClusterHandler(ClusterHandler):
                 },
             )
 
-    def attribute_updated(self, attrid, value) -> None:
+    def attribute_updated(self, attrid: int, value: Any) -> None:
         """Handle attribute update from lock cluster."""
         attr_name = self.cluster.attributes.get(attrid, [attrid])[0]
         self.debug(
@@ -58,9 +58,7 @@ class DoorLockClusterHandler(ClusterHandler):
                 f"cluster_handler_{SIGNAL_ATTR_UPDATED}", attrid, attr_name, value
             )
 
-    async def async_set_user_code(
-        self, code_slot: int, user_code: str
-    ) -> Awaitable[None]:
+    async def async_set_user_code(self, code_slot: int, user_code: str) -> None:
         """Set the user code for the code slot."""
 
         await self.set_pin_code(
@@ -70,12 +68,12 @@ class DoorLockClusterHandler(ClusterHandler):
             user_code,
         )
 
-    async def async_enable_user_code(self, code_slot: int) -> Awaitable[None]:
+    async def async_enable_user_code(self, code_slot: int) -> None:
         """Enable the code slot."""
 
         await self.set_user_status(code_slot - 1, closures.DoorLock.UserStatus.Enabled)
 
-    async def async_disable_user_code(self, code_slot: int) -> Awaitable[None]:
+    async def async_disable_user_code(self, code_slot: int) -> None:
         """Disable the code slot."""
 
         await self.set_user_status(code_slot - 1, closures.DoorLock.UserStatus.Disabled)
@@ -86,19 +84,17 @@ class DoorLockClusterHandler(ClusterHandler):
         result = await self.get_pin_code(code_slot - 1)
         return result
 
-    async def async_clear_user_code(self, code_slot: int) -> Awaitable[None]:
+    async def async_clear_user_code(self, code_slot: int) -> None:
         """Clear the code slot."""
 
         await self.clear_pin_code(code_slot - 1)
 
-    async def async_clear_all_user_codes(self) -> Awaitable[None]:
+    async def async_clear_all_user_codes(self) -> None:
         """Clear all code slots."""
 
         await self.clear_all_pin_codes()
 
-    async def async_set_user_type(
-        self, code_slot: int, user_type: str
-    ) -> Awaitable[None]:
+    async def async_set_user_type(self, code_slot: int, user_type: str) -> None:
         """Set user type."""
 
         await self.set_user_type(code_slot - 1, user_type)
@@ -125,11 +121,11 @@ class WindowCovering(ClusterHandler):
     """Window cluster handler."""
 
     _value_attribute = 8
-    REPORT_CONFIG = (
+    REPORT_CONFIG = [
         {"attr": "current_position_lift_percentage", "config": REPORT_CONFIG_IMMEDIATE},
-    )
+    ]
 
-    async def async_update(self) -> Awaitable[None]:
+    async def async_update(self) -> None:
         """Retrieve latest state."""
         result = await self.get_attribute_value(
             "current_position_lift_percentage", from_cache=False
@@ -143,7 +139,7 @@ class WindowCovering(ClusterHandler):
                 result,
             )
 
-    def attribute_updated(self, attrid, value) -> None:
+    def attribute_updated(self, attrid: int, value: Any) -> None:
         """Handle attribute update from window_covering cluster."""
         attr_name = self.cluster.attributes.get(attrid, [attrid])[0]
         self.debug(

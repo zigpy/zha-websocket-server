@@ -1,16 +1,20 @@
 """WS api for the lock platform entity."""
+from __future__ import annotations
 
-from typing import Any, Awaitable
+from typing import TYPE_CHECKING, Any
 
-from backports.strenum.strenum import StrEnum
 import voluptuous as vol
 
+from zhaws.backports.enum import StrEnum
 from zhaws.server.platforms.api import (
     execute_platform_entity_command,
     platform_entity_command_schema,
 )
 from zhaws.server.websocket.api import decorators, register_api_command
-from zhaws.server.websocket.types import ClientType, ServerType
+
+if TYPE_CHECKING:
+    from zhaws.server.websocket.client import Client
+    from zhaws.server.websocket.server import Server
 
 
 class LockCommands(StrEnum):
@@ -24,25 +28,20 @@ class LockCommands(StrEnum):
     CLEAR_USER_LOCK_CODE = "lock_clear_user_lock_code"
 
 
-@decorators.async_response
 @decorators.websocket_command(platform_entity_command_schema(LockCommands.LOCK))
-async def lock(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+@decorators.async_response
+async def lock(server: Server, client: Client, message: dict[str, Any]) -> None:
     """Lock the lock."""
     await execute_platform_entity_command(server, client, message, "async_lock")
 
 
-@decorators.async_response
 @decorators.websocket_command(platform_entity_command_schema(LockCommands.UNLOCK))
-async def unlock(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+@decorators.async_response
+async def unlock(server: Server, client: Client, message: dict[str, Any]) -> None:
     """Unlock the lock."""
     await execute_platform_entity_command(server, client, message, "async_unlock")
 
 
-@decorators.async_response
 @decorators.websocket_command(
     platform_entity_command_schema(
         LockCommands.SET_USER_LOCK_CODE,
@@ -52,16 +51,16 @@ async def unlock(
         },
     )
 )
+@decorators.async_response
 async def set_user_lock_code(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+    server: Server, client: Client, message: dict[str, Any]
+) -> None:
     """Set a user lock code in the specified slot for the lock."""
     await execute_platform_entity_command(
         server, client, message, "async_set_user_lock_code"
     )
 
 
-@decorators.async_response
 @decorators.websocket_command(
     platform_entity_command_schema(
         LockCommands.ENABLE_USER_LOCK_CODE,
@@ -70,16 +69,16 @@ async def set_user_lock_code(
         },
     )
 )
+@decorators.async_response
 async def enable_user_lock_code(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+    server: Server, client: Client, message: dict[str, Any]
+) -> None:
     """Enable a user lock code for the lock."""
     await execute_platform_entity_command(
         server, client, message, "async_enable_user_lock_code"
     )
 
 
-@decorators.async_response
 @decorators.websocket_command(
     platform_entity_command_schema(
         LockCommands.DISABLE_USER_LOCK_CODE,
@@ -88,16 +87,16 @@ async def enable_user_lock_code(
         },
     )
 )
+@decorators.async_response
 async def disable_user_lock_code(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+    server: Server, client: Client, message: dict[str, Any]
+) -> None:
     """Disable a user lock code for the lock."""
     await execute_platform_entity_command(
         server, client, message, "async_disable_user_lock_code"
     )
 
 
-@decorators.async_response
 @decorators.websocket_command(
     platform_entity_command_schema(
         LockCommands.CLEAR_USER_LOCK_CODE,
@@ -106,16 +105,17 @@ async def disable_user_lock_code(
         },
     )
 )
+@decorators.async_response
 async def clear_user_lock_code(
-    server: ServerType, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+    server: Server, client: Client, message: dict[str, Any]
+) -> None:
     """Clear a user lock code for the lock."""
     await execute_platform_entity_command(
         server, client, message, "async_clear_user_lock_code"
     )
 
 
-def load_api(server: ServerType) -> None:
+def load_api(server: Server) -> None:
     """Load the api command handlers."""
     register_api_command(server, lock)
     register_api_command(server, unlock)

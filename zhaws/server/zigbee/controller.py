@@ -1,10 +1,11 @@
 """Controller for zha web socket server."""
+from __future__ import annotations
+
 import asyncio
 import logging
 import time
-from typing import Any, Awaitable, Dict, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
-from backports.strenum.strenum import StrEnum
 from bellows.zigbee.application import ControllerApplication
 from serial.serialutil import SerialException
 from zhaquirks import setup as setup_quirks
@@ -13,6 +14,7 @@ from zigpy.group import Group
 from zigpy.types.named import EUI64
 from zigpy.typing import DeviceType as ZigpyDeviceType
 
+from zhaws.backports.enum import StrEnum
 from zhaws.server.const import (
     CONF_ENABLE_QUIRKS,
     CONF_RADIO_TYPE,
@@ -28,7 +30,10 @@ from zhaws.server.const import (
     MessageTypes,
 )
 from zhaws.server.platforms import discovery
-from zhaws.server.websocket.types import ServerType
+
+if TYPE_CHECKING:
+    from zhaws.server.websocket.server import Server
+
 from zhaws.server.zigbee.device import Device, DeviceStatus
 from zhaws.server.zigbee.radio import RadioType
 
@@ -47,12 +52,12 @@ class DevicePairingStatus(StrEnum):
 class Controller:
     """Controller for the Zigbee application."""
 
-    def __init__(self, server: ServerType):
+    def __init__(self, server: Server):
         """Initialize the controller."""
         self._application_controller: ControllerApplication = None
-        self._server: ServerType = server
-        self.radio_description: str = None
-        self._devices: Dict[EUI64, Device] = {}
+        self._server: Server = server
+        self.radio_description: Optional[str] = None
+        self._devices: dict[EUI64, Device] = {}
 
     @property
     def is_running(self) -> bool:
@@ -63,7 +68,7 @@ class Controller:
         )
 
     @property
-    def server(self) -> ServerType:
+    def server(self) -> Server:
         """Return the server."""
         return self._server
 
@@ -77,16 +82,16 @@ class Controller:
         """Get the coordinator device."""
         return self._devices[self._application_controller.ieee]
 
-    async def start_network(self, configuration) -> Awaitable[None]:
+    async def start_network(self, configuration: dict) -> None:
         """Start the Zigbee network."""
         if configuration.get(CONF_ENABLE_QUIRKS):
             setup_quirks(configuration)
         radio_type = configuration[CONF_RADIO_TYPE]
         app_controller_cls = RadioType[radio_type].controller
         self.radio_description = RadioType[radio_type].description
-        controller_config = app_controller_cls.SCHEMA(configuration)
+        controller_config = app_controller_cls.SCHEMA(configuration)  # type: ignore
         try:
-            self._application_controller = await app_controller_cls.new(
+            self._application_controller = await app_controller_cls.new(  # type: ignore
                 controller_config, auto_form=True, start_radio=True
             )
         except (asyncio.TimeoutError, SerialException, OSError) as exception:
@@ -116,11 +121,11 @@ class Controller:
                     _LOGGER.debug("Platform entity data: %s", platform_entity.to_json())
             self.server.data[platform].clear()
 
-    async def stop_network(self) -> Awaitable[None]:
+    async def stop_network(self) -> None:
         """Stop the Zigbee network."""
         await self._application_controller.pre_shutdown()
 
-    def get_devices(self) -> Dict[str, Any]:
+    def get_devices(self) -> dict[str, Any]:
         """Get Zigbee devices."""
         # TODO temporary to test response
         return {
@@ -136,7 +141,7 @@ class Controller:
             raise ValueError(f"Device {str(ieee)} not found")
         return device
 
-    def get_groups(self):
+    def get_groups(self) -> None:
         """Get Zigbee groups."""
 
     def device_joined(self, device: ZigpyDeviceType) -> None:
@@ -196,11 +201,11 @@ class Controller:
             }
         )
 
-    def device_removed(self, device: ZigpyDeviceType):
+    def device_removed(self, device: ZigpyDeviceType) -> None:
         """Handle device being removed from the network."""
         device = self._devices.pop(device.ieee, None)
         if device is not None:
-            message = {DEVICE: device.zha_device_info}
+            message: dict[str, Any] = {DEVICE: device.zha_device_info}
             message[MESSAGE_TYPE] = MessageTypes.EVENT
             message[EVENT_TYPE] = EventTypes.CONTROLLER_EVENT
             message[EVENT] = ControllerEvents.DEVICE_REMOVED
@@ -218,7 +223,7 @@ class Controller:
     def group_removed(self, zigpy_group: Group) -> None:
         """Handle zigpy group removed event."""
 
-    async def async_device_initialized(self, device: ZigpyDeviceType):
+    async def async_device_initialized(self, device: ZigpyDeviceType) -> None:
         """Handle device joined and basic information discovered (async)."""
         zha_device = self.get_or_create_device(device)
         # This is an active device so set a last seen if it is none
@@ -248,14 +253,14 @@ class Controller:
             )
             await self._async_device_joined(zha_device)
 
-        message = {DEVICE: zha_device.zha_device_info}
+        message: dict[str, Any] = {DEVICE: zha_device.zha_device_info}
         message[PAIRING_STATUS] = DevicePairingStatus.INITIALIZED
         message[MESSAGE_TYPE] = MessageTypes.EVENT
         message[EVENT_TYPE] = EventTypes.CONTROLLER_EVENT
         message[EVENT] = ControllerEvents.DEVICE_FULLY_INITIALIZED
         self.server.client_manager.broadcast(message)
 
-    def get_or_create_device(self, zigpy_device: ZigpyDeviceType):
+    def get_or_create_device(self, zigpy_device: ZigpyDeviceType) -> Device:
         """Get or create a device."""
         if (device := self._devices.get(zigpy_device.ieee)) is None:
             device = Device(zigpy_device, self)
@@ -264,7 +269,7 @@ class Controller:
 
     async def _async_device_joined(self, device: Device) -> None:
         device.available = True
-        message = {DEVICE: device.device_info}
+        message: dict[str, Any] = {DEVICE: device.device_info}
         await device.async_configure()
         message[PAIRING_STATUS] = DevicePairingStatus.CONFIGURED
         message[MESSAGE_TYPE] = MessageTypes.EVENT
@@ -274,7 +279,7 @@ class Controller:
         await device.async_initialize(from_cache=False)
         self.create_platform_entities()
 
-    async def _async_device_rejoined(self, device: Device):
+    async def _async_device_rejoined(self, device: Device) -> None:
         _LOGGER.debug(
             "skipping discovery for previously discovered device - %s:%s",
             f"0x{device.nwk:04x}",
@@ -282,7 +287,7 @@ class Controller:
         )
         # we don't have to do this on a nwk swap but we don't have a way to tell currently
         await device.async_configure()
-        message = {DEVICE: device.device_info}
+        message: dict[str, Any] = {DEVICE: device.device_info}
         message[PAIRING_STATUS] = DevicePairingStatus.CONFIGURED
         message[MESSAGE_TYPE] = MessageTypes.EVENT
         message[EVENT_TYPE] = EventTypes.CONTROLLER_EVENT

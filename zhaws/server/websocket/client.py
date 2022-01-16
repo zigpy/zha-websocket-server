@@ -1,13 +1,15 @@
 """Client classes for zhawss."""
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
-from typing import Any, Awaitable
+from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, Union
 
-from backports.strenum.strenum import StrEnum
 import voluptuous
 from websockets.server import WebSocketServerProtocol
 
+from zhaws.backports.enum import StrEnum
 from zhaws.server.const import (
     COMMAND,
     ERROR_CODE,
@@ -23,7 +25,9 @@ from zhaws.server.const import (
     MessageTypes,
 )
 from zhaws.server.websocket.api import decorators, register_api_command
-from zhaws.server.websocket.types import ClientManagerType, ServerType
+
+if TYPE_CHECKING:
+    from zhaws.server.websocket.server import Server
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,11 +46,11 @@ class Client:
     def __init__(
         self,
         websocket: WebSocketServerProtocol,
-        client_manager: ClientManagerType,
+        client_manager: ClientManager,
     ):
         """Initialize the client."""
         self._websocket: WebSocketServerProtocol = websocket
-        self._client_manager: ClientManagerType = client_manager
+        self._client_manager: ClientManager = client_manager
         self.receive_events: bool = False
         self.receive_raw_zcl_events: bool = False
 
@@ -65,7 +69,7 @@ class Client:
         self._send_data(message)
 
     def send_result_success(
-        self, request_message: dict[str, Any], data: dict[str, Any] = None
+        self, request_message: dict[str, Any], data: Optional[dict[str, Any]] = None
     ) -> None:
         """Send success result prompted by a client request."""
         message = {
@@ -118,21 +122,23 @@ class Client:
         except (TypeError) as exception:
             _LOGGER.error("Couldn't serialize data: %s", data, exc_info=exception)
 
-    async def _handle_incoming_message(self, message) -> Awaitable[None]:
+    async def _handle_incoming_message(self, message: Union[str, bytes]) -> None:
         """Handle an incoming message."""
         _LOGGER.info("Message received: %s", message)
-        handlers: dict[str, Awaitable] = self._client_manager.server.data[WEBSOCKET_API]
+        handlers: dict[
+            str, Tuple[Callable, Callable]
+        ] = self._client_manager.server.data[WEBSOCKET_API]
 
-        message = json.loads(message)
+        loaded_message = json.loads(message)
         _LOGGER.debug(
-            "Received message: %s on websocket: %s", message, self._websocket.id
+            "Received message: %s on websocket: %s", loaded_message, self._websocket.id
         )
 
         try:
-            msg = MINIMAL_MESSAGE_SCHEMA(message)
+            msg = MINIMAL_MESSAGE_SCHEMA(loaded_message)
         except voluptuous.Invalid as exception:
             _LOGGER.error(
-                f"Received invalid command[unable to parse command]: {message}",
+                f"Received invalid command[unable to parse command]: {loaded_message}",
                 exc_info=exception,
             )
             return
@@ -149,56 +155,54 @@ class Client:
             handler(self._client_manager.server, self, schema(msg))
         except Exception as err:  # pylint: disable=broad-except
             # TODO Fix this - make real error codes with error messages
-            self.send_result_error(message, "INTERNAL_ERROR", f"Internal error: {err}")
+            self.send_result_error(
+                loaded_message, "INTERNAL_ERROR", f"Internal error: {err}"
+            )
 
-    async def listen(self) -> Awaitable[None]:
+    async def listen(self) -> None:
         async for message in self._websocket:
             asyncio.create_task(self._handle_incoming_message(message))
 
 
-@decorators.async_response
 @decorators.websocket_command(
     {
         COMMAND: str(ClientAPICommands.LISTEN_RAW_ZCL),
     }
 )
+@decorators.async_response
 async def listen_raw_zcl(
-    server: ServerType, client: Client, message: dict[str, Any]
-) -> Awaitable[None]:
+    server: Server, client: Client, message: dict[str, Any]
+) -> None:
     """Listen for raw ZCL events."""
     client.receive_raw_zcl_events = True
     client.send_result_success(message)
 
 
-@decorators.async_response
 @decorators.websocket_command(
     {
         COMMAND: str(ClientAPICommands.LISTEN),
     }
 )
-async def listen(
-    server: ServerType, client: Client, message: dict[str, Any]
-) -> Awaitable[None]:
+@decorators.async_response
+async def listen(server: Server, client: Client, message: dict[str, Any]) -> None:
     """Listen for events."""
     client.receive_events = True
     client.send_result_success(message)
 
 
-@decorators.async_response
 @decorators.websocket_command(
     {
         COMMAND: str(ClientAPICommands.DISCONNECT),
     }
 )
-async def disconnect(
-    server: ServerType, client: Client, message: dict[str, Any]
-) -> Awaitable[None]:
+@decorators.async_response
+async def disconnect(server: Server, client: Client, message: dict[str, Any]) -> None:
     """Disconnect the client."""
     client.disconnect()
     server.client_manager.remove_client(client)
 
 
-def load_api(server: ServerType) -> None:
+def load_api(server: Server) -> None:
     """Load the api command handlers."""
     register_api_command(server, listen_raw_zcl)
     register_api_command(server, listen)
@@ -208,23 +212,23 @@ def load_api(server: ServerType) -> None:
 class ClientManager:
     """ZHAWSS client manager implementation."""
 
-    def __init__(self, server: ServerType):
+    def __init__(self, server: Server):
         """Initialize the client."""
-        self._server: ServerType = server
+        self._server: Server = server
         self._clients: list[Client] = []
 
     @property
-    def server(self) -> ServerType:
+    def server(self) -> Server:
         """Return the server this ClientManager belongs to."""
         return self._server
 
-    async def add_client(self, websocket) -> Awaitable[None]:
+    async def add_client(self, websocket: WebSocketServerProtocol) -> None:
         """Adds a new client to the client manager."""
         client: Client = Client(websocket, self)
         self._clients.append(client)
         await client.listen()
 
-    def remove_client(self, client: Client) -> Awaitable[None]:
+    def remove_client(self, client: Client) -> None:
         """Adds a new client to the client manager."""
         self._clients.remove(client)
 

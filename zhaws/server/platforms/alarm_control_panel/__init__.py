@@ -1,17 +1,21 @@
 """Alarm control panel module for zhawss."""
+from __future__ import annotations
 
 import functools
-from typing import Dict, Final, List, Union
+from typing import TYPE_CHECKING, Dict, Final, Union
 
-from backports.strenum.strenum import StrEnum
 from zigpy.zcl.clusters.security import IasAce
 
+from zhaws.backports.enum import StrEnum
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhaws.server.zigbee.cluster.const import CLUSTER_HANDLER_IAS_ACE
 from zhaws.server.zigbee.cluster.security import IasAce as IasAceClusterHandler
-from zhaws.server.zigbee.cluster.types import ClusterHandlerType
-from zhaws.server.zigbee.types import DeviceType, EndpointType
+
+if TYPE_CHECKING:
+    from zhaws.server.zigbee.cluster import ClusterHandler
+    from zhaws.server.zigbee.device import Device
+    from zhaws.server.zigbee.endpoint import Endpoint
 
 STRICT_MATCH = functools.partial(
     PLATFORM_ENTITIES.strict_match, Platform.ALARM_CONTROL_PANEL
@@ -36,6 +40,7 @@ class AlarmState(StrEnum):
     ARMING = "arming"
     DISARMING = "disarming"
     TRIGGERED = "triggered"
+    UNKNOWN = "unknown"
 
 
 IAS_ACE_STATE_MAP = {
@@ -56,9 +61,9 @@ class ZHAAlarmControlPanel(PlatformEntity):
     def __init__(
         self,
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
     ):
         """Initialize the alarm control panel."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
@@ -81,36 +86,36 @@ class ZHAAlarmControlPanel(PlatformEntity):
         """
         self._cluster_handler.add_listener(self)
 
-    def cluster_handler_state_changed(self):
+    def cluster_handler_state_changed(self) -> None:
         """Handle state changed on cluster."""
         self.send_state_changed_event()
 
     @property
-    def code_arm_required(self):
+    def code_arm_required(self) -> bool:
         """Whether the code is required for arm actions."""
         return self._cluster_handler.code_required_arm_actions
 
-    async def async_alarm_disarm(self, code=None):
+    async def async_alarm_disarm(self, code: str | None = None) -> None:
         """Send disarm command."""
         self._cluster_handler.arm(IasAce.ArmMode.Disarm, code, 0)
         self.send_state_changed_event()
 
-    async def async_alarm_arm_home(self, code=None):
+    async def async_alarm_arm_home(self, code: str | None = None) -> None:
         """Send arm home command."""
         self._cluster_handler.arm(IasAce.ArmMode.Arm_Day_Home_Only, code, 0)
         self.send_state_changed_event()
 
-    async def async_alarm_arm_away(self, code=None):
+    async def async_alarm_arm_away(self, code: str | None = None) -> None:
         """Send arm away command."""
         self._cluster_handler.arm(IasAce.ArmMode.Arm_All_Zones, code, 0)
         self.send_state_changed_event()
 
-    async def async_alarm_arm_night(self, code=None):
+    async def async_alarm_arm_night(self, code: str | None = None) -> None:
         """Send arm night command."""
         self._cluster_handler.arm(IasAce.ArmMode.Arm_Night_Sleep_Only, code, 0)
         self.send_state_changed_event()
 
-    async def async_alarm_trigger(self, code=None):
+    async def async_alarm_trigger(self, code: str | None = None) -> None:
         """Send alarm trigger command."""
         self.send_state_changed_event()
 
@@ -125,9 +130,11 @@ class ZHAAlarmControlPanel(PlatformEntity):
         )
 
     @property
-    def state(self):
+    def state(self) -> str:
         """Return the state of the entity."""
-        return IAS_ACE_STATE_MAP.get(self._cluster_handler.armed_state)
+        return IAS_ACE_STATE_MAP.get(
+            self._cluster_handler.armed_state, AlarmState.UNKNOWN
+        )
 
     def get_state(self) -> Union[str, Dict, None]:
         return self.state

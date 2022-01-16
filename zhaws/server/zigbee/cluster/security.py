@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Awaitable
+from typing import TYPE_CHECKING, Any, Callable
 
 from zigpy.exceptions import ZigbeeException
 from zigpy.zcl import Cluster as ZigpyClusterType
@@ -17,8 +17,9 @@ from zigpy.zcl.clusters.security import IasAce as AceCluster
 
 from zhaws.server.zigbee import registries
 from zhaws.server.zigbee.cluster import ClusterHandler, ClusterHandlerStatus
-from zhaws.server.zigbee.decorators import CALLABLE_T
-from zhaws.server.zigbee.types import EndpointType
+
+if TYPE_CHECKING:
+    from zhaws.server.zigbee.endpoint import Endpoint
 
 IAS_ACE_ARM = 0x0000  # ("arm", (t.enum8, t.CharacterString, t.uint8_t), False),
 IAS_ACE_BYPASS = 0x0001  # ("bypass", (t.LVList(t.uint8_t), t.CharacterString), False),
@@ -67,10 +68,10 @@ _LOGGER = logging.getLogger(__name__)
 class IasAce(ClusterHandler):
     """IAS Ancillary Control Equipment cluster handler."""
 
-    def __init__(self, cluster: ZigpyClusterType, endpoint: EndpointType) -> None:
+    def __init__(self, cluster: ZigpyClusterType, endpoint: Endpoint) -> None:
         """Initialize IAS Ancillary Control Equipment cluster handler."""
         super().__init__(cluster, endpoint)
-        self.command_map: dict[int, CALLABLE_T] = {
+        self.command_map: dict[int, Callable] = {
             IAS_ACE_ARM: self.arm,
             IAS_ACE_BYPASS: self._bypass,
             IAS_ACE_EMERGENCY: self._emergency,
@@ -82,7 +83,7 @@ class IasAce(ClusterHandler):
             IAS_ACE_GET_BYPASSED_ZONE_LIST: self._get_bypassed_zone_list,
             IAS_ACE_GET_ZONE_STATUS: self._get_zone_status,
         }
-        self.arm_map: dict[AceCluster.ArmMode, CALLABLE_T] = {
+        self.arm_map: dict[AceCluster.ArmMode, Callable] = {
             AceCluster.ArmMode.Disarm: self._disarm,
             AceCluster.ArmMode.Arm_All_Zones: self._arm_away,
             AceCluster.ArmMode.Arm_Day_Home_Only: self._arm_day,
@@ -99,14 +100,14 @@ class IasAce(ClusterHandler):
         # where do we store this to handle restarts
         self.alarm_status: AceCluster.AlarmStatus = AceCluster.AlarmStatus.No_Alarm
 
-    def cluster_command(self, tsn, command_id, args) -> None:
+    def cluster_command(self, tsn: int, command_id: int, args: Any) -> None:
         """Handle commands received to this cluster."""
         self.warning(
             "received command %s", self._cluster.server_commands.get(command_id)[NAME]
         )
         self.command_map[command_id](*args)
 
-    def arm(self, arm_mode: int, code: str, zone_id: int) -> None:
+    def arm(self, arm_mode: int, code: str | None, zone_id: int) -> None:
         """Handle the IAS ACE arm command."""
         mode = AceCluster.ArmMode(arm_mode)
 
@@ -203,7 +204,7 @@ class IasAce(ClusterHandler):
             zigbee_reply = self.arm_response(armed_type)
         return zigbee_reply
 
-    def _bypass(self, zone_list, code) -> None:
+    def _bypass(self, zone_list: Any, code: str) -> None:
         """Handle the IAS ACE bypass command."""
         """TODO figure out events
         self.zha_send_event(
@@ -214,36 +215,27 @@ class IasAce(ClusterHandler):
 
     def _emergency(self) -> None:
         """Handle the IAS ACE emergency command."""
-        self._set_alarm(
-            AceCluster.AlarmStatus.Emergency,
-            IAS_ACE_EMERGENCY,
-        )
+        self._set_alarm(AceCluster.AlarmStatus.Emergency)
 
     def _fire(self) -> None:
         """Handle the IAS ACE fire command."""
-        self._set_alarm(
-            AceCluster.AlarmStatus.Fire,
-            IAS_ACE_FIRE,
-        )
+        self._set_alarm(AceCluster.AlarmStatus.Fire)
 
     def _panic(self) -> None:
         """Handle the IAS ACE panic command."""
-        self._set_alarm(
-            AceCluster.AlarmStatus.Emergency_Panic,
-            IAS_ACE_PANIC,
-        )
+        self._set_alarm(AceCluster.AlarmStatus.Emergency_Panic)
 
-    def _set_alarm(self, status: AceCluster.PanelStatus, event: str) -> None:
+    def _set_alarm(self, status: AceCluster.AlarmStatus) -> None:
         """Set the specified alarm status."""
         self.alarm_status = status
         self.armed_state = AceCluster.PanelStatus.In_Alarm
         self.listener_event("cluster_handler_state_changed")
         self._send_panel_status_changed()
 
-    def _get_zone_id_map(self):
+    def _get_zone_id_map(self) -> None:
         """Handle the IAS ACE zone id map command."""
 
-    def _get_zone_info(self, zone_id):
+    def _get_zone_info(self, zone_id: int) -> None:
         """Handle the IAS ACE zone info command."""
 
     def _send_panel_status_response(self) -> None:
@@ -267,12 +259,16 @@ class IasAce(ClusterHandler):
         asyncio.create_task(response)
         self.listener_event("cluster_handler_state_changed")
 
-    def _get_bypassed_zone_list(self):
+    def _get_bypassed_zone_list(self) -> None:
         """Handle the IAS ACE bypassed zone list command."""
 
     def _get_zone_status(
-        self, starting_zone_id, max_zone_ids, zone_status_mask_flag, zone_status_mask
-    ):
+        self,
+        starting_zone_id: int,
+        max_zone_ids: int,
+        zone_status_mask_flag: int,
+        zone_status_mask: int,
+    ) -> None:
         """Handle the IAS ACE zone status command."""
 
 
@@ -282,7 +278,9 @@ class IasWd(ClusterHandler):
     """IAS Warning Device cluster handler."""
 
     @staticmethod
-    def set_bit(destination_value, destination_bit, source_value, source_bit):
+    def set_bit(
+        destination_value: int, destination_bit: int, source_value: int, source_bit: int
+    ) -> int:
         """Set the specified bit in the value."""
 
         if IasWd.get_bit(source_value, source_bit):
@@ -290,16 +288,16 @@ class IasWd(ClusterHandler):
         return destination_value
 
     @staticmethod
-    def get_bit(value, bit):
+    def get_bit(value: int, bit: int) -> bool:
         """Get the specified bit from the value."""
         return (value & (1 << bit)) != 0
 
     async def issue_squawk(
         self,
-        mode=WARNING_DEVICE_SQUAWK_MODE_ARMED,
-        strobe=WARNING_DEVICE_STROBE_YES,
-        squawk_level=WARNING_DEVICE_SOUND_HIGH,
-    ) -> Awaitable[None]:
+        mode: int = WARNING_DEVICE_SQUAWK_MODE_ARMED,
+        strobe: int = WARNING_DEVICE_STROBE_YES,
+        squawk_level: int = WARNING_DEVICE_SOUND_HIGH,
+    ) -> None:
         """Issue a squawk command.
 
         This command uses the WD capabilities to emit a quick audible/visible pulse called a
@@ -321,13 +319,13 @@ class IasWd(ClusterHandler):
 
     async def issue_start_warning(
         self,
-        mode=WARNING_DEVICE_MODE_EMERGENCY,
-        strobe=WARNING_DEVICE_STROBE_YES,
-        siren_level=WARNING_DEVICE_SOUND_HIGH,
-        warning_duration=5,  # seconds
-        strobe_duty_cycle=0x00,
-        strobe_intensity=WARNING_DEVICE_STROBE_HIGH,
-    ) -> Awaitable[None]:
+        mode: int = WARNING_DEVICE_MODE_EMERGENCY,
+        strobe: int = WARNING_DEVICE_STROBE_YES,
+        siren_level: int = WARNING_DEVICE_SOUND_HIGH,
+        warning_duration: int = 5,  # seconds
+        strobe_duty_cycle: int = 0x00,
+        strobe_intensity: int = WARNING_DEVICE_STROBE_HIGH,
+    ) -> None:
         """Issue a start warning command.
 
         This command starts the WD operation. The WD alerts the surrounding area by audible
@@ -363,7 +361,7 @@ class IASZoneClusterHandler(ClusterHandler):
 
     ZCL_INIT_ATTRS = {"zone_status": True, "zone_state": False, "zone_type": True}
 
-    def cluster_command(self, tsn, command_id, args) -> None:
+    def cluster_command(self, tsn: int, command_id: int, args: Any) -> None:
         """Handle commands received to this cluster."""
         _LOGGER.info("received cluster_command: %s args: %s", command_id, args)
         if command_id == 0:
@@ -373,7 +371,7 @@ class IASZoneClusterHandler(ClusterHandler):
             res = self._cluster.enroll_response(0, 0)
             asyncio.create_task(res)
 
-    async def async_configure(self) -> Awaitable[None]:
+    async def async_configure(self) -> None:
         """Configure IAS device."""
         await self.get_attribute_value("zone_type", from_cache=False)
         if self._endpoint.device.skip_configuration:
@@ -407,7 +405,7 @@ class IASZoneClusterHandler(ClusterHandler):
         self._status = ClusterHandlerStatus.CONFIGURED
         self.debug("finished IASZoneClusterHandler configuration")
 
-    def attribute_updated(self, attrid, value) -> None:
+    def attribute_updated(self, attrid: int, value: Any) -> None:
         """Handle attribute updates on this cluster."""
         if attrid == 2:
             value = value & 3

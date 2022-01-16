@@ -1,8 +1,9 @@
 """ZHAWSS websocket server."""
+from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, Awaitable
+from typing import TYPE_CHECKING, Any
 
 import voluptuous
 import websockets
@@ -13,10 +14,11 @@ from zhaws.server.platforms.api import load_platform_entity_apis
 from zhaws.server.platforms.discovery import PLATFORMS
 from zhaws.server.websocket.api import decorators, register_api_command
 from zhaws.server.websocket.client import ClientManager
-from zhaws.server.websocket.types import ClientType
 from zhaws.server.zigbee.api import load_api as load_zigbee_controller_api
 from zhaws.server.zigbee.controller import Controller
-from zhaws.server.zigbee.types import ControllerType
+
+if TYPE_CHECKING:
+    from zhaws.server.websocket.client import Client
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,10 +26,10 @@ _LOGGER = logging.getLogger(__name__)
 class Server:
     """ZHAWSS server implementation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the server."""
         self._waiter: asyncio.Future = asyncio.Future()
-        self._controller: ControllerType = Controller(self)
+        self._controller: Controller = Controller(self)
         self._client_manager: ClientManager = ClientManager(self)
         self.data: dict[Any, Any] = {}
         for platform in PLATFORMS:
@@ -36,7 +38,7 @@ class Server:
         discovery.PROBE.initialize(self)
 
     @property
-    def controller(self) -> ControllerType:
+    def controller(self) -> Controller:
         """Return the zigbee application controller."""
         return self._controller
 
@@ -45,14 +47,14 @@ class Server:
         """Return the zigbee application controller."""
         return self._client_manager
 
-    async def start_server(self) -> Awaitable[None]:
+    async def start_server(self) -> None:
         """Stop the websocket server."""
-        async with websockets.serve(
+        async with websockets.serve(  # type: ignore
             self._client_manager.add_client, "", 8001, logger=_LOGGER
         ):
             await self._waiter
 
-    async def stop_server(self) -> Awaitable[None]:
+    async def stop_server(self) -> None:
         """Stop the websocket server."""
         if self._controller.is_running:
             await self._controller.stop_network()
@@ -68,15 +70,13 @@ class Server:
         load_client_api(self)
 
 
-@decorators.async_response
 @decorators.websocket_command(
     {
         voluptuous.Required(COMMAND): str(APICommands.STOP_SERVER),
     }
 )
-async def stop_server(
-    server: Server, client: ClientType, message: dict[str, Any]
-) -> Awaitable[None]:
+@decorators.async_response
+async def stop_server(server: Server, client: Client, message: dict[str, Any]) -> None:
     """Stop the Zigbee network."""
     await server.stop_server()
     client.send_result_success(message)

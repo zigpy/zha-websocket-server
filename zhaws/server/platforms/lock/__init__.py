@@ -1,15 +1,19 @@
 """Lock platform for zhawss."""
+from __future__ import annotations
 
 import functools
-from typing import Dict, Final, List, Union
+from typing import TYPE_CHECKING, Any, Final, Union
 
 from zigpy.zcl.foundation import Status
 
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhaws.server.zigbee.cluster.const import CLUSTER_HANDLER_DOORLOCK
-from zhaws.server.zigbee.cluster.types import ClusterHandlerType
-from zhaws.server.zigbee.types import DeviceType, EndpointType
+
+if TYPE_CHECKING:
+    from zhaws.server.zigbee.cluster import ClusterHandler
+    from zhaws.server.zigbee.device import Device
+    from zhaws.server.zigbee.endpoint import Endpoint
 
 MULTI_MATCH = functools.partial(PLATFORM_ENTITIES.multipass_match, Platform.LOCK)
 
@@ -19,7 +23,7 @@ STATE_LOCKING: Final[str] = "locking"
 STATE_UNLOCKING: Final[str] = "unlocking"
 STATE_JAMMED: Final[str] = "jammed"
 # The first state is Zigbee 'Not fully locked'
-STATE_LIST: Final[List[str]] = [STATE_UNLOCKED, STATE_LOCKED, STATE_UNLOCKED]
+STATE_LIST: Final[list[str]] = [STATE_UNLOCKED, STATE_LOCKED, STATE_UNLOCKED]
 VALUE_TO_STATE: Final = dict(enumerate(STATE_LIST))
 
 
@@ -32,13 +36,13 @@ class Lock(PlatformEntity):
     def __init__(
         self,
         unique_id: str,
-        cluster_handlers: List[ClusterHandlerType],
-        endpoint: EndpointType,
-        device: DeviceType,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
     ):
         """Initialize the lock."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
-        self._doorlock_cluster_handler: ClusterHandlerType = cluster_handlers[0]
+        self._doorlock_cluster_handler: ClusterHandler = cluster_handlers[0]
         self._state = VALUE_TO_STATE.get(
             self._doorlock_cluster_handler.cluster.get("lock_state"), None
         )
@@ -51,7 +55,7 @@ class Lock(PlatformEntity):
             return False
         return self._state == STATE_LOCKED
 
-    async def async_lock(self, **kwargs):
+    async def async_lock(self, **kwargs: Any) -> None:
         """Lock the lock."""
         result = await self._doorlock_cluster_handler.lock_door()
         if not isinstance(result, list) or result[0] is not Status.SUCCESS:
@@ -59,7 +63,7 @@ class Lock(PlatformEntity):
             return
         self.send_state_changed_event()
 
-    async def async_unlock(self, **kwargs):
+    async def async_unlock(self, **kwargs: Any) -> None:
         """Unlock the lock."""
         result = await self._doorlock_cluster_handler.unlock_door()
         if not isinstance(result, list) or result[0] is not Status.SUCCESS:
@@ -67,17 +71,19 @@ class Lock(PlatformEntity):
             return
         self.send_state_changed_event()
 
-    async def async_update(self):
+    async def async_update(self) -> None:
         """Attempt to retrieve state from the lock."""
         await super().async_update()
         await self.async_get_state()
 
-    def cluster_handler_attribute_updated(self, attr_id, attr_name, value):
+    def cluster_handler_attribute_updated(
+        self, attr_id: int, attr_name: str, value: Any
+    ) -> None:
         """Handle state update from cluster handler."""
         self._state = VALUE_TO_STATE.get(value, self._state)
         self.send_state_changed_event()
 
-    async def async_get_state(self, from_cache=True):
+    async def async_get_state(self, from_cache: bool = True) -> None:
         """Attempt to retrieve state from the lock."""
         if self._doorlock_cluster_handler:
             state = await self._doorlock_cluster_handler.get_attribute_value(
@@ -112,7 +118,7 @@ class Lock(PlatformEntity):
             await self._doorlock_cluster_handler.async_clear_user_code(code_slot)
             self.debug("User code at slot %s cleared", code_slot)
 
-    def get_state(self) -> Union[str, Dict, None]:
+    def get_state(self) -> Union[str, dict, None]:
         return {
             "is_locked": self.is_locked,
         }

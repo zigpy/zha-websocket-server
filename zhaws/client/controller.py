@@ -3,7 +3,7 @@
 import asyncio
 from asyncio.tasks import Task
 import logging
-from typing import Awaitable, Dict, Optional
+from typing import Any, Optional
 
 from aiohttp import ClientSession
 from async_timeout import timeout
@@ -37,17 +37,17 @@ class Controller(EventBase):
         self._aiohttp_session: ClientSession = aiohttp_session
         self._client: Client = Client(ws_server_url, aiohttp_session)
         self._listen_task: Optional[Task] = None
-        self._devices: Dict[str, Device] = {}
+        self._devices: dict[str, Device] = {}
         self._client.on("platform_entity_event", self.handle_platform_entity_event)
         self._client.on("controller_event", self._handle_event_protocol)
         attach_platform_entity_helpers(self, self._client)
 
     @property
-    def devices(self) -> Dict[str, Device]:
+    def devices(self) -> dict[str, Device]:
         """Return the devices."""
         return self._devices
 
-    async def connect(self) -> Awaitable[None]:
+    async def connect(self) -> None:
         """Connect to the websocket server."""
         try:
             async with timeout(CONNECT_TIMEOUT):
@@ -57,20 +57,20 @@ class Controller(EventBase):
             raise err
         self._listen_task = asyncio.create_task(self._listen())
 
-    async def _listen(self) -> Awaitable[None]:
+    async def _listen(self) -> None:
         """Listen for messages from the websocket server."""
         try:
             await self._client.listen()
         except Exception as err:
             _LOGGER.error("Unable to connect to the zhawss: %s", err)
 
-    async def send_command(self, command: Command) -> Awaitable[CommandResponse]:
+    async def send_command(self, command: Command) -> CommandResponse:
         """Send a command and get a response."""
         return await self._client.async_send_command(command.dict(exclude_none=True))
 
-    async def load_devices(self) -> Awaitable[None]:
+    async def load_devices(self) -> None:
         """Load devices from the websocket server."""
-        response: GetDevicesResponse = await self._client.async_send_command(
+        response: GetDevicesResponse = await self._client.async_send_command(  # type: ignore
             {"command": "get_devices"}
         )
         for ieee, device in response.devices.items():
@@ -132,18 +132,18 @@ class Controller(EventBase):
         self._devices.pop(device.ieee, None)
         self.emit("device_removed", event)
 
-    def handle_group_member_removed(self, event) -> None:
+    def handle_group_member_removed(self, event: Any) -> None:
         """Handle group member removed event."""
         self.emit("group_member_removed", event)
 
-    def handle_group_member_added(self, event) -> None:
+    def handle_group_member_added(self, event: Any) -> None:
         """Handle group member added event."""
         self.emit("group_member_added", event)
 
-    def handle_group_added(self, event) -> None:
+    def handle_group_added(self, event: Any) -> None:
         """Handle group added event."""
         self.emit("group_added", event)
 
-    def handle_group_removed(self, event) -> None:
+    def handle_group_removed(self, event: Any) -> None:
         """Handle group removed event."""
         self.emit("group_removed", event)
