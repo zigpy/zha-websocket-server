@@ -122,8 +122,8 @@ class Metering(ClusterHandler):
     def __init__(self, cluster: ZigpyClusterType, endpoint: Endpoint) -> None:
         """Initialize Metering."""
         super().__init__(cluster, endpoint)
-        self._format_spec
-        self._summa_format
+        self._format_spec: str | None = None
+        self._summa_format: str | None = None
 
     @property
     def divisor(self) -> int:
@@ -203,8 +203,8 @@ class Metering(ClusterHandler):
                 return round(value_watt, 1)
             return round(value_watt)
         if selector == self.FormatSelector.SUMMATION:
-            return self._summa_format.format(val).lstrip()
-        return self._format_spec.format(val).lstrip()
+            return str(self._summa_format).format(val).lstrip()
+        return str(self._format_spec).format(val).lstrip()
 
     demand_formatter = partialmethod(_formatter_function, FormatSelector.DEMAND)
     summa_formatter = partialmethod(_formatter_function, FormatSelector.SUMMATION)

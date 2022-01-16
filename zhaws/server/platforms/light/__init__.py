@@ -107,9 +107,6 @@ class LightColorMode(enum.IntEnum):
     COLOR_TEMP = 0x02
 
 
-"""TODO implement to_json method"""
-
-
 class BaseLight(PlatformEntity):
     """Operations common to all light entities."""
 
@@ -210,9 +207,17 @@ class BaseLight(PlatformEntity):
         """Flag supported features."""
         return self._supported_features
 
-    async def async_turn_on(self, **kwargs: Any) -> None:
+    def to_json(self) -> dict:
+        """Return a JSON representation of the select."""
+        json = super().to_json()
+        json["supported_features"] = self.supported_features
+        json["effect_list"] = self.effect_list
+        json["min_mireds"] = self.min_mireds
+        json["max_mireds"] = self.max_mireds
+        return json
+
+    async def async_turn_on(self, transition=None, **kwargs: Any) -> None:
         """Turn the entity on."""
-        transition = kwargs.get(ATTR_TRANSITION)
         duration = (
             transition * 10
             if transition
@@ -317,9 +322,9 @@ class BaseLight(PlatformEntity):
         self.debug("turned on: %s", t_log)
         self.send_state_changed_event()
 
-    async def async_turn_off(self, **kwargs):
+    async def async_turn_off(self, transition=None, **kwargs):
         """Turn the entity off."""
-        duration = kwargs.get(ATTR_TRANSITION)
+        duration = transition
         supports_level = self.supported_features & SUPPORT_BRIGHTNESS
 
         if duration and supports_level:
