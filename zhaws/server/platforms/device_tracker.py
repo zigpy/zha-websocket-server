@@ -1,6 +1,7 @@
 """Device Tracker platform for zhawss."""
 from __future__ import annotations
 
+import asyncio
 import functools
 import time
 from typing import TYPE_CHECKING, Any
@@ -44,6 +45,7 @@ class DeviceTracker(PlatformEntity):
         self._should_poll: bool = True
         self._battery_level: int | None = None
         self._battery_cluster_handler.add_listener(self)
+        self._cancel_refresh_handle = asyncio.create_task(self._refresh())
 
     async def async_update(self) -> None:
         """Handle polling."""
@@ -87,5 +89,8 @@ class DeviceTracker(PlatformEntity):
         """
         return self._battery_level
 
-    def get_state(self) -> bool:
-        return self._connected
+    def get_state(self) -> dict:
+        return {
+            "connected": self._connected,
+            "battery_level": self._battery_level,
+        }
