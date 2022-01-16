@@ -4,7 +4,7 @@ from __future__ import annotations
 import collections
 from collections.abc import Callable
 import dataclasses
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable, TypeVar
 
 import attr
 from zigpy import zcl
@@ -18,10 +18,12 @@ from zhaws.server.zigbee import (  # noqa: F401 pylint: disable=unused-import
 )
 
 if TYPE_CHECKING:
+    from zhaws.server.platforms import PlatformEntity
     from zhaws.server.zigbee.cluster import ClusterHandler
 
+    ENTITY_T = TypeVar("ENTITY_T", bound=PlatformEntity)
+
 from zhaws.backports.enum import StrEnum
-from zhaws.server.zigbee.decorators import CALLABLE_T
 
 
 class Platform(StrEnum):
@@ -134,32 +136,33 @@ DEVICE_CLASS = {
 DEVICE_CLASS = collections.defaultdict(dict, DEVICE_CLASS)
 
 
-def set_or_callable(value):
+def set_or_callable(
+    value: str | Callable | Iterable | None,
+) -> frozenset[str] | Callable:
     """Convert single str or None to a set. Pass through callables and sets."""
     if value is None:
         return frozenset()
-    if callable(value):
+    elif isinstance(value, str):
+        return frozenset([value])
+    elif callable(value):
         return value
-    if isinstance(value, (frozenset, set, list)):
+    else:
         return frozenset(value)
-    return frozenset([str(value)])
 
 
 @attr.s(frozen=True)
 class MatchRule:
     """Match a ZHA Entity to a cluster handler name or generic id."""
 
-    cluster_handler_names: set[str] | str = attr.ib(
+    cluster_handler_names: frozenset = attr.ib(
         factory=frozenset, converter=set_or_callable
     )
-    generic_ids: set[str] | str = attr.ib(factory=frozenset, converter=set_or_callable)
-    manufacturers: Callable | set[str] | str = attr.ib(
+    generic_ids: frozenset = attr.ib(factory=frozenset, converter=set_or_callable)
+    manufacturers: frozenset | Callable = attr.ib(
         factory=frozenset, converter=set_or_callable
     )
-    models: Callable | set[str] | str = attr.ib(
-        factory=frozenset, converter=set_or_callable
-    )
-    aux_cluster_handlers: Callable | set[str] | str = attr.ib(
+    models: frozenset | Callable = attr.ib(factory=frozenset, converter=set_or_callable)
+    aux_cluster_handlers: frozenset = attr.ib(
         factory=frozenset, converter=set_or_callable
     )
 
@@ -207,18 +210,20 @@ class MatchRule:
         return claimed
 
     def strict_matched(
-        self, manufacturer: str, model: str, cluster_handlers: list
+        self, manufacturer: str, model: str, cluster_handlers: list[ClusterHandler]
     ) -> bool:
         """Return True if this device matches the criteria."""
         return all(self._matched(manufacturer, model, cluster_handlers))
 
     def loose_matched(
-        self, manufacturer: str, model: str, cluster_handlers: list
+        self, manufacturer: str, model: str, cluster_handlers: list[ClusterHandler]
     ) -> bool:
         """Return True if this device matches the criteria."""
         return any(self._matched(manufacturer, model, cluster_handlers))
 
-    def _matched(self, manufacturer: str, model: str, cluster_handlers: list) -> list:
+    def _matched(
+        self, manufacturer: str, model: str, cluster_handlers: list[ClusterHandler]
+    ) -> list[bool]:
         """Return a list of field matches."""
         if not any(attr.asdict(self).values()):
             return [False]
@@ -251,24 +256,24 @@ class MatchRule:
 class EntityClassAndClusterHandlers:
     """Container for entity class and corresponding cluster handlers."""
 
-    entity_class: CALLABLE_T
+    entity_class: PlatformEntity
     claimed_cluster_handlers: list[ClusterHandler]
 
 
 class ZHAEntityRegistry:
     """Cluster handler to ZHA Entity mapping."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize Registry instance."""
         self._strict_registry: dict[
-            str, dict[MatchRule, CALLABLE_T]
+            str, dict[MatchRule, PlatformEntity]
         ] = collections.defaultdict(dict)
         self._multi_entity_registry: dict[
-            str, dict[int | str | None, dict[MatchRule, list[CALLABLE_T]]]
+            str, dict[int | str | None, dict[MatchRule, list[PlatformEntity]]]
         ] = collections.defaultdict(
             lambda: collections.defaultdict(lambda: collections.defaultdict(list))
         )
-        self._group_registry: dict[str, CALLABLE_T] = {}
+        self._group_registry: dict[str, PlatformEntity] = {}
         self.single_device_matches: dict[
             Platform, dict[EUI64, list[str]]
         ] = collections.defaultdict(lambda: collections.defaultdict(list))
@@ -279,8 +284,8 @@ class ZHAEntityRegistry:
         manufacturer: str,
         model: str,
         cluster_handlers: list[ClusterHandler],
-        default: CALLABLE_T = None,
-    ) -> tuple[CALLABLE_T, list[ClusterHandler]]:
+        default: PlatformEntity | None = None,
+    ) -> tuple[PlatformEntity | None, list[ClusterHandler]]:
         """Match cluster handlers to a ZHA Entity class."""
         matches = self._strict_registry[component]
         for match in sorted(matches, key=lambda x: x.weight, reverse=True):
@@ -318,19 +323,19 @@ class ZHAEntityRegistry:
 
         return result, list(all_claimed)
 
-    def get_group_entity(self, component: str) -> CALLABLE_T:
+    def get_group_entity(self, component: str) -> PlatformEntity | None:
         """Match a ZHA group to a ZHA Entity class."""
         return self._group_registry.get(component)
 
     def strict_match(
         self,
         component: str,
-        cluster_handler_names: set[str] | str = None,
-        generic_ids: set[str] | str = None,
-        manufacturers: Callable | set[str] | str = None,
-        models: Callable | set[str] | str = None,
-        aux_cluster_handlers: Callable | set[str] | str = None,
-    ) -> Callable[[CALLABLE_T], CALLABLE_T]:
+        cluster_handler_names: set[str] | str | None = None,
+        generic_ids: set[str] | str | None = None,
+        manufacturers: Callable | set[str] | str | None = None,
+        models: Callable | set[str] | str | None = None,
+        aux_cluster_handlers: Callable | set[str] | str | None = None,
+    ) -> Callable[[ENTITY_T], ENTITY_T]:
         """Decorate a strict match rule."""
 
         rule = MatchRule(
@@ -341,7 +346,7 @@ class ZHAEntityRegistry:
             aux_cluster_handlers,
         )
 
-        def decorator(zha_ent: CALLABLE_T) -> CALLABLE_T:
+        def decorator(zha_ent: ENTITY_T) -> ENTITY_T:
             """Register a strict match rule.
 
             All non empty fields of a match rule must match.
@@ -354,13 +359,13 @@ class ZHAEntityRegistry:
     def multipass_match(
         self,
         component: str,
-        cluster_handler_names: set[str] | str = None,
-        generic_ids: set[str] | str = None,
-        manufacturers: Callable | set[str] | str = None,
-        models: Callable | set[str] | str = None,
-        aux_cluster_handlers: Callable | set[str] | str = None,
+        cluster_handler_names: set[str] | str | None = None,
+        generic_ids: set[str] | str | None = None,
+        manufacturers: Callable | set[str] | str | None = None,
+        models: Callable | set[str] | str | None = None,
+        aux_cluster_handlers: Callable | set[str] | str | None = None,
         stop_on_match_group: int | str | None = None,
-    ) -> Callable[[CALLABLE_T], CALLABLE_T]:
+    ) -> Callable[[ENTITY_T], ENTITY_T]:
         """Decorate a loose match rule."""
 
         rule = MatchRule(
@@ -371,7 +376,7 @@ class ZHAEntityRegistry:
             aux_cluster_handlers,
         )
 
-        def decorator(zha_entity: CALLABLE_T) -> CALLABLE_T:
+        def decorator(zha_entity: ENTITY_T) -> ENTITY_T:
             """Register a loose match rule.
 
             All non empty fields of a match rule must match.
@@ -384,10 +389,10 @@ class ZHAEntityRegistry:
 
         return decorator
 
-    def group_match(self, component: str) -> Callable[[CALLABLE_T], CALLABLE_T]:
+    def group_match(self, component: str) -> Callable[[ENTITY_T], ENTITY_T]:
         """Decorate a group match rule."""
 
-        def decorator(zha_ent: CALLABLE_T) -> CALLABLE_T:
+        def decorator(zha_ent: ENTITY_T) -> ENTITY_T:
             """Register a group match rule."""
             self._group_registry[component] = zha_ent
             return zha_ent
@@ -407,9 +412,7 @@ class ZHAEntityRegistry:
 
     def clean_up(self) -> None:
         """Clean up post discovery."""
-        self.single_device_matches: dict[
-            Platform, dict[EUI64, list[str]]
-        ] = collections.defaultdict(lambda: collections.defaultdict(list))
+        self.single_device_matches.clear()
 
 
 PLATFORM_ENTITIES = ZHAEntityRegistry()
