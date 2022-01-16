@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+# Stop on errors
+set -e
+
+cd "$(dirname "$0")/.."
+
+source venv/bin/activate
+
+python ./zhaws/server/main.py
