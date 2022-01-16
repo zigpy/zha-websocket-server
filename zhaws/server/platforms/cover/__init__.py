@@ -261,18 +261,17 @@ class Shade(PlatformEntity):
         self._is_open = False
         self.send_state_changed_event()
 
-    async def async_set_cover_position(self, **kwargs: Any) -> None:
+    async def async_set_cover_position(self, position: int, **kwargs: Any) -> None:
         """Move the roller shutter to a specific position."""
-        new_pos = kwargs[ATTR_POSITION]
         res = await self._level_cluster_handler.move_to_level_with_on_off(
-            new_pos * 255 / 100, 1
+            position * 255 / 100, 1
         )
 
         if not isinstance(res, list) or res[1] != Status.SUCCESS:
             self.debug("couldn't set cover's position: %s", res)
             return
 
-        self._position = new_pos
+        self._position = position
         self.send_state_changed_event()
 
     async def async_stop_cover(self, **kwargs: Any) -> None:

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from enum import Enum
 import functools
-from typing import TYPE_CHECKING, Dict, Final, Union
+from typing import TYPE_CHECKING, Any, Dict, Final, Union
 
 import zigpy.types as t
 from zigpy.zcl.clusters.security import IasWd
@@ -59,7 +59,7 @@ class EnumSelect(PlatformEntity):
             return None
         return option.name.replace("_", " ")
 
-    async def async_select_option(self, option: Union[str, int]) -> None:
+    async def async_select_option(self, option: Union[str, int], **kwargs: Any) -> None:
         """Change the selected option."""
         self._cluster_handler.data_cache[self._attr_name] = self._enum[
             option.replace(" ", "_")

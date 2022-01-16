@@ -1,7 +1,7 @@
 """WS api for the select platform entity."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 import voluptuous as vol
 
@@ -23,7 +23,7 @@ COMMAND_SELECT_OPTION = "select_select_option"
     platform_entity_command_schema(
         COMMAND_SELECT_OPTION,
         {
-            vol.Required(ATTR_OPTION): Union[str, int],
+            vol.Required(ATTR_OPTION): str,
         },
     )
 )

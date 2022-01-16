@@ -155,6 +155,7 @@ class Client:
             handler(self._client_manager.server, self, schema(msg))
         except Exception as err:  # pylint: disable=broad-except
             # TODO Fix this - make real error codes with error messages
+            _LOGGER.error("Error handling message: %s", msg, exc_info=err)
             self.send_result_error(
                 loaded_message, "INTERNAL_ERROR", f"Internal error: {err}"
             )

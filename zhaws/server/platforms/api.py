@@ -1,6 +1,7 @@
 """WS API for common platform entity functionality."""
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any, Optional
 
 import voluptuous as vol
@@ -12,6 +13,8 @@ from zhaws.server.websocket.api import decorators, register_api_command
 if TYPE_CHECKING:
     from zhaws.server.websocket.client import Client
     from zhaws.server.websocket.server import Server
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class PlatformEntityCommands(StrEnum):
@@ -45,6 +48,7 @@ async def execute_platform_entity_command(
         device = server.controller.get_device(request_message[IEEE])
         platform_entity = device.get_platform_entity(request_message[ATTR_UNIQUE_ID])
     except ValueError as err:
+        _LOGGER.exception("Error executing command: %s", command, exc_info=err)
         client.send_result_error(
             request_message, "PLATFORM_ENTITY_COMMAND_ERROR", str(err)
         )
@@ -57,6 +61,7 @@ async def execute_platform_entity_command(
         else:
             await action(**request_message)
     except Exception as err:
+        _LOGGER.exception("Error executing command: %s", command, exc_info=err)
         client.send_result_error(
             request_message, "PLATFORM_ENTITY_ACTION_ERROR", str(err)
         )

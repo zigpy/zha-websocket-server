@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Dict, Final, Union
+from typing import TYPE_CHECKING, Any, Dict, Final, Union
 
 from zigpy.zcl.clusters.security import IasAce
 
@@ -95,27 +95,33 @@ class ZHAAlarmControlPanel(PlatformEntity):
         """Whether the code is required for arm actions."""
         return self._cluster_handler.code_required_arm_actions
 
-    async def async_alarm_disarm(self, code: str | None = None) -> None:
+    async def async_alarm_disarm(self, code: str | None = None, **kwargs: Any) -> None:
         """Send disarm command."""
         self._cluster_handler.arm(IasAce.ArmMode.Disarm, code, 0)
         self.send_state_changed_event()
 
-    async def async_alarm_arm_home(self, code: str | None = None) -> None:
+    async def async_alarm_arm_home(
+        self, code: str | None = None, **kwargs: Any
+    ) -> None:
         """Send arm home command."""
         self._cluster_handler.arm(IasAce.ArmMode.Arm_Day_Home_Only, code, 0)
         self.send_state_changed_event()
 
-    async def async_alarm_arm_away(self, code: str | None = None) -> None:
+    async def async_alarm_arm_away(
+        self, code: str | None = None, **kwargs: Any
+    ) -> None:
         """Send arm away command."""
         self._cluster_handler.arm(IasAce.ArmMode.Arm_All_Zones, code, 0)
         self.send_state_changed_event()
 
-    async def async_alarm_arm_night(self, code: str | None = None) -> None:
+    async def async_alarm_arm_night(
+        self, code: str | None = None, **kwargs: Any
+    ) -> None:
         """Send arm night command."""
         self._cluster_handler.arm(IasAce.ArmMode.Arm_Night_Sleep_Only, code, 0)
         self.send_state_changed_event()
 
-    async def async_alarm_trigger(self, code: str | None = None) -> None:
+    async def async_alarm_trigger(self, code: str | None = None, **kwargs: Any) -> None:
         """Send alarm trigger command."""
         self.send_state_changed_event()
 

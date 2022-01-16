@@ -226,34 +226,35 @@ class AlarmControlPanelDisarmCommand(PlatformEntityCommand):
     """Command to disarm an alarm control panel platform entity."""
 
     command: Literal["alarm_control_panel_disarm"] = "alarm_control_panel_disarm"
-    code: str
+    code: Optional[str]
 
 
 class AlarmControlPanelArmHomeCommand(PlatformEntityCommand):
     """Command to arm an alarm control panel platform entity in home mode."""
 
     command: Literal["alarm_control_panel_arm_home"] = "alarm_control_panel_arm_home"
-    code: str
+    code: Optional[str]
 
 
 class AlarmControlPanelArmAwayCommand(PlatformEntityCommand):
     """Command to arm an alarm control panel platform entity in away mode."""
 
     command: Literal["alarm_control_panel_arm_away"] = "alarm_control_panel_arm_away"
-    code: str
+    code: Optional[str]
 
 
 class AlarmControlPanelArmNightCommand(PlatformEntityCommand):
     """Command to arm an alarm control panel platform entity in night mode."""
 
     command: Literal["alarm_control_panel_arm_night"] = "alarm_control_panel_arm_night"
-    code: str
+    code: Optional[str]
 
 
 class AlarmControlPanelTriggerCommand(PlatformEntityCommand):
     """Command to trigger the alarm for an alarm control panel platform entity."""
 
     command: Literal["alarm_control_panel_trigger"] = "alarm_control_panel_trigger"
+    code: Optional[str]
 
 
 class PlatformEntityRefreshStateCommand(PlatformEntityCommand):
