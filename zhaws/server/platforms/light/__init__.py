@@ -240,6 +240,7 @@ class BaseLight(PlatformEntity):
                 level = min(254, brightness)
             else:
                 level = self._brightness or 254
+            assert self._level_cluster_handler is not None
             result = await self._level_cluster_handler.move_to_level_with_on_off(
                 level, duration
             )
@@ -262,6 +263,7 @@ class BaseLight(PlatformEntity):
             self._state = True
         if ATTR_COLOR_TEMP in kwargs and self.supported_features & SUPPORT_COLOR_TEMP:
             temperature = kwargs[ATTR_COLOR_TEMP]
+            assert self._color_cluster_handler is not None
             result = await self._color_cluster_handler.move_to_color_temp(
                 temperature, duration
             )
@@ -275,6 +277,7 @@ class BaseLight(PlatformEntity):
         if ATTR_HS_COLOR in kwargs and self.supported_features & SUPPORT_COLOR:
             hs_color = kwargs[ATTR_HS_COLOR]
             xy_color = color_util.color_hs_to_xy(*hs_color)
+            assert self._color_cluster_handler is not None
             result = await self._color_cluster_handler.move_to_color(
                 int(xy_color[0] * 65535), int(xy_color[1] * 65535), duration
             )
@@ -286,6 +289,7 @@ class BaseLight(PlatformEntity):
             self._color_temp = None
 
         if effect == EFFECT_COLORLOOP and self.supported_features & SUPPORT_EFFECT:
+            assert self._color_cluster_handler is not None
             result = await self._color_cluster_handler.color_loop_set(
                 UPDATE_COLORLOOP_ACTION
                 | UPDATE_COLORLOOP_DIRECTION
@@ -302,6 +306,7 @@ class BaseLight(PlatformEntity):
             and effect != EFFECT_COLORLOOP
             and self.supported_features & SUPPORT_EFFECT
         ):
+            assert self._color_cluster_handler is not None
             result = await self._color_cluster_handler.color_loop_set(
                 UPDATE_COLORLOOP_ACTION,
                 0x0,
@@ -313,6 +318,7 @@ class BaseLight(PlatformEntity):
             self._effect = None
 
         if flash is not None and self._supported_features & SUPPORT_FLASH:
+            assert self._identify_cluster_handler is not None
             result = await self._identify_cluster_handler.trigger_effect(
                 FLASH_EFFECTS[flash], EFFECT_DEFAULT_VARIANT
             )
@@ -330,6 +336,7 @@ class BaseLight(PlatformEntity):
         supports_level = self.supported_features & SUPPORT_BRIGHTNESS
 
         if duration and supports_level:
+            assert self._level_cluster_handler is not None
             result = await self._level_cluster_handler.move_to_level_with_on_off(
                 0, duration * 10
             )
@@ -422,6 +429,7 @@ class Light(BaseLight):
         """
 
         self._on_off_cluster_handler.add_listener(self)
+        assert self._level_cluster_handler is not None
         self._level_cluster_handler.add_listener(self)
 
         @periodic(self._REFRESH_INTERVAL)
