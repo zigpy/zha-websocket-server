@@ -216,7 +216,7 @@ class BaseLight(PlatformEntity):
         json["max_mireds"] = self.max_mireds
         return json
 
-    async def async_turn_on(self, transition=None, **kwargs: Any) -> None:
+    async def async_turn_on(self, transition: int | None = None, **kwargs: Any) -> None:
         """Turn the entity on."""
         duration = (
             transition * 10
@@ -322,7 +322,9 @@ class BaseLight(PlatformEntity):
         self.debug("turned on: %s", t_log)
         self.send_state_changed_event()
 
-    async def async_turn_off(self, transition=None, **kwargs):
+    async def async_turn_off(
+        self, transition: int | None = None, **kwargs: Any
+    ) -> None:
         """Turn the entity off."""
         duration = transition
         supports_level = self.supported_features & SUPPORT_BRIGHTNESS
