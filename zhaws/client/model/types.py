@@ -76,6 +76,53 @@ class FanState(BaseModel):
     percentage: int
 
 
+class LockState(BaseModel):
+    """Lock state model."""
+
+    is_locked: bool
+
+
+class BatteryState(BaseModel):
+    """Battery state model."""
+
+    state: Optional[Union[str, float, int]]
+    battery_size: Optional[str]
+    battery_quantity: Optional[str]
+    battery_voltage: Optional[float]
+
+
+class ElectricalMeasurementState(BaseModel):
+    """Electrical measurement state model."""
+
+    state: Optional[Union[str, float, int]]
+    measurement_type: Optional[str]
+
+
+class LightState(BaseModel):
+    """Light state model."""
+
+    on: bool
+    brightness: Optional[int]
+    hs_color: Optional[tuple[float, float]]
+    color_temp: Optional[int]
+    effect: Optional[str]
+    off_brightness: Optional[int]
+
+
+class SwitchState(BaseModel):
+    """Switch state model."""
+
+    state: bool
+
+
+class SmareEnergyMeteringState(BaseModel):
+    """Smare energy metering state model."""
+
+    state: Optional[Union[str, float, int]]
+    device_type: Optional[str]
+    status: Optional[str]
+
+
 class BasePlatformEntity(BaseEventedModel):
     """Base platform entity model."""
 
@@ -85,12 +132,6 @@ class BasePlatformEntity(BaseEventedModel):
     device_ieee: str
     endpoint_id: int
     class_name: str
-
-
-class LockState(BaseModel):
-    """Lock state model."""
-
-    is_locked: bool
 
 
 class LockEntity(BasePlatformEntity):
@@ -131,22 +172,25 @@ class BinarySensorEntity(BasePlatformEntity):
     state: bool
 
 
-class SensorEntity(BasePlatformEntity):
+class BaseSensorEntity(BasePlatformEntity):
     """Sensor model."""
+
+    attribute: Optional[str]
+    decimals: int
+    divisor: int
+    multiplier: Union[int, float]
+    unit: Optional[str]
+
+
+class SensorEntity(BaseSensorEntity):
+    """Sensor entity model."""
 
     class_name: Literal[
         "AnalogInput",
-        "Battery",
-        "ElectricalMeasurement",
-        "ElectricalMeasurementApparentPower",
-        "ElectricalMeasurementRMSCurrent",
-        "ElectricalMeasurementRMSVoltage",
         "Humidity",
         "SoilMoisture",
         "LeafWetness",
         "Illuminance",
-        "SmartEnergyMetering",
-        "SmartEnergySummation",
         "Pressure",
         "Temperature",
         "CarbonDioxideConcentration",
@@ -159,11 +203,33 @@ class SensorEntity(BasePlatformEntity):
         "RSSISensor",
         "LQISensor",
     ]
-    attribute: Optional[str]
-    decimals: int
-    divisor: int
-    multiplier: Union[int, float]
-    unit: Optional[str]
+    state: Optional[Union[str, float, int]]
+
+
+class BatteryEntity(BaseSensorEntity):
+    """Battery entity model."""
+
+    class_name: Literal["Battery"]
+    state: BatteryState
+
+
+class ElectricalMeasurementEntity(BaseSensorEntity):
+    """Electrical measurement entity model."""
+
+    class_name: Literal[
+        "ElectricalMeasurement",
+        "ElectricalMeasurementApparentPower",
+        "ElectricalMeasurementRMSCurrent",
+        "ElectricalMeasurementRMSVoltage",
+    ]
+    state: ElectricalMeasurementState
+
+
+class SmareEnergyMeteringEntity(BaseSensorEntity):
+    """Smare energy metering entity model."""
+
+    class_name: Literal["SmartEnergyMetering", "SmartEnergySummation"]
+    state: SmareEnergyMeteringState
 
 
 class AlarmControlPanelEntity(BasePlatformEntity):
@@ -191,17 +257,6 @@ class FanEntity(BasePlatformEntity):
     supported_features: int
     speed_count: int
     state: FanState
-
-
-class LightState(BaseModel):
-    """Light state model."""
-
-    on: bool
-    brightness: Optional[int]
-    hs_color: Optional[tuple[float, float]]
-    color_temp: Optional[int]
-    effect: Optional[str]
-    off_brightness: Optional[int]
 
 
 class LightEntity(BasePlatformEntity):
@@ -251,12 +306,6 @@ class SirenEntity(BasePlatformEntity):
     state: bool
 
 
-class SwitchState(BaseModel):
-    """Switch state model."""
-
-    state: bool
-
-
 class SwitchEntity(BasePlatformEntity):
     """Switch entity model."""
 
@@ -280,6 +329,9 @@ ENTITIES = Annotated[
         CoverEntity,
         LockEntity,
         SwitchEntity,
+        BatteryEntity,
+        ElectricalMeasurementEntity,
+        SmareEnergyMeteringEntity,
     ],
     Field(discriminator="class_name"),  # noqa: F821
 ]
