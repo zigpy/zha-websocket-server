@@ -43,7 +43,7 @@ class DeviceTracker(PlatformEntity):
         self._connected: bool = False
         self._keepalive_interval: int = 60
         self._should_poll: bool = True
-        self._battery_level: int | None = None
+        self._battery_level: float | None = None
         self._battery_cluster_handler.add_listener(self)
         self._cancel_refresh_handle = asyncio.create_task(self._refresh())
 
@@ -83,7 +83,7 @@ class DeviceTracker(PlatformEntity):
         self.send_state_changed_event()
 
     @property
-    def battery_level(self) -> int | None:
+    def battery_level(self) -> float | None:
         """Return the battery level of the device.
         Percentage from 0-100.
         """

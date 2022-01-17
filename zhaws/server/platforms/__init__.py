@@ -140,6 +140,7 @@ class PlatformEntity(LogMixin):
             "endpoint_id": self._endpoint.id,
             "platform": self.PLATFORM,
             "class_name": self.__class__.__name__,
+            "state": self.get_state(),
         }
 
     async def async_update(self) -> None:

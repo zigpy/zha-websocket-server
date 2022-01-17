@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from enum import Enum
 import functools
-from typing import TYPE_CHECKING, Any, Dict, Final, Union
+from typing import TYPE_CHECKING, Any, Final, Union
 
 import zigpy.types as t
 from zigpy.zcl.clusters.security import IasWd
@@ -73,7 +73,7 @@ class EnumSelect(PlatformEntity):
         json["options"] = self._attr_options
         return json
 
-    def get_state(self) -> Union[str, Dict, None]:
+    def get_state(self) -> str | None:
         return self.current_option
 
 
@@ -104,4 +104,4 @@ class DefaultStrobeLevelSelectEntity(EnumSelect, id_suffix=IasWd.StrobeLevel.__n
 class DefaultStrobeSelectEntity(EnumSelect, id_suffix=Strobe.__name__):
     """Representation of a zhawss default siren strobe select entity."""
 
-    _enum = Strobe  # type: ignore #TODO fix type
+    _enum = Strobe
