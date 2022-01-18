@@ -354,7 +354,7 @@ class GetGroupsResponse(CommandResponse):
     """Get groups response."""
 
     command: Literal["get_groups"] = "get_groups"
-    groups: dict[str, Group]
+    groups: dict[int, Group]
 
 
 CommandResponses = Annotated[
