@@ -143,7 +143,7 @@ class Device(LogMixin):
             )
             """
 
-        self._platform_entities: dict[EUI64, PlatformEntity] = {}
+        self._platform_entities: dict[str, PlatformEntity] = {}
         self.semaphore: asyncio.Semaphore = asyncio.Semaphore(3)
         self._zdo_handler: ZDOClusterHandler = ZDOClusterHandler(self)
         self.status: DeviceStatus = DeviceStatus.CREATED
@@ -322,7 +322,7 @@ class Device(LogMixin):
         }
 
     @property
-    def platform_entities(self) -> dict[EUI64, PlatformEntity]:
+    def platform_entities(self) -> dict[str, PlatformEntity]:
         """Return the platform entities for this device."""
         return self._platform_entities
 

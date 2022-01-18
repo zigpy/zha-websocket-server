@@ -13,6 +13,7 @@ from zhaws.server.platforms.registries import Platform
 if TYPE_CHECKING:
     from zhaws.server.zigbee.cluster import ClusterHandler
     from zhaws.server.zigbee.device import Device
+    from zhaws.server.zigbee.group import Group
     from zhaws.server.zigbee.endpoint import Endpoint
 
 from zhaws.server.util import LogMixin
@@ -164,3 +165,35 @@ class PlatformEntity(LogMixin, EventBase):
         msg = f"%s: {msg}"
         args = (self.unique_id,) + args
         _LOGGER.log(level, msg, *args, **kwargs)
+
+
+class GroupEntity(LogMixin):
+    """A base class for group entities."""
+
+    PLATFORM: str = Platform.UNKNOWN
+
+    def __init__(
+        self,
+        group: Group,
+        platform_entities: list[PlatformEntity],
+    ) -> None:
+        """Initialize a group."""
+        self._zigpy_group: Group = group
+        self._name: str = f"{group.name}_0x{group.group_id:04x}"
+        self._group_id: int = group.group_id
+        self._platform_entities: list[PlatformEntity] = platform_entities
+
+    @property
+    def name(self) -> str:
+        """Return the name of the group."""
+        return self._name
+
+    @property
+    def group_id(self) -> int:
+        """Return the group id."""
+        return self._group_id
+
+    @property
+    def platform_entities(self) -> list[PlatformEntity]:
+        """Return the platform entities that make up this group."""
+        return self._platform_entities

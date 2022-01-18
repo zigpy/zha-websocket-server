@@ -10,7 +10,7 @@ from bellows.zigbee.application import ControllerApplication
 from serial.serialutil import SerialException
 from zhaquirks import setup as setup_quirks
 from zigpy.endpoint import Endpoint
-from zigpy.group import Group
+from zigpy.group import Group as ZigpyGroup
 from zigpy.types.named import EUI64
 from zigpy.typing import DeviceType as ZigpyDeviceType
 
@@ -30,6 +30,7 @@ from zhaws.server.const import (
     MessageTypes,
 )
 from zhaws.server.platforms import discovery
+from zhaws.server.zigbee.group import Group
 
 if TYPE_CHECKING:
     from zhaws.server.websocket.server import Server
@@ -58,6 +59,7 @@ class Controller:
         self._server: Server = server
         self.radio_description: Optional[str] = None
         self._devices: dict[EUI64, Device] = {}
+        self._groups: dict[int, Group] = {}
 
     @property
     def is_running(self) -> bool:
@@ -141,8 +143,9 @@ class Controller:
             raise ValueError(f"Device {str(ieee)} not found")
         return device
 
-    def get_groups(self) -> None:
+    def get_groups(self) -> dict[int, Group]:
         """Get Zigbee groups."""
+        return self._groups
 
     def device_joined(self, device: ZigpyDeviceType) -> None:
         """Handle device joined.
@@ -211,16 +214,16 @@ class Controller:
             message[EVENT] = ControllerEvents.DEVICE_REMOVED
             self.server.client_manager.broadcast(message)
 
-    def group_member_removed(self, zigpy_group: Group, endpoint: Endpoint) -> None:
+    def group_member_removed(self, zigpy_group: ZigpyGroup, endpoint: Endpoint) -> None:
         """Handle zigpy group member removed event."""
 
-    def group_member_added(self, zigpy_group: Group, endpoint: Endpoint) -> None:
+    def group_member_added(self, zigpy_group: ZigpyGroup, endpoint: Endpoint) -> None:
         """Handle zigpy group member added event."""
 
-    def group_added(self, zigpy_group: Group) -> None:
+    def group_added(self, zigpy_group: ZigpyGroup) -> None:
         """Handle zigpy group added event."""
 
-    def group_removed(self, zigpy_group: Group) -> None:
+    def group_removed(self, zigpy_group: ZigpyGroup) -> None:
         """Handle zigpy group removed event."""
 
     async def async_device_initialized(self, device: ZigpyDeviceType) -> None:
