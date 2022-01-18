@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import collections
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -18,6 +19,11 @@ if TYPE_CHECKING:
     from zhaws.server.zigbee.device import Device
 
 _LOGGER = logging.getLogger(__name__)
+
+
+GroupMemberReference = collections.namedtuple(
+    "GroupMemberReference", "ieee endpoint_id"
+)
 
 
 class GroupMember(LogMixin):
@@ -96,7 +102,6 @@ class Group:
         """Initialize the group."""
         self._group: ZigpyGroup = group
         self._server: Server = server
-        self._members: dict[str, Device] = {}
         self._platform_entities: dict[str, GroupEntity] = {}
 
     @property
@@ -110,99 +115,94 @@ class Group:
         return self._group.name
 
     @property
-    def members(self) -> dict[str, Device]:
-        """Return the members of the group."""
-        return self._members
-
-    @property
     def platform_entities(self) -> dict[str, GroupEntity]:
         """Return the platform entities of the group."""
         return self._platform_entities
 
-    """
     @property
-    def members(self) -> list[ZHAGroupMember]:
-        #Return the ZHA devices that are members of this group.
+    def zigpy_group(self) -> ZigpyGroup:
+        """Return the zigpy group."""
+        return self._group
+
+    @property
+    def members(self) -> list[GroupMember]:
+        """Return the ZHA devices that are members of this group."""
+        devices: dict[str, Device] = self._server.controller.get_devices()
         return [
-            ZHAGroupMember(
-                self, self._zha_gateway.devices.get(member_ieee), endpoint_id
-            )
-            for (member_ieee, endpoint_id) in self._zigpy_group.members.keys()
-            if member_ieee in self._zha_gateway.devices
+            GroupMember(self, devices[member_ieee], endpoint_id)
+            for (member_ieee, endpoint_id) in self._group.members.keys()
+            if member_ieee in devices
         ]
 
-    async def async_add_members(self, members: list[GroupMember]) -> None:
-        #Add members to this group.
+    async def async_add_members(self, members: list[GroupMemberReference]) -> None:
+        """Add members to this group."""
+        devices: dict[str, Device] = self._server.controller.get_devices()
         if len(members) > 1:
             tasks = []
             for member in members:
                 tasks.append(
-                    self._zha_gateway.devices[member.ieee].async_add_endpoint_to_group(
+                    devices[member.ieee].async_add_endpoint_to_group(
                         member.endpoint_id, self.group_id
                     )
                 )
             await asyncio.gather(*tasks)
         else:
-            await self._zha_gateway.devices[
-                members[0].ieee
-            ].async_add_endpoint_to_group(members[0].endpoint_id, self.group_id)
+            member = members[0]
+            await devices[member.ieee].async_add_endpoint_to_group(
+                member.endpoint_id, self.group_id
+            )
 
-    async def async_remove_members(self, members: list[GroupMember]) -> None:
-        #Remove members from this group.
+    async def async_remove_members(self, members: list[GroupMemberReference]) -> None:
+        """Remove members from this group."""
+        devices: dict[str, Device] = self._server.controller.get_devices()
         if len(members) > 1:
             tasks = []
             for member in members:
                 tasks.append(
-                    self._zha_gateway.devices[
-                        member.ieee
-                    ].async_remove_endpoint_from_group(
+                    devices[member.ieee].async_remove_endpoint_from_group(
                         member.endpoint_id, self.group_id
                     )
                 )
             await asyncio.gather(*tasks)
         else:
-            await self._zha_gateway.devices[
-                members[0].ieee
-            ].async_remove_endpoint_from_group(members[0].endpoint_id, self.group_id)
+            member = members[0]
+            await devices[member.ieee].async_remove_endpoint_from_group(
+                member.endpoint_id, self.group_id
+            )
 
     @property
-    def member_entity_ids(self) -> list[str]:
-        #Return the ZHA entity ids for all entities for the members of this group.
-        all_entity_ids: list[str] = []
+    def member_entity_ids(self) -> list[PlatformEntity]:
+        """Return the platform entities for the members of this group."""
+        all_entities: list[PlatformEntity] = []
         for member in self.members:
-            entity_references = member.associated_entities
-            for entity_reference in entity_references:
-                all_entity_ids.append(entity_reference["entity_id"])
-        return all_entity_ids
+            entities = member.associated_entities
+            for entity in entities:
+                all_entities.append(entity)
+        return all_entities
 
-    def get_domain_entity_ids(self, domain) -> list[str]:
-        #Return entity ids from the entity domain for this group.
-        domain_entity_ids: list[str] = []
+    def get_platform_entities(self, platform: str) -> list[PlatformEntity]:
+        """Return entities belonging to the specified platform for this group."""
+        platform_entities: list[PlatformEntity] = []
         for member in self.members:
             if member.device.is_coordinator:
                 continue
-            entities = async_entries_for_device(
-                self._zha_gateway.ha_entity_registry,
-                member.device.device_id,
-                include_disabled_entities=True,
-            )
-            domain_entity_ids.extend(
-                [entity.entity_id for entity in entities if entity.domain == domain]
-            )
-        return domain_entity_ids
+            for entity in member.associated_entities:
+                if entity.PLATFORM == platform:
+                    platform_entities.append(entity)
+
+        return platform_entities
 
     @property
     def group_info(self) -> dict[str, Any]:
-        #Get ZHA group info.
+        """Get ZHA group info."""
         group_info: dict[str, Any] = {}
         group_info["group_id"] = self.group_id
         group_info["name"] = self.name
         group_info["members"] = [member.member_info for member in self.members]
         return group_info
 
-    def log(self, level: int, msg: str, *args):
-        #Log a message.
+    def log(self, level: int, msg: str, *args: Any) -> None:
+        """Log a message."""
         msg = f"[%s](%s): {msg}"
         args = (self.name, self.group_id) + args
         _LOGGER.log(level, msg, *args)
-"""

@@ -103,7 +103,9 @@ class Controller:
                 exc_info=exception,
             )
         self.load_devices()
+        self.load_groups()
         self.application_controller.add_listener(self)
+        self.application_controller.groups.add_listener(self)
 
     def load_devices(self) -> None:
         """Load devices."""
@@ -112,6 +114,15 @@ class Controller:
             for zigpy_device in self._application_controller.devices.values()
         }
         self.create_platform_entities()
+
+    def load_groups(self) -> None:
+        """Load groups."""
+        for group_id, group in self.application_controller.groups.items():
+            _LOGGER.info("Loading group with id: 0x%04x", group_id)
+            group = Group(group, self._server)
+            self._groups[group_id] = group
+            # we can do this here because the entities are in the entity registry tied to the devices
+            discovery.GROUP_PROBE.discover_group_entities(group)
 
     def create_platform_entities(self) -> None:
         """Create platform entities."""

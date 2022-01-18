@@ -86,7 +86,7 @@ GROUP_PLATFORMS = (
 class ProbeEndpoint:
     """All discovered cluster handlers and entities of an endpoint."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize instance."""
         self._device_configs: dict[str, Any] = {}
 
@@ -104,7 +104,7 @@ class ProbeEndpoint:
 
         platform = None  # remove this when the below is uncommented
         """TODO
-        component = self._device_configs.get(unique_id, {}).get(ha_const.CONF_TYPE)
+        platform = self._device_configs.get(unique_id, {}).get(ha_const.CONF_TYPE)
         """
         if platform is None:
             ep_profile_id = endpoint.zigpy_endpoint.profile_id
@@ -149,8 +149,8 @@ class ProbeEndpoint:
                     if isinstance(cluster_handler.cluster, cluster_class):
                         platform = match
                         break
-
-            self.probe_single_cluster(platform, cluster_handler, endpoint)
+            if platform is not None:
+                self.probe_single_cluster(platform, cluster_handler, endpoint)
 
         # until we can get rid off registries
         self.handle_on_off_output_cluster_exception(endpoint)
@@ -253,18 +253,18 @@ class ProbeEndpoint:
 
 
 class GroupProbe:
-    # Determine the appropriate component for a group.
+    """Determine the appropriate platform for a group"""
 
-    def __init__(self):
-        # Initialize instance.
+    def __init__(self) -> None:
+        """Initialize instance."""
         self._server: Server | None = None
 
     def initialize(self, server: Server) -> None:
-        # Initialize the group probe.
+        """Initialize the group probe."""
         self._server = server
 
     def _reprobe_group(self, group_id: int) -> None:
-        # Reprobe a group for entities after its members change.
+        """Reprobe a group for entities after its members change."""
         assert self._server is not None
         controller: Controller = self._server.controller
         if (group := controller.get_groups().get(group_id)) is None:
@@ -272,7 +272,8 @@ class GroupProbe:
         self.discover_group_entities(group)
 
     def discover_group_entities(self, group: Group) -> None:
-        # Process a group and create any entities that are needed.
+        """Process a group and create any entities that are needed."""
+        _LOGGER.info("Probing group %s for entities", group.name)
         # only create a group entity if there are 2 or more members in a group
         if len(group.members) < 2:
             _LOGGER.debug(
@@ -286,23 +287,25 @@ class GroupProbe:
         entity_platforms = GroupProbe.determine_entity_platforms(self._server, group)
 
         if not entity_platforms:
+            _LOGGER.info("No entity platforms discovered for group %s", group.name)
             return
 
         for platform in entity_platforms:
             entity_class = PLATFORM_ENTITIES.get_group_entity(platform)
             if entity_class is None:
                 continue
+            _LOGGER.info("Creating entity : %s for group %s", entity_class, group.name)
             entity_class(group)
 
     @staticmethod
     def determine_entity_platforms(server: Server, group: Group) -> list[str]:
-        # Determine the entity platforms for this group.
+        """Determine the entity platforms for this group."""
         entity_domains: list[str] = []
         all_platform_occurrences = []
-        for member in group.members.values():
+        for member in group.members:
             if member.device.is_coordinator:
                 continue
-            entities = member.platform_entities
+            entities = member.associated_entities
             all_platform_occurrences.extend(
                 [
                     entity.PLATFORM
@@ -327,4 +330,4 @@ class GroupProbe:
 
 
 PROBE: ProbeEndpoint = ProbeEndpoint()
-GROUP_PROBE = GroupProbe()
+GROUP_PROBE: GroupProbe = GroupProbe()
