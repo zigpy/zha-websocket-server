@@ -157,8 +157,8 @@ class PlatformEntity(LogMixin):
             if state != previous_state:
                 self.send_state_changed_event()
 
-    def log(self, level: int, msg: str, *args: Any) -> None:
+    def log(self, level: int, msg: str, *args: Any, **kwargs: Any) -> None:
         """Log a message."""
         msg = f"%s: {msg}"
         args = (self.unique_id,) + args
-        _LOGGER.log(level, msg, *args)
+        _LOGGER.log(level, msg, *args, **kwargs)
