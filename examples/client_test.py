@@ -38,12 +38,19 @@ async def main():
     await controller.connect()
     await controller.clients.listen()
     await controller.load_devices()
+    await controller.load_groups()
 
     devices = controller.devices
 
     for device in devices.values():
         _LOGGER.info("Device: %s", device)
         for entity in device.device.entities.values():
+            _LOGGER.info("Entity: %s", entity)
+
+    groups = controller.groups
+    for group in groups.values():
+        _LOGGER.info("Group: %s", group)
+        for entity in group.group.entities:
             _LOGGER.info("Entity: %s", entity)
 
     if test_lights:

@@ -396,3 +396,30 @@ class Device(BaseDevice):
 
     entities: dict[str, ENTITIES]
     neighbors: list[Any]
+
+
+class GroupEntity(BaseModel):
+    """Group entity model."""
+
+    class_name: Literal["LightGroup"]
+    name: str
+    state: Any
+    unique_is: str
+    platform: str
+
+
+class GroupMember(BaseModel):
+    """Group member model."""
+
+    endpoint_id: int
+    device: Device
+    entities: list[ENTITIES]
+
+
+class Group(BaseModel):
+    """Group model."""
+
+    name: str
+    id: int
+    members: list[GroupMember]
+    entities: list[GroupEntity]

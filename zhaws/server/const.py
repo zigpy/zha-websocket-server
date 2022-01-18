@@ -12,6 +12,7 @@ class APICommands(StrEnum):
 
     # Zigbee API commands
     GET_DEVICES = "get_devices"
+    GET_GROUPS = "get_groups"
     PERMIT_JOINING = "permit_joining"
     REMOVE_DEVICE = "remove_device"
     START_NETWORK = "start_network"
@@ -137,6 +138,7 @@ PAIRING_STATUS: Final[str] = "pairing_status"
 
 
 DEVICES: Final[str] = "devices"
+GROUPS: Final[str] = "groups"
 DURATION: Final[str] = "duration"
 ERROR_CODE: Final[str] = "error_code"
 ERROR_MESSAGE: Final[str] = "error_message"

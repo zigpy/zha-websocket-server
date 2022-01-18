@@ -150,6 +150,11 @@ class Controller:
             str(ieee): device.zha_device_info for ieee, device in self._devices.items()
         }
 
+    def get_groups_json(self) -> dict[int, Any]:
+        """Get Zigbee devices."""
+        # TODO temporary to test response
+        return {id: group.to_json() for id, group in self._groups.items()}
+
     def get_device(self, ieee: Union[EUI64, str]) -> Device:
         """Get a device by ieee address."""
         if isinstance(ieee, str):

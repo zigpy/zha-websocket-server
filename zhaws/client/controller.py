@@ -10,8 +10,15 @@ from async_timeout import timeout
 
 from zhaws.client.client import Client
 from zhaws.client.device import Device
+from zhaws.event import EventBase
+from zhaws.client.group import Group
 from zhaws.client.helpers import attach_platform_entity_helpers
-from zhaws.client.model.commands import Command, CommandResponse, GetDevicesResponse
+from zhaws.client.model.commands import (
+    Command,
+    CommandResponse,
+    GetDevicesResponse,
+    GetGroupsResponse,
+)
 from zhaws.client.model.events import (
     DeviceConfiguredEvent,
     DeviceFullyInitializedEvent,
@@ -38,6 +45,7 @@ class Controller(EventBase):
         self._client: Client = Client(ws_server_url, aiohttp_session)
         self._listen_task: Optional[Task] = None
         self._devices: dict[str, Device] = {}
+        self._groups: dict[int, Group] = {}
         self._client.on_event(
             "platform_entity_event", self.handle_platform_entity_event
         )
@@ -48,6 +56,11 @@ class Controller(EventBase):
     def devices(self) -> dict[str, Device]:
         """Return the devices."""
         return self._devices
+
+    @property
+    def groups(self) -> dict[int, Group]:
+        """Return the groups."""
+        return self._groups
 
     async def connect(self) -> None:
         """Connect to the websocket server."""
@@ -77,6 +90,14 @@ class Controller(EventBase):
         )
         for ieee, device in response.devices.items():
             self._devices[ieee] = Device(device, self, self._client)
+
+    async def load_groups(self) -> None:
+        """Load groups from the websocket server."""
+        response: GetGroupsResponse = await self._client.async_send_command(  # type: ignore
+            {"command": "get_groups"}
+        )
+        for id, group in response.groups.items():
+            self._groups[id] = Group(group, self, self._client)
 
     def handle_platform_entity_event(self, event: PlatformEntityEvent) -> None:
         """Handle a platform_entity_event from the websocket server."""

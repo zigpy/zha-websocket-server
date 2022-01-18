@@ -17,6 +17,7 @@ from zhaws.server.const import (
     CONF_RADIO_TYPE,
     DEVICES,
     DURATION,
+    GROUPS,
     IEEE,
     APICommands,
 )
@@ -76,6 +77,19 @@ async def get_devices(server: Server, client: Client, message: dict[str, Any]) -
     devices: dict[str, Any] = server.controller.get_devices()
     _LOGGER.info("devices: %s", devices)
     client.send_result_success(message, {DEVICES: devices})
+
+
+@decorators.websocket_command(
+    {
+        vol.Required(COMMAND): str(APICommands.GET_GROUPS),
+    }
+)
+@decorators.async_response
+async def get_groups(server: Server, client: Client, message: dict[str, Any]) -> None:
+    """Get Zigbee groups."""
+    groups: dict[int, Any] = server.controller.get_groups_json()
+    _LOGGER.info("groups: %s", groups)
+    client.send_result_success(message, {GROUPS: groups})
 
 
 @decorators.websocket_command(

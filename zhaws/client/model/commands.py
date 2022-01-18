@@ -5,7 +5,7 @@ from typing import Annotated, Literal, Optional, Tuple, Union
 from pydantic import conint
 from pydantic.fields import Field
 
-from zhaws.client.model.types import Device
+from zhaws.client.model.types import Device, Group
 from zhaws.model import BaseModel
 
 
@@ -350,7 +350,16 @@ class GetDevicesResponse(CommandResponse):
     devices: dict[str, Device]
 
 
+class GetGroupsResponse(CommandResponse):
+    """Get groups response."""
+
+    command: Literal["get_groups"] = "get_groups"
+    groups: dict[str, Group]
+
+
 CommandResponses = Annotated[
-    Union[DefaultResponse, GetDevicesResponse, PermitJoiningResponse],
+    Union[
+        DefaultResponse, GetDevicesResponse, GetGroupsResponse, PermitJoiningResponse
+    ],
     Field(discriminator="command"),  # noqa: F821
 ]
