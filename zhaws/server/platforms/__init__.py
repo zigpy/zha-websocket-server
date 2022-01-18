@@ -216,3 +216,9 @@ class GroupEntity(BaseEntity):
     def group(self) -> Group:
         """Return the group."""
         return self._group
+
+    def to_json(self) -> dict[str, Any]:
+        """Return a JSON representation of the group."""
+        json = super().to_json()
+        json["name"] = self._name
+        return json

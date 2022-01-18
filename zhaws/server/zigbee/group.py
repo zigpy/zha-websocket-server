@@ -57,15 +57,6 @@ class GroupMember(LogMixin):
         return self._device
 
     @property
-    def member_info(self) -> dict[str, Any]:
-        """Get group info."""  # TODO turn this into to_json
-        member_info: dict[str, Any] = {}
-        member_info["endpoint_id"] = self.endpoint_id
-        member_info["device"] = self.device.zha_device_info
-        member_info["entities"] = self.associated_entities
-        return member_info
-
-    @property
     def associated_entities(self) -> list[PlatformEntity]:
         """Return the list of entities that were derived from this endpoint."""
         return [
@@ -73,6 +64,16 @@ class GroupMember(LogMixin):
             for platform_entity in self._device.platform_entities.values()
             if platform_entity.endpoint.id == self.endpoint_id
         ]
+
+    def to_json(self) -> dict[str, Any]:
+        """Get group info."""
+        member_info: dict[str, Any] = {}
+        member_info["endpoint_id"] = self.endpoint_id
+        member_info["device"] = self.device.zha_device_info
+        member_info["entities"] = [
+            entity.to_json() for entity in self.associated_entities
+        ]
+        return member_info
 
     async def async_remove_from_group(self) -> None:
         """Remove the device endpoint from the provided zigbee group."""
@@ -193,13 +194,15 @@ class Group:
 
         return platform_entities
 
-    @property
-    def group_info(self) -> dict[str, Any]:  # TODO turn this into to_json
+    def to_json(self) -> dict[str, Any]:
         """Get ZHA group info."""
         group_info: dict[str, Any] = {}
         group_info["group_id"] = self.group_id
         group_info["name"] = self.name
-        group_info["members"] = [member.member_info for member in self.members]
+        group_info["members"] = [member.to_json() for member in self.members]
+        group_info["entities"] = [
+            entity.to_json() for entity in self._platform_entities.values()
+        ]
         return group_info
 
     def log(self, level: int, msg: str, *args: Any) -> None:
