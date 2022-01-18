@@ -58,7 +58,7 @@ class GroupMember(LogMixin):
 
     @property
     def member_info(self) -> dict[str, Any]:
-        """Get group info."""  # TODO do we need this information
+        """Get group info."""  # TODO turn this into to_json
         member_info: dict[str, Any] = {}
         member_info["endpoint_id"] = self.endpoint_id
         member_info["device"] = self.device.zha_device_info
@@ -194,7 +194,7 @@ class Group:
         return platform_entities
 
     @property
-    def group_info(self) -> dict[str, Any]:
+    def group_info(self) -> dict[str, Any]:  # TODO turn this into to_json
         """Get ZHA group info."""
         group_info: dict[str, Any] = {}
         group_info["group_id"] = self.group_id
