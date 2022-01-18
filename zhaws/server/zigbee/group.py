@@ -13,6 +13,7 @@ from zhaws.server.util import LogMixin
 
 if TYPE_CHECKING:
     from zigpy.group import Endpoint as ZigpyEndpoint, Group as ZigpyGroup
+    from zigpy.types.named import EUI64
 
     from zhaws.server.platforms import GroupEntity
     from zhaws.server.websocket.server import Server
@@ -127,7 +128,7 @@ class Group:
     @property
     def members(self) -> list[GroupMember]:
         """Return the ZHA devices that are members of this group."""
-        devices: dict[str, Device] = self._server.controller.get_devices()
+        devices: dict[EUI64, Device] = self._server.controller.devices
         return [
             GroupMember(self, devices[member_ieee], endpoint_id)
             for (member_ieee, endpoint_id) in self._group.members.keys()

@@ -84,6 +84,11 @@ class Controller:
         """Get the coordinator device."""
         return self._devices[self._application_controller.ieee]
 
+    @property
+    def devices(self) -> dict[EUI64, Device]:
+        """Get devices."""
+        return self._devices
+
     async def start_network(self, configuration: dict) -> None:
         """Start the Zigbee network."""
         if configuration.get(CONF_ENABLE_QUIRKS):
