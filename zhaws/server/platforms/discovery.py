@@ -298,9 +298,9 @@ class GroupProbe:
             entity_class(group)
 
     @staticmethod
-    def determine_entity_platforms(server: Server, group: Group) -> list[str]:
+    def determine_entity_platforms(server: Server, group: Group) -> list[Platform]:
         """Determine the entity platforms for this group."""
-        entity_domains: list[str] = []
+        entity_domains: list[Platform] = []
         all_platform_occurrences = []
         for member in group.members:
             if member.device.is_coordinator:
