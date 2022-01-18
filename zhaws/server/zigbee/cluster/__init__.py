@@ -426,11 +426,11 @@ class ClusterHandler(ListenableMixin, LogMixin):
 
         return json
 
-    def log(self, level: int, msg: str, *args: Any) -> None:
+    def log(self, level: int, msg: str, *args: Any, **kwargs: Any) -> None:
         """Log a message."""
         msg = f"[%s:%s]: {msg}"
         args = (self._endpoint.device.nwk, self._id) + args
-        _LOGGER.log(level, msg, *args)
+        _LOGGER.log(level, msg, *args, **kwargs)
 
     def __getattr__(self, name: str) -> Any:
         """Get attribute or a decorated cluster command."""
@@ -482,11 +482,11 @@ class ZDOClusterHandler(LogMixin):
         """Configure cluster handler."""
         self._status = ClusterHandlerStatus.CONFIGURED
 
-    def log(self, level: int, msg: str, *args: Any) -> None:
+    def log(self, level: int, msg: str, *args: Any, **kwargs: Any) -> None:
         """Log a message."""
         msg = f"[%s:ZDO](%s): {msg}"
         args = (self._device.nwk, self._device.model) + args
-        _LOGGER.log(level, msg, *args)
+        _LOGGER.log(level, msg, *args, **kwargs)
 
 
 class ClientClusterHandler(ClusterHandler):
