@@ -197,7 +197,7 @@ class Group:
     def to_json(self) -> dict[str, Any]:
         """Get ZHA group info."""
         group_info: dict[str, Any] = {}
-        group_info["group_id"] = self.group_id
+        group_info["id"] = self.group_id
         group_info["name"] = self.name
         group_info["members"] = [member.to_json() for member in self.members]
         group_info["entities"] = [
