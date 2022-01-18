@@ -132,5 +132,6 @@ def load_api(server: Server) -> None:
     register_api_command(server, start_network)
     register_api_command(server, stop_network)
     register_api_command(server, get_devices)
+    register_api_command(server, get_groups)
     register_api_command(server, permit_joining)
     register_api_command(server, remove_device)

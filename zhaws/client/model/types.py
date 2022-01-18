@@ -404,7 +404,7 @@ class GroupEntity(BaseModel):
     class_name: Literal["LightGroup"]
     name: str
     state: Any
-    unique_is: str
+    unique_id: str
     platform: str
 
 
