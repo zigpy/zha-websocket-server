@@ -336,6 +336,29 @@ ENTITIES = Annotated[
     Field(discriminator="class_name"),  # noqa: F821
 ]
 
+ENTITIES2 = Annotated[
+    Union[
+        SirenEntity,
+        SelectEntity,
+        NumberEntity,
+        LightEntity,
+        FanEntity,
+        ButtonEntity,
+        AlarmControlPanelEntity,
+        SensorEntity,
+        BinarySensorEntity,
+        DeviceTrackerEntity,
+        ShadeEntity,
+        CoverEntity,
+        LockEntity,
+        SwitchEntity,
+        BatteryEntity,
+        ElectricalMeasurementEntity,
+        SmareEnergyMeteringEntity,
+    ],
+    Field(discriminator="class_name"),  # noqa: F821
+]
+
 
 class DeviceSignatureEndpoint(BaseModel):
     """Device signature endpoint model."""
@@ -413,7 +436,7 @@ class GroupMember(BaseModel):
 
     endpoint_id: int
     device: Device
-    entities: list[ENTITIES]
+    entities: dict[str, ENTITIES2]
 
 
 class Group(BaseModel):

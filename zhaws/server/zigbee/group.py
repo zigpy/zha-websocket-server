@@ -70,9 +70,9 @@ class GroupMember(LogMixin):
         member_info: dict[str, Any] = {}
         member_info["endpoint_id"] = self.endpoint_id
         member_info["device"] = self.device.zha_device_info
-        member_info["entities"] = [
-            entity.to_json() for entity in self.associated_entities
-        ]
+        member_info["entities"] = {
+            entity.unique_id: entity.to_json() for entity in self.associated_entities
+        }
         return member_info
 
     async def async_remove_from_group(self) -> None:
