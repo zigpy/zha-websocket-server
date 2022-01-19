@@ -1,6 +1,8 @@
 """Provide Event base classes for zhaws."""
 from __future__ import annotations
 
+import asyncio
+import inspect
 import logging
 from typing import TYPE_CHECKING, Any, Callable
 
@@ -45,8 +47,14 @@ class EventBase:
 
     def emit(self, event_name: str, data: BaseEvent) -> None:
         """Run all callbacks for an event."""
+        tasks = []
         for listener in self._listeners.get(event_name, []):
-            listener(data)
+            if inspect.iscoroutinefunction(listener):
+                tasks.append(listener(data))
+            else:
+                listener(data)
+        if tasks:
+            asyncio.create_task(asyncio.gather(*tasks))
 
     def _handle_event_protocol(self, event: BaseEvent) -> None:
         """Process an event based on event protocol."""

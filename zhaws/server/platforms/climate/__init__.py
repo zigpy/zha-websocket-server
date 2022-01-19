@@ -13,6 +13,7 @@ from zhaws.backports.enum import StrEnum
 from zhaws.server.decorators import periodic
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
+from zhaws.server.zigbee.cluster import CLUSTER_HANDLER_EVENT
 from zhaws.server.zigbee.cluster.const import (
     CLUSTER_HANDLER_FAN,
     CLUSTER_HANDLER_THERMOSTAT,
@@ -193,11 +194,9 @@ class Thermostat(PlatformEntity):
         self._fan_cluster_handler: Optional[ClusterHandler] = self.cluster_handlers.get(
             CLUSTER_HANDLER_FAN
         )
-
-        # TODO this is really messed up there is async stuff in the attribute updated callbacks. Update to fix this and use EventBase
-        self._thermostat_cluster_handler.add_listener(self)
-        """TODO we have a collision here. We need to determine if we need to add a listener to the fan cluster handler"""
-        # self._fan_cluster_handler.add_listener(self)
+        self._thermostat_cluster_handler.on_event(
+            CLUSTER_HANDLER_EVENT, self._handle_event_protocol
+        )
 
     @property
     def current_temperature(self) -> Union[float, None]:
@@ -438,7 +437,7 @@ class Thermostat(PlatformEntity):
             return self.DEFAULT_MIN_TEMP
         return round(min(temps) / ZCL_TEMP, 1)
 
-    async def cluster_handler_attribute_updated(self, record) -> None:
+    async def handle_cluster_handler_attribute_updated(self, record) -> None:
         """Handle attribute update from device."""
         if (
             record.attr_name in (ATTR_OCCP_COOL_SETPT, ATTR_OCCP_HEAT_SETPT)
