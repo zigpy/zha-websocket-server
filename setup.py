@@ -17,7 +17,6 @@ setup(
     packages=find_packages(exclude=["tests", "tests.*"]),
     install_requires=[
         "colorlog",
-        "orjson",
         "pydantic",
         "websockets",
         "voluptuous",
