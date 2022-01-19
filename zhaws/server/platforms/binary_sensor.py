@@ -2,10 +2,14 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Union
 
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
+from zhaws.server.zigbee.cluster import (
+    CLUSTER_HANDLER_EVENT,
+    ClusterAttributeUpdatedEvent,
+)
 from zhaws.server.zigbee.cluster.const import (
     CLUSTER_HANDLER_ACCELEROMETER,
     CLUSTER_HANDLER_BINARY_INPUT,
@@ -41,7 +45,9 @@ class BinarySensor(PlatformEntity):
         """Initialize the binary sensor."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
         self._cluster_handler: ClusterHandler = cluster_handlers[0]
-        self._cluster_handler.add_listener(self)
+        self._cluster_handler.on_event(
+            CLUSTER_HANDLER_EVENT, self._handle_event_protocol
+        )
         value = self._cluster_handler.cluster.get("zone_status")
         self._state: bool = value & 3 if value is not None else False
 
@@ -53,13 +59,13 @@ class BinarySensor(PlatformEntity):
     def get_state(self) -> bool:
         return self.is_on
 
-    def cluster_handler_attribute_updated(
-        self, attr_id: int, attr_name: str, value: Any
+    def handle_cluster_handler_attribute_updated(
+        self, event: ClusterAttributeUpdatedEvent
     ) -> None:
         """handle attribute updates from the cluster handler."""
-        if self.SENSOR_ATTR is None or self.SENSOR_ATTR != attr_name:
+        if self.SENSOR_ATTR is None or self.SENSOR_ATTR != event.name:
             return
-        self._state = bool(value)
+        self._state = bool(event.value)
         self.send_state_changed_event()
 
     async def async_update(self) -> None:

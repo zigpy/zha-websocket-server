@@ -8,6 +8,10 @@ from zigpy.zcl.foundation import Status
 
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
+from zhaws.server.zigbee.cluster import (
+    CLUSTER_HANDLER_EVENT,
+    ClusterAttributeUpdatedEvent,
+)
 from zhaws.server.zigbee.cluster.const import CLUSTER_HANDLER_DOORLOCK
 
 if TYPE_CHECKING:
@@ -46,7 +50,9 @@ class Lock(PlatformEntity):
         self._state = VALUE_TO_STATE.get(
             self._doorlock_cluster_handler.cluster.get("lock_state"), None
         )
-        self._doorlock_cluster_handler.add_listener(self)
+        self._doorlock_cluster_handler.on_event(
+            CLUSTER_HANDLER_EVENT, self._handle_event_protocol
+        )
 
     @property
     def is_locked(self) -> bool:
@@ -76,11 +82,11 @@ class Lock(PlatformEntity):
         await super().async_update()
         await self.async_get_state()
 
-    def cluster_handler_attribute_updated(
-        self, attr_id: int, attr_name: str, value: Any
+    def handle_cluster_handler_attribute_updated(
+        self, event: ClusterAttributeUpdatedEvent
     ) -> None:
         """Handle state update from cluster handler."""
-        self._state = VALUE_TO_STATE.get(value, self._state)
+        self._state = VALUE_TO_STATE.get(event.value, self._state)
         self.send_state_changed_event()
 
     async def async_get_state(self, from_cache: bool = True) -> None:

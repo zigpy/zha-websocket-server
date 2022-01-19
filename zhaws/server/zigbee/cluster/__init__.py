@@ -5,14 +5,15 @@ import asyncio
 from enum import Enum
 from functools import partialmethod
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Final
+from typing import TYPE_CHECKING, Any, Callable, Final, Literal
 
 from zigpy.device import Device as ZigpyDevice
 import zigpy.exceptions
-from zigpy.util import ListenableMixin
 from zigpy.zcl import Cluster as ZigpyCluster
 from zigpy.zcl.foundation import Status
 
+from zhaws.event import EventBase
+from zhaws.model import BaseEvent
 from zhaws.server.const import EVENT, EVENT_TYPE, EventTypes
 from zhaws.server.util import LogMixin
 from zhaws.server.zigbee.cluster.const import (
@@ -30,6 +31,9 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 SIGNAL_ATTR_UPDATED: Final[str] = "attribute_updated"
+CLUSTER_HANDLER_EVENT = "cluster_handler_event"
+CLUSTER_HANDLER_ATTRIBUTE_UPDATED = "cluster_handler_attribute_updated"
+CLUSTER_HANDLER_STATE_CHANGED = "cluster_handler_state_changed"
 
 
 class ClusterHandlerStatus(Enum):
@@ -40,7 +44,19 @@ class ClusterHandlerStatus(Enum):
     INITIALIZED = 3
 
 
-class ClusterHandler(ListenableMixin, LogMixin):
+class ClusterAttributeUpdatedEvent(BaseEvent):
+    """Event to signal that a cluster attribute has been updated."""
+
+    id: int
+    name: str
+    value: Any
+    event_type: Literal["cluster_handler_event"] = "cluster_handler_event"
+    event: Literal[
+        "cluster_handler_attribute_updated"
+    ] = "cluster_handler_attribute_updated"
+
+
+class ClusterHandler(LogMixin, EventBase):
     """Base cluster handler for a Zigbee cluster handler."""
 
     REPORT_CONFIG: list[dict[int | str, str | tuple[int, int, int | float]]] = []
@@ -53,6 +69,7 @@ class ClusterHandler(ListenableMixin, LogMixin):
 
     def __init__(self, cluster: ZigpyCluster, endpoint: Endpoint):
         """Initialize ClusterHandler."""
+        super().__init__()
         self._generic_id: str = f"channel_0x{cluster.cluster_id:04x}"
         self._endpoint: Endpoint = endpoint
         self._cluster: ZigpyCluster = cluster
@@ -68,7 +85,6 @@ class ClusterHandler(ListenableMixin, LogMixin):
         self._status: ClusterHandlerStatus = ClusterHandlerStatus.CREATED
         self._cluster.add_listener(self)
         self.data_cache: dict[str, Any] = {}
-        self._listeners: dict[Any, Callable] = {}
 
     @property
     def id(self) -> str:
@@ -322,11 +338,13 @@ class ClusterHandler(ListenableMixin, LogMixin):
             }
         )
 
-        self.listener_event(
-            f"cluster_handler_{SIGNAL_ATTR_UPDATED}",
-            attrid,
-            self.cluster.attributes.get(attrid, [attrid])[0],
-            value,
+        self.emit(
+            CLUSTER_HANDLER_EVENT,
+            ClusterAttributeUpdatedEvent(
+                id=attrid,
+                name=self.cluster.attributes.get(attrid, [attrid])[0],
+                value=value,
+            ),
         )
 
     def zdo_command(self, *args: Any, **kwargs: Any) -> None:

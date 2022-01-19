@@ -8,15 +8,20 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Literal
 
 from zigpy.exceptions import ZigbeeException
 from zigpy.zcl import Cluster as ZigpyClusterType
 from zigpy.zcl.clusters import security
 from zigpy.zcl.clusters.security import IasAce as AceCluster
 
+from zhaws.model import BaseEvent
 from zhaws.server.zigbee import registries
-from zhaws.server.zigbee.cluster import ClusterHandler, ClusterHandlerStatus
+from zhaws.server.zigbee.cluster import (
+    CLUSTER_HANDLER_EVENT,
+    ClusterHandler,
+    ClusterHandlerStatus,
+)
 
 if TYPE_CHECKING:
     from zhaws.server.zigbee.endpoint import Endpoint
@@ -62,6 +67,13 @@ WARNING_DEVICE_SQUAWK_MODE_ARMED = 0
 WARNING_DEVICE_SQUAWK_MODE_DISARMED = 1
 
 _LOGGER = logging.getLogger(__name__)
+
+
+class ClusterHandlerStateChangedEvent(BaseEvent):
+    """Event to signal that a cluster attribute has been updated."""
+
+    event_type: Literal["cluster_handler_event"] = "cluster_handler_event"
+    event: Literal["cluster_handler_state_changed"] = "cluster_handler_state_changed"
 
 
 @registries.CLUSTER_HANDLER_REGISTRY.register(AceCluster.cluster_id)
@@ -229,7 +241,10 @@ class IasAce(ClusterHandler):
         """Set the specified alarm status."""
         self.alarm_status = status
         self.armed_state = AceCluster.PanelStatus.In_Alarm
-        self.listener_event("cluster_handler_state_changed")
+        self.emit(
+            CLUSTER_HANDLER_EVENT,
+            ClusterHandlerStateChangedEvent(),
+        )
         self._send_panel_status_changed()
 
     def _get_zone_id_map(self) -> asyncio.Future:
@@ -257,7 +272,10 @@ class IasAce(ClusterHandler):
             self.alarm_status,
         )
         asyncio.create_task(response)
-        self.listener_event("cluster_handler_state_changed")
+        self.emit(
+            CLUSTER_HANDLER_EVENT,
+            ClusterHandlerStateChangedEvent(),
+        )
 
     def _get_bypassed_zone_list(self) -> asyncio.Future:
         """Handle the IAS ACE bypassed zone list command."""

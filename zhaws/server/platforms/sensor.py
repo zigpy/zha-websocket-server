@@ -10,6 +10,10 @@ from typing import TYPE_CHECKING, Any, Final, Type, Union
 from zhaws.server.decorators import periodic
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
+from zhaws.server.zigbee.cluster import (
+    CLUSTER_HANDLER_EVENT,
+    ClusterAttributeUpdatedEvent,
+)
 from zhaws.server.zigbee.cluster.const import (
     CLUSTER_HANDLER_ANALOG_INPUT,
     CLUSTER_HANDLER_BASIC,
@@ -99,7 +103,9 @@ class Sensor(PlatformEntity):
         """Initialize the sensor."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
         self._cluster_handler: ClusterHandler = cluster_handlers[0]
-        self._cluster_handler.add_listener(self)
+        self._cluster_handler.on_event(
+            CLUSTER_HANDLER_EVENT, self._handle_event_protocol
+        )
         if self.should_poll:
             self.poller_task = asyncio.create_task(self._refresh())
 
@@ -119,8 +125,8 @@ class Sensor(PlatformEntity):
             )
         return round(float(value * self._multiplier) / self._divisor)
 
-    def cluster_handler_attribute_updated(
-        self, attr_id: int, attr_name: str, value: Any
+    def handle_cluster_handler_attribute_updated(
+        self, event: ClusterAttributeUpdatedEvent
     ) -> None:
         """handle attribute updates from the cluster handler."""
         self.send_state_changed_event()

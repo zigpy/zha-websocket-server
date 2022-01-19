@@ -6,7 +6,6 @@ https://home-assistant.io/integrations/zha/
 """
 from __future__ import annotations
 
-from collections import namedtuple
 from typing import Any
 
 from zigpy.exceptions import ZigbeeException
@@ -14,14 +13,17 @@ from zigpy.zcl.clusters import hvac
 from zigpy.zcl.foundation import Status
 
 from zhaws.server.zigbee import registries
-from zhaws.server.zigbee.cluster import SIGNAL_ATTR_UPDATED, ClusterHandler
+from zhaws.server.zigbee.cluster import (
+    CLUSTER_HANDLER_EVENT,
+    ClusterAttributeUpdatedEvent,
+    ClusterHandler,
+)
 from zhaws.server.zigbee.cluster.const import (
     REPORT_CONFIG_MAX_INT,
     REPORT_CONFIG_MIN_INT,
     REPORT_CONFIG_OP,
 )
 
-AttributeUpdateRecord = namedtuple("AttributeUpdateRecord", "attr_id, attr_name, value")
 REPORT_CONFIG_CLIMATE = (REPORT_CONFIG_MIN_INT, REPORT_CONFIG_MAX_INT, 25)
 REPORT_CONFIG_CLIMATE_DEMAND = (REPORT_CONFIG_MIN_INT, REPORT_CONFIG_MAX_INT, 5)
 REPORT_CONFIG_CLIMATE_DISCRETE = (REPORT_CONFIG_MIN_INT, REPORT_CONFIG_MAX_INT, 1)
@@ -71,8 +73,13 @@ class FanClusterHandler(ClusterHandler):
             "Attribute report '%s'[%s] = %s", self.cluster.name, attr_name, value
         )
         if attr_name == "fan_mode":
-            self.listener_event(
-                f"cluster_handler_{SIGNAL_ATTR_UPDATED}", attrid, attr_name, value
+            self.emit(
+                CLUSTER_HANDLER_EVENT,
+                ClusterAttributeUpdatedEvent(
+                    id=attrid,
+                    name=attr_name,
+                    value=value,
+                ),
             )
 
 
@@ -228,9 +235,13 @@ class ThermostatClusterHandler(ClusterHandler):
         self.debug(
             "Attribute report '%s'[%s] = %s", self.cluster.name, attr_name, value
         )
-        self.listener_event(
-            f"cluster_handler_{SIGNAL_ATTR_UPDATED}",
-            AttributeUpdateRecord(attrid, attr_name, value),
+        self.emit(
+            CLUSTER_HANDLER_EVENT,
+            ClusterAttributeUpdatedEvent(
+                id=attrid,
+                name=attr_name,
+                value=value,
+            ),
         )
 
     async def async_set_operation_mode(self, mode: Any) -> bool:

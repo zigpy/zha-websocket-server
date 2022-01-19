@@ -194,6 +194,7 @@ class Thermostat(PlatformEntity):
             CLUSTER_HANDLER_FAN
         )
 
+        # TODO this is really messed up there is async stuff in the attribute updated callbacks. Update to fix this and use EventBase
         self._thermostat_cluster_handler.add_listener(self)
         """TODO we have a collision here. We need to determine if we need to add a listener to the fan cluster handler"""
         # self._fan_cluster_handler.add_listener(self)

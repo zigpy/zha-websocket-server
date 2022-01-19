@@ -5,8 +5,9 @@ from zigpy.zcl.clusters import closures
 
 from zhaws.server.zigbee import registries
 from zhaws.server.zigbee.cluster import (
-    SIGNAL_ATTR_UPDATED,
+    CLUSTER_HANDLER_EVENT,
     ClientClusterHandler,
+    ClusterAttributeUpdatedEvent,
     ClusterHandler,
 )
 from zhaws.server.zigbee.cluster.const import REPORT_CONFIG_IMMEDIATE
@@ -23,8 +24,13 @@ class DoorLockClusterHandler(ClusterHandler):
         """Retrieve latest state."""
         result = await self.get_attribute_value("lock_state", from_cache=True)
         if result is not None:
-            self.listener_event(
-                f"cluster_handler_{SIGNAL_ATTR_UPDATED}", 0, "lock_state", result
+            self.emit(
+                CLUSTER_HANDLER_EVENT,
+                ClusterAttributeUpdatedEvent(
+                    id=0,
+                    name="lock_state",
+                    value=result,
+                ),
             )
 
     def cluster_command(self, tsn: int, command_id: int, args: Any) -> None:
@@ -54,8 +60,13 @@ class DoorLockClusterHandler(ClusterHandler):
             "Attribute report '%s'[%s] = %s", self.cluster.name, attr_name, value
         )
         if attrid == self._value_attribute:
-            self.listener_event(
-                f"cluster_handler_{SIGNAL_ATTR_UPDATED}", attrid, attr_name, value
+            self.emit(
+                CLUSTER_HANDLER_EVENT,
+                ClusterAttributeUpdatedEvent(
+                    id=attrid,
+                    name=attr_name,
+                    value=value,
+                ),
             )
 
     async def async_set_user_code(self, code_slot: int, user_code: str) -> None:
@@ -132,11 +143,13 @@ class WindowCovering(ClusterHandler):
         )
         self.debug("read current position: %s", result)
         if result is not None:
-            self.listener_event(
-                f"cluster_handler_{SIGNAL_ATTR_UPDATED}",
-                8,
-                "current_position_lift_percentage",
-                result,
+            self.emit(
+                CLUSTER_HANDLER_EVENT,
+                ClusterAttributeUpdatedEvent(
+                    id=8,
+                    name="current_position_lift_percentage",
+                    value=result,
+                ),
             )
 
     def attribute_updated(self, attrid: int, value: Any) -> None:
@@ -146,6 +159,11 @@ class WindowCovering(ClusterHandler):
             "Attribute report '%s'[%s] = %s", self.cluster.name, attr_name, value
         )
         if attrid == self._value_attribute:
-            self.listener_event(
-                f"cluster_handler_{SIGNAL_ATTR_UPDATED}", attrid, attr_name, value
+            self.emit(
+                CLUSTER_HANDLER_EVENT,
+                ClusterAttributeUpdatedEvent(
+                    id=attrid,
+                    name=attr_name,
+                    value=value,
+                ),
             )

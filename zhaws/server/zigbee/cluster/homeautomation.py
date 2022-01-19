@@ -6,7 +6,11 @@ import enum
 from zigpy.zcl.clusters import homeautomation
 
 from zhaws.server.zigbee import registries
-from zhaws.server.zigbee.cluster import SIGNAL_ATTR_UPDATED, ClusterHandler
+from zhaws.server.zigbee.cluster import (
+    CLUSTER_HANDLER_EVENT,
+    ClusterAttributeUpdatedEvent,
+    ClusterHandler,
+)
 from zhaws.server.zigbee.cluster.const import (
     CLUSTER_HANDLER_ELECTRICAL_MEASUREMENT,
     REPORT_CONFIG_DEFAULT,
@@ -95,11 +99,13 @@ class ElectricalMeasurementClusterHandler(ClusterHandler):
         result = await self.get_attributes(attrs, from_cache=False)
         if result:
             for attr, value in result.items():
-                self.listener_event(
-                    f"cluster_handler_{SIGNAL_ATTR_UPDATED}",
-                    self.cluster.attridx.get(attr, attr),
-                    attr,
-                    value,
+                self.emit(
+                    CLUSTER_HANDLER_EVENT,
+                    ClusterAttributeUpdatedEvent(
+                        id=self.cluster.attridx.get(attr, attr),
+                        name=attr,
+                        value=value,
+                    ),
                 )
 
     @property

@@ -2,15 +2,19 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Any, Dict, Final, Union
+from typing import TYPE_CHECKING, Any, Dict, Final, Union, cast
 
 from zigpy.zcl.clusters.security import IasAce
 
 from zhaws.backports.enum import StrEnum
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
+from zhaws.server.zigbee.cluster import CLUSTER_HANDLER_EVENT
 from zhaws.server.zigbee.cluster.const import CLUSTER_HANDLER_IAS_ACE
-from zhaws.server.zigbee.cluster.security import IasAce as IasAceClusterHandler
+from zhaws.server.zigbee.cluster.security import (
+    ClusterHandlerStateChangedEvent,
+    IasAce as IasAceClusterHandler,
+)
 
 if TYPE_CHECKING:
     from zhaws.server.zigbee.cluster import ClusterHandler
@@ -67,7 +71,9 @@ class ZHAAlarmControlPanel(PlatformEntity):
     ):
         """Initialize the alarm control panel."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
-        self._cluster_handler: IasAceClusterHandler = cluster_handlers[0]
+        self._cluster_handler: IasAceClusterHandler = cast(
+            IasAceClusterHandler, cluster_handlers[0]
+        )
         self._cluster_handler.panel_code = "1234"
         self._cluster_handler.code_required_arm_actions = False
         self._cluster_handler.max_invalid_tries = 3
@@ -84,9 +90,13 @@ class ZHAAlarmControlPanel(PlatformEntity):
             cfg_entry, ZHA_ALARM_OPTIONS, CONF_ALARM_FAILED_TRIES, 3
         )
         """
-        self._cluster_handler.add_listener(self)
+        self._cluster_handler.on_event(
+            CLUSTER_HANDLER_EVENT, self._handle_event_protocol
+        )
 
-    def cluster_handler_state_changed(self) -> None:
+    def handle_cluster_handler_state_changed(
+        self, event: ClusterHandlerStateChangedEvent
+    ) -> None:
         """Handle state changed on cluster."""
         self.send_state_changed_event()
 

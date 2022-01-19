@@ -7,6 +7,10 @@ from typing import TYPE_CHECKING, Any
 
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
+from zhaws.server.zigbee.cluster import (
+    CLUSTER_HANDLER_EVENT,
+    ClusterAttributeUpdatedEvent,
+)
 from zhaws.server.zigbee.cluster.const import CLUSTER_HANDLER_ANALOG_OUTPUT
 
 if TYPE_CHECKING:
@@ -37,7 +41,9 @@ class Number(PlatformEntity):
         self._analog_output_cluster_handler: ClusterHandler = self.cluster_handlers[
             CLUSTER_HANDLER_ANALOG_OUTPUT
         ]
-        self._analog_output_cluster_handler.add_listener(self)
+        self._analog_output_cluster_handler.on_event(
+            CLUSTER_HANDLER_EVENT, self._handle_event_protocol
+        )
 
     @property
     def value(self) -> float:
@@ -73,8 +79,8 @@ class Number(PlatformEntity):
             return f"{super().name} {description}"
         return super().name
 
-    def cluster_handler_attribute_updated(
-        self, attr_id: int, attr_name: str, value: Any
+    def handle_cluster_handler_attribute_updated(
+        self, event: ClusterAttributeUpdatedEvent
     ) -> None:
         """Handle value update from cluster handler."""
         self.send_state_changed_event()

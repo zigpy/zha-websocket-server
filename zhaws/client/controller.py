@@ -38,8 +38,10 @@ class Controller(EventBase):
         self._client: Client = Client(ws_server_url, aiohttp_session)
         self._listen_task: Optional[Task] = None
         self._devices: dict[str, Device] = {}
-        self._client.on("platform_entity_event", self.handle_platform_entity_event)
-        self._client.on("controller_event", self._handle_event_protocol)
+        self._client.on_event(
+            "platform_entity_event", self.handle_platform_entity_event
+        )
+        self._client.on_event("controller_event", self._handle_event_protocol)
         attach_platform_entity_helpers(self, self._client)
 
     @property

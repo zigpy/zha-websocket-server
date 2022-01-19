@@ -18,7 +18,7 @@ class EventBase:
         super().__init__(*args, **kwargs)
         self._listeners: dict[str, list[Callable]] = {}
 
-    def on(  # pylint: disable=invalid-name
+    def on_event(  # pylint: disable=invalid-name
         self, event_name: str, callback: Callable
     ) -> Callable:
         """Register an event callback."""
@@ -39,7 +39,7 @@ class EventBase:
             unsub()
             callback(data)
 
-        unsub = self.on(event_name, event_listener)
+        unsub = self.on_event(event_name, event_listener)
 
         return unsub
 
