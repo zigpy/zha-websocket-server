@@ -553,11 +553,19 @@ class LightGroup(GroupEntity, BaseLight):
     def __init__(self, group: Group):
         """Initialize a light group."""
         super().__init__(group)
-        self._on_off_channel = group.zigpy_group.endpoint[OnOff.cluster_id]
-        self._level_channel = group.zigpy_group.endpoint[LevelControl.cluster_id]
-        self._color_channel = group.zigpy_group.endpoint[Color.cluster_id]
-        self._identify_channel = group.zigpy_group.endpoint[Identify.cluster_id]
-        self._debounced_member_refresh = None
+        self._on_off_cluster_handler: ClusterHandler = group.zigpy_group.endpoint[
+            OnOff.cluster_id
+        ]
+        self._level_cluster_handler: Optional[
+            ClusterHandler
+        ] = group.zigpy_group.endpoint[LevelControl.cluster_id]
+        self._color_cluster_handler: Optional[
+            ClusterHandler
+        ] = group.zigpy_group.endpoint[Color.cluster_id]
+        self._identify_cluster_handler: Optional[
+            ClusterHandler
+        ] = group.zigpy_group.endpoint[Identify.cluster_id]
+        # self._debounced_member_refresh = None
         """
         self._default_transition = async_get_zha_config_value(
             zha_device.gateway.config_entry,

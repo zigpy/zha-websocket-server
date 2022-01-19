@@ -204,7 +204,7 @@ class GroupEntity(BaseEntity):
 
     @property
     def name(self) -> str:
-        """Return the name of the group."""
+        """Return the name of the group entity."""
         return self._name
 
     @property
@@ -221,4 +221,5 @@ class GroupEntity(BaseEntity):
         """Return a JSON representation of the group."""
         json = super().to_json()
         json["name"] = self._name
+        json["group_id"] = self.group_id
         return json

@@ -123,15 +123,20 @@ class SmareEnergyMeteringState(BaseModel):
     status: Optional[str]
 
 
-class BasePlatformEntity(BaseEventedModel):
+class BaseEntity(BaseEventedModel):
     """Base platform entity model."""
 
     name: str
     unique_id: str
     platform: str
+    class_name: str
+
+
+class BasePlatformEntity(BaseEntity):
+    """Base platform entity model."""
+
     device_ieee: str
     endpoint_id: int
-    class_name: str
 
 
 class LockEntity(BasePlatformEntity):
@@ -313,53 +318,6 @@ class SwitchEntity(BasePlatformEntity):
     state: SwitchState
 
 
-ENTITIES = Annotated[
-    Union[
-        SirenEntity,
-        SelectEntity,
-        NumberEntity,
-        LightEntity,
-        FanEntity,
-        ButtonEntity,
-        AlarmControlPanelEntity,
-        SensorEntity,
-        BinarySensorEntity,
-        DeviceTrackerEntity,
-        ShadeEntity,
-        CoverEntity,
-        LockEntity,
-        SwitchEntity,
-        BatteryEntity,
-        ElectricalMeasurementEntity,
-        SmareEnergyMeteringEntity,
-    ],
-    Field(discriminator="class_name"),  # noqa: F821
-]
-
-ENTITIES2 = Annotated[
-    Union[
-        SirenEntity,
-        SelectEntity,
-        NumberEntity,
-        LightEntity,
-        FanEntity,
-        ButtonEntity,
-        AlarmControlPanelEntity,
-        SensorEntity,
-        BinarySensorEntity,
-        DeviceTrackerEntity,
-        ShadeEntity,
-        CoverEntity,
-        LockEntity,
-        SwitchEntity,
-        BatteryEntity,
-        ElectricalMeasurementEntity,
-        SmareEnergyMeteringEntity,
-    ],
-    Field(discriminator="class_name"),  # noqa: F821
-]
-
-
 class DeviceSignatureEndpoint(BaseModel):
     """Device signature endpoint model."""
 
@@ -417,18 +375,60 @@ class BaseDevice(BaseModel):
 class Device(BaseDevice):
     """Device model."""
 
-    entities: dict[str, ENTITIES]
+    entities: dict[
+        str,
+        Annotated[
+            Union[
+                SirenEntity,
+                SelectEntity,
+                NumberEntity,
+                LightEntity,
+                FanEntity,
+                ButtonEntity,
+                AlarmControlPanelEntity,
+                SensorEntity,
+                BinarySensorEntity,
+                DeviceTrackerEntity,
+                ShadeEntity,
+                CoverEntity,
+                LockEntity,
+                SwitchEntity,
+                BatteryEntity,
+                ElectricalMeasurementEntity,
+                SmareEnergyMeteringEntity,
+            ],
+            Field(discriminator="class_name"),  # noqa: F821
+        ],
+    ]
     neighbors: list[Any]
 
 
-class GroupEntity(BaseModel):
+class GroupEntity(BaseEntity):
+    """Group entity model."""
+
+    group_id: int
+    state: Any
+
+
+class LightGroupEntity(GroupEntity):
     """Group entity model."""
 
     class_name: Literal["LightGroup"]
-    name: str
-    state: Any
-    unique_id: str
-    platform: str
+    state: LightState
+
+
+class FanGroupEntity(GroupEntity):
+    """Group entity model."""
+
+    class_name: Literal["FanGroup"]
+    state: FanState
+
+
+class SwitchGroupEntity(GroupEntity):
+    """Group entity model."""
+
+    class_name: Literal["SwitchGroup"]
+    state: SwitchState
 
 
 class GroupMember(BaseModel):
@@ -436,7 +436,31 @@ class GroupMember(BaseModel):
 
     endpoint_id: int
     device: Device
-    entities: dict[str, ENTITIES2]
+    entities: dict[
+        str,
+        Annotated[
+            Union[
+                SirenEntity,
+                SelectEntity,
+                NumberEntity,
+                LightEntity,
+                FanEntity,
+                ButtonEntity,
+                AlarmControlPanelEntity,
+                SensorEntity,
+                BinarySensorEntity,
+                DeviceTrackerEntity,
+                ShadeEntity,
+                CoverEntity,
+                LockEntity,
+                SwitchEntity,
+                BatteryEntity,
+                ElectricalMeasurementEntity,
+                SmareEnergyMeteringEntity,
+            ],
+            Field(discriminator="class_name"),  # noqa: F821
+        ],
+    ]
 
 
 class Group(BaseModel):
@@ -444,5 +468,11 @@ class Group(BaseModel):
 
     name: str
     id: int
-    members: list[GroupMember]
-    entities: list[GroupEntity]
+    members: dict[str, GroupMember]
+    entities: dict[
+        str,
+        Annotated[
+            Union[LightGroupEntity, FanGroupEntity, SwitchGroupEntity],
+            Field(discriminator="class_name"),  # noqa: F821
+        ],
+    ]

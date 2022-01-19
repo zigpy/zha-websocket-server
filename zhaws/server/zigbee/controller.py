@@ -164,6 +164,13 @@ class Controller:
             raise ValueError(f"Device {str(ieee)} not found")
         return device
 
+    def get_group(self, group_id: int) -> Group:
+        """Get a group by group id."""
+        group = self._groups.get(group_id)
+        if not group:
+            raise ValueError(f"Group {str(group_id)} not found")
+        return group
+
     def get_groups(self) -> dict[int, Group]:
         """Get Zigbee groups."""
         return self._groups

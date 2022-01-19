@@ -199,10 +199,13 @@ class Group:
         group_info: dict[str, Any] = {}
         group_info["id"] = self.group_id
         group_info["name"] = self.name
-        group_info["members"] = [member.to_json() for member in self.members]
-        group_info["entities"] = [
-            entity.to_json() for entity in self._platform_entities.values()
-        ]
+        group_info["members"] = {
+            str(member.device.ieee): member.to_json() for member in self.members
+        }
+        group_info["entities"] = {
+            unique_id: entity.to_json()
+            for unique_id, entity in self._platform_entities.items()
+        }
         return group_info
 
     def log(self, level: int, msg: str, *args: Any) -> None:
