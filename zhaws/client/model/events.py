@@ -7,8 +7,8 @@ from typing import Annotated, Any, Literal, Union
 
 from pydantic.fields import Field
 
-from zhaws.client.model import BaseModel
 from zhaws.client.model.types import BaseDevice, Device, DeviceSignature
+from zhaws.model import BaseEvent, BaseModel
 
 
 class MinimalPlatformEntity(BaseModel):
@@ -53,12 +53,6 @@ class MinimalClusterHandler(BaseModel):
 
     unique_id: str
     cluster: MinimalCluster
-
-
-class BaseEvent(BaseModel):
-    """Base event model."""
-
-    message_type: Literal["event"] = "event"
 
 
 class PlatformEntityEvent(BaseEvent):

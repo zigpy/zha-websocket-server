@@ -9,9 +9,9 @@ import uuid
 from aiohttp import ClientSession, ClientWebSocketResponse, client_exceptions
 from aiohttp.http_websocket import WSMsgType
 
-from zhaws.client.event import EventBase
 from zhaws.client.model.commands import CommandResponse
 from zhaws.client.model.messages import Message
+from zhaws.event import EventBase
 
 SIZE_PARSE_JSON_EXECUTOR = 8192
 _LOGGER = logging.getLogger(__package__)

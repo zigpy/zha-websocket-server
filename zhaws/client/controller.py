@@ -10,7 +10,6 @@ from async_timeout import timeout
 
 from zhaws.client.client import Client
 from zhaws.client.device import Device
-from zhaws.client.event import EventBase
 from zhaws.client.helpers import attach_platform_entity_helpers
 from zhaws.client.model.commands import Command, CommandResponse, GetDevicesResponse
 from zhaws.client.model.events import (
@@ -22,6 +21,7 @@ from zhaws.client.model.events import (
     PlatformEntityEvent,
     RawDeviceInitializedEvent,
 )
+from zhaws.event import EventBase
 
 CONNECT_TIMEOUT = 10
 

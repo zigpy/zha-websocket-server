@@ -1,17 +1,17 @@
-"""Provide Event base classes for zhaws.client."""
+"""Provide Event base classes for zhaws."""
 from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING, Any, Callable
 
 if TYPE_CHECKING:
-    from zhaws.client.model.events import BaseEvent, PlatformEntityEvent
+    from zhaws.model import BaseEvent
 
 _LOGGER = logging.getLogger(__package__)
 
 
 class EventBase:
-    """Represent a zhawssclient base class for event handling models."""
+    """Base class for event handling and emitting objects."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize event base."""
@@ -48,7 +48,7 @@ class EventBase:
         for listener in self._listeners.get(event_name, []):
             listener(data)
 
-    def _handle_event_protocol(self, event: PlatformEntityEvent) -> None:
+    def _handle_event_protocol(self, event: BaseEvent) -> None:
         """Process an event based on event protocol."""
         _LOGGER.debug("handling event protocol for event: %s", event)
         handler = getattr(self, f"handle_{event.event.replace(' ', '_')}", None)

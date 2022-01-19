@@ -5,8 +5,8 @@ from typing import Annotated, Literal, Optional, Tuple, Union
 from pydantic import conint
 from pydantic.fields import Field
 
-from zhaws.client.model import BaseModel
 from zhaws.client.model.types import Device
+from zhaws.model import BaseModel
 
 
 class Command(BaseModel):

@@ -3,9 +3,9 @@ from typing import Annotated, Union
 
 from pydantic.fields import Field
 
-from zhaws.client.model import BaseModel
 from zhaws.client.model.commands import CommandResponses
 from zhaws.client.model.events import Events
+from zhaws.model import BaseModel
 
 
 class Message(BaseModel):
