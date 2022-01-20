@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from zhaws.client.event import EventBase
+from zhaws.event import EventBase
 
 if TYPE_CHECKING:
     from zhaws.client.client import Client
