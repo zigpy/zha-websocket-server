@@ -106,7 +106,7 @@ class Controller(EventBase):
             if device is None:
                 _LOGGER.warning("Received event from unknown device: %s", event)
                 return
-            entity = device.device.entities.get(event.platform_entity.unique_id)
+            entity: Any = device.device.entities.get(event.platform_entity.unique_id)
         elif event.group:
             group = self.groups.get(event.group.id)
             if not group:
