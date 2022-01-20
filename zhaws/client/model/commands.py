@@ -21,6 +21,13 @@ class DeviceCommand(Command):
     ieee: str
 
 
+class GroupEntityCommand(Command):
+    """Base class for commands that address group platform entities."""
+
+    unique_id: str
+    group_id: int
+
+
 class PlatformEntityCommand(DeviceCommand):
     """Base class for commands that address individual platform entities."""
 
@@ -43,6 +50,26 @@ class LightTurnOffCommand(PlatformEntityCommand):
     """Command to instruct a light to turn off."""
 
     command: Literal["light_turn_off"] = "light_turn_off"
+    transition: Optional[int]
+    flash: Optional[Literal["long", "short"]]
+
+
+class GroupLightTurnOnCommand(GroupEntityCommand):
+    """Command to instruct a light to turn on."""
+
+    command: Literal["group_light_turn_on"] = "group_light_turn_on"
+    brightness: Optional[int]
+    transition: Optional[int]
+    flash: Optional[Literal["long", "short"]]
+    effect: Optional[str]
+    hs_color: Optional[Tuple[float, float]]
+    color_temp: Optional[int]
+
+
+class GroupLightTurnOffCommand(GroupEntityCommand):
+    """Command to instruct a light to turn off."""
+
+    command: Literal["group_light_turn_off"] = "group_light_turn_off"
     transition: Optional[int]
     flash: Optional[Literal["long", "short"]]
 
@@ -299,6 +326,8 @@ class DefaultResponse(CommandResponse):
         "stop_server",
         "light_turn_on",
         "light_turn_off",
+        "group_light_turn_on",
+        "group_light_turn_off",
         "switch_turn_on",
         "switch_turn_off",
         "lock_lock",

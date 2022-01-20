@@ -136,6 +136,10 @@ class Group(LogMixin):
             if member_ieee in devices
         ]
 
+    def send_event(self, event: dict[str, Any]) -> None:
+        """Send an event from this group."""
+        self._server.client_manager.broadcast(event)
+
     async def async_add_members(self, members: list[GroupMemberReference]) -> None:
         """Add members to this group."""
         devices: dict[str, Device] = self._server.controller.get_devices()

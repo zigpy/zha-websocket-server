@@ -7,7 +7,9 @@ import voluptuous as vol
 
 from zhaws.backports.enum import StrEnum
 from zhaws.server.platforms.api import (
+    execute_group_entity_command,
     execute_platform_entity_command,
+    group_entity_command_schema,
     platform_entity_command_schema,
 )
 from zhaws.server.platforms.light import (
@@ -86,7 +88,57 @@ async def turn_off(server: Server, client: Client, message: dict[str, Any]) -> N
     await execute_platform_entity_command(server, client, message, "async_turn_off")
 
 
+@decorators.websocket_command(
+    group_entity_command_schema(
+        f"group_{LightAPICommands.LIGHT_TURN_ON}",
+        {
+            vol.Optional(ATTR_BRIGHTNESS): VALID_BRIGHTNESS,
+            vol.Optional(ATTR_TRANSITION): VALID_TRANSITION,
+            vol.Optional(ATTR_FLASH): VALID_FLASH,
+            vol.Optional(ATTR_EFFECT): str,
+            vol.Exclusive(ATTR_HS_COLOR, COLOR_GROUP): vol.All(
+                vol.Coerce(tuple),
+                vol.ExactSequence(
+                    (
+                        vol.All(vol.Coerce(float), vol.Range(min=0, max=360)),
+                        vol.All(vol.Coerce(float), vol.Range(min=0, max=100)),
+                    )
+                ),
+            ),
+            vol.Exclusive(ATTR_COLOR_TEMP, COLOR_GROUP): vol.All(
+                vol.Coerce(int), vol.Range(min=1)
+            ),
+        },
+    )
+)
+@decorators.async_response
+async def group_turn_on(
+    server: Server, client: Client, message: dict[str, Any]
+) -> None:
+    """Turn on the light."""
+    await execute_group_entity_command(server, client, message, "async_turn_on")
+
+
+@decorators.websocket_command(
+    group_entity_command_schema(
+        f"group_{LightAPICommands.LIGHT_TURN_OFF}",
+        {
+            vol.Optional(ATTR_TRANSITION): VALID_TRANSITION,
+            vol.Optional(ATTR_FLASH): VALID_FLASH,
+        },
+    )
+)
+@decorators.async_response
+async def group_turn_off(
+    server: Server, client: Client, message: dict[str, Any]
+) -> None:
+    """Turn on the light."""
+    await execute_group_entity_command(server, client, message, "async_turn_off")
+
+
 def load_api(server: Server) -> None:
     """Load the api command handlers."""
     register_api_command(server, turn_on)
     register_api_command(server, turn_off)
+    register_api_command(server, group_turn_on)
+    register_api_command(server, group_turn_off)

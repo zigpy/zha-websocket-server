@@ -37,6 +37,20 @@ def platform_entity_command_schema(
     return full_schema
 
 
+def group_entity_command_schema(
+    command: str, schema: Optional[dict[str, Any]] = None
+) -> dict[str, Any]:
+    """Return the schema for a platform entity command."""
+    full_schema = {
+        vol.Required(COMMAND): str(command),
+        vol.Required(ATTR_UNIQUE_ID): str,
+        vol.Required("group_id"): int,
+    }
+    if schema:
+        full_schema.update(schema)
+    return full_schema
+
+
 async def execute_platform_entity_command(
     server: Server,
     client: Client,
@@ -68,6 +82,41 @@ async def execute_platform_entity_command(
 
     result = {}
     result[IEEE] = request_message[IEEE]
+    result[ATTR_UNIQUE_ID] = request_message[ATTR_UNIQUE_ID]
+    client.send_result_success(request_message, result)
+
+
+async def execute_group_entity_command(
+    server: Server,
+    client: Client,
+    request_message: dict[str, Any],
+    command: str,
+) -> None:
+    """Get the group entity and execute a command."""
+    try:
+        group = server.controller.get_group(request_message["group_id"])
+        group_entity = group.platform_entities.get(request_message[ATTR_UNIQUE_ID])
+    except ValueError as err:
+        _LOGGER.exception("Error executing command: %s", command, exc_info=err)
+        client.send_result_error(
+            request_message, "PLATFORM_ENTITY_COMMAND_ERROR", str(err)
+        )
+        return None
+
+    try:
+        action = getattr(group_entity, command)
+        if action.__code__.co_argcount == 1:  # the only argument is self
+            await action()
+        else:
+            await action(**request_message)
+    except Exception as err:
+        _LOGGER.exception("Error executing command: %s", command, exc_info=err)
+        client.send_result_error(
+            request_message, "PLATFORM_ENTITY_ACTION_ERROR", str(err)
+        )
+
+    result = {}
+    result["group_id"] = request_message["group_id"]
     result[ATTR_UNIQUE_ID] = request_message[ATTR_UNIQUE_ID]
     client.send_result_success(request_message, result)
 

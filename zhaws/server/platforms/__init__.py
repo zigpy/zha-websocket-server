@@ -217,6 +217,19 @@ class GroupEntity(BaseEntity):
         """Return the group."""
         return self._group
 
+    def send_event(self, signal: dict[str, Any]) -> None:
+        """Broadcast an event from this group entity."""
+        signal["platform_entity"] = {
+            "name": self._name,
+            "unique_id": self._unique_id,
+            "platform": self.PLATFORM,
+        }
+        signal["group"] = {
+            "id": self._group.group_id,
+        }
+        _LOGGER.info("Sending event from group entity: %s", signal)
+        self._group.send_event(signal)
+
     def to_json(self) -> dict[str, Any]:
         """Return a JSON representation of the group."""
         json = super().to_json()

@@ -247,6 +247,7 @@ class BaseLight(BaseEntity):
                 level = min(254, brightness)
             else:
                 level = self._brightness or 254
+            assert self._level_cluster_handler is not None
             result = await self._level_cluster_handler.move_to_level_with_on_off(
                 level, duration
             )
@@ -269,6 +270,7 @@ class BaseLight(BaseEntity):
             self._state = True
         if ATTR_COLOR_TEMP in kwargs and self.supported_features & SUPPORT_COLOR_TEMP:
             temperature = kwargs[ATTR_COLOR_TEMP]
+            assert self._color_cluster_handler is not None
             result = await self._color_cluster_handler.move_to_color_temp(
                 temperature, duration
             )
@@ -282,6 +284,7 @@ class BaseLight(BaseEntity):
         if ATTR_HS_COLOR in kwargs and self.supported_features & SUPPORT_COLOR:
             hs_color = kwargs[ATTR_HS_COLOR]
             xy_color = color_util.color_hs_to_xy(*hs_color)
+            assert self._color_cluster_handler is not None
             result = await self._color_cluster_handler.move_to_color(
                 int(xy_color[0] * 65535), int(xy_color[1] * 65535), duration
             )
@@ -293,6 +296,7 @@ class BaseLight(BaseEntity):
             self._color_temp = None
 
         if effect == EFFECT_COLORLOOP and self.supported_features & SUPPORT_EFFECT:
+            assert self._color_cluster_handler is not None
             result = await self._color_cluster_handler.color_loop_set(
                 UPDATE_COLORLOOP_ACTION
                 | UPDATE_COLORLOOP_DIRECTION
@@ -309,6 +313,7 @@ class BaseLight(BaseEntity):
             and effect != EFFECT_COLORLOOP
             and self.supported_features & SUPPORT_EFFECT
         ):
+            assert self._color_cluster_handler is not None
             result = await self._color_cluster_handler.color_loop_set(
                 UPDATE_COLORLOOP_ACTION,
                 0x0,
@@ -320,6 +325,7 @@ class BaseLight(BaseEntity):
             self._effect = None
 
         if flash is not None and self._supported_features & SUPPORT_FLASH:
+            assert self._identify_cluster_handler is not None
             result = await self._identify_cluster_handler.trigger_effect(
                 FLASH_EFFECTS[flash], EFFECT_DEFAULT_VARIANT
             )
@@ -337,6 +343,7 @@ class BaseLight(BaseEntity):
         supports_level = self.supported_features & SUPPORT_BRIGHTNESS
 
         if duration and supports_level:
+            assert self._level_cluster_handler is not None
             result = await self._level_cluster_handler.move_to_level_with_on_off(
                 0, duration * 10
             )
@@ -565,6 +572,7 @@ class LightGroup(GroupEntity, BaseLight):
         self._identify_cluster_handler: Optional[
             ClusterHandler
         ] = group.zigpy_group.endpoint[Identify.cluster_id]
+
         # self._debounced_member_refresh = None
         """
         self._default_transition = async_get_zha_config_value(
@@ -575,17 +583,25 @@ class LightGroup(GroupEntity, BaseLight):
         )
         """
 
+    def handle_cluster_handler_attribute_updated(
+        self, event: ClusterAttributeUpdatedEvent
+    ) -> None:
+        """Set the state."""
+        self.update()
+        self.send_state_changed_event()
+
     def send_event(self, signal: dict[str, Any]) -> None:
         """Broadcast an event from this platform entity."""
 
-    """TODO
-    async def async_update(self) -> None:
-        #Query all members and determine the light group state.
-        all_states = [self.hass.states.get(x) for x in self._entity_ids]
-        states: list[State] = list(filter(None, all_states))
-        on_states = [state for state in states if state.state == STATE_ON]
+    def update(self) -> None:
+        # Query all members and determine the light group state.
+        all_states = [
+            entity.get_state() for entity in self._group.platform_entities.values()
+        ]
+        on_states = [state for state in all_states if state["on"]]
 
         self._state = len(on_states) > 0
+        """TODO
         self._available = any(state.state != STATE_UNAVAILABLE for state in states)
 
         self._brightness = helpers.reduce_attribute(on_states, ATTR_BRIGHTNESS)
@@ -623,4 +639,4 @@ class LightGroup(GroupEntity, BaseLight):
         # Bitwise-and the supported features with the GroupedLight's features
         # so that we don't break in the future when a new feature is added.
         self._supported_features &= SUPPORT_GROUP_LIGHT
-    """
+        """
