@@ -27,8 +27,6 @@ from zhaws.client.model.commands import (
     FanSetPresetModeCommand,
     FanTurnOffCommand,
     FanTurnOnCommand,
-    GroupLightTurnOffCommand,
-    GroupLightTurnOnCommand,
     LightTurnOffCommand,
     LightTurnOnCommand,
     LockClearUserLockCodeCommand,
@@ -63,7 +61,7 @@ class LightHelper:
 
     async def turn_on(
         self,
-        light_platform_entity: BasePlatformEntity,
+        light_platform_entity: BasePlatformEntity | GroupEntity,
         brightness: int | None = None,
         transition: int | None = None,
         flash: bool | None = None,
@@ -81,7 +79,12 @@ class LightHelper:
             )
 
         command = LightTurnOnCommand(
-            ieee=light_platform_entity.device_ieee,
+            ieee=light_platform_entity.device_ieee
+            if not isinstance(light_platform_entity, GroupEntity)
+            else None,
+            group_id=light_platform_entity.group_id
+            if isinstance(light_platform_entity, GroupEntity)
+            else None,
             unique_id=light_platform_entity.unique_id,
             brightness=brightness,
             transition=transition,
@@ -94,7 +97,7 @@ class LightHelper:
 
     async def turn_off(
         self,
-        light_platform_entity: BasePlatformEntity,
+        light_platform_entity: BasePlatformEntity | GroupEntity,
         transition: int | None = None,
         flash: bool | None = None,
     ) -> CommandResponse:
@@ -108,61 +111,12 @@ class LightHelper:
             )
 
         command = LightTurnOffCommand(
-            ieee=light_platform_entity.device_ieee,
-            unique_id=light_platform_entity.unique_id,
-            transition=transition,
-            flash=flash,
-        )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
-
-    async def group_turn_on(
-        self,
-        light_platform_entity: GroupEntity,
-        brightness: int | None = None,
-        transition: int | None = None,
-        flash: bool | None = None,
-        effect: str | None = None,
-        hs_color: tuple | None = None,
-        color_temp: int | None = None,
-    ) -> CommandResponse:
-        """Turn on a light group."""
-        if (
-            light_platform_entity is None
-            or light_platform_entity.platform != Platform.LIGHT
-        ):
-            raise ValueError(
-                "light_platform_entity must be provided and it must be a light platform entity"
-            )
-
-        command = GroupLightTurnOnCommand(
-            group_id=light_platform_entity.group_id,
-            unique_id=light_platform_entity.unique_id,
-            brightness=brightness,
-            transition=transition,
-            flash=flash,
-            effect=effect,
-            hs_color=hs_color,
-            color_temp=color_temp,
-        )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
-
-    async def group_turn_off(
-        self,
-        light_platform_entity: GroupEntity,
-        transition: int | None = None,
-        flash: bool | None = None,
-    ) -> CommandResponse:
-        """Turn off a light."""
-        if (
-            light_platform_entity is None
-            or light_platform_entity.platform != Platform.LIGHT
-        ):
-            raise ValueError(
-                "light_platform_entity must be provided and it must be a light platform entity"
-            )
-
-        command = GroupLightTurnOffCommand(
-            group_id=light_platform_entity.group_id,
+            ieee=light_platform_entity.device_ieee
+            if not isinstance(light_platform_entity, GroupEntity)
+            else None,
+            group_id=light_platform_entity.group_id
+            if isinstance(light_platform_entity, GroupEntity)
+            else None,
             unique_id=light_platform_entity.unique_id,
             transition=transition,
             flash=flash,
