@@ -167,7 +167,7 @@ class PlatformEntity(BaseEntity):
         return {
             "unique_id": self.unique_id,
             "platform": self.PLATFORM,
-            "device_ieee": self.device.ieee,
+            "device_ieee": str(self.device.ieee),
             "endpoint_id": self.endpoint.id,
         }
 
