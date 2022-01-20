@@ -709,7 +709,7 @@ class MoesThermostat(Thermostat):
         """Return only the heat mode, because the device can't be turned off."""
         return (HVACMode.HEAT,)
 
-    async def cluster_handler_attribute_updated(self, record):
+    async def handle_cluster_handler_attribute_updated(self, record):
         """Handle attribute update from device."""
         if record.attr_name == "operation_preset":
             if record.value == 0:
@@ -726,7 +726,7 @@ class MoesThermostat(Thermostat):
                 self._preset = Preset.BOOST
             if record.value == 6:
                 self._preset = Preset.COMPLEX
-        await super().cluster_handler_attribute_updated(record)
+        await super().handle_cluster_handler_attribute_updated(record)
 
     async def async_preset_handler(self, preset: str, enable: bool = False) -> bool:
         """Set the preset mode."""
@@ -796,7 +796,7 @@ class BecaThermostat(Thermostat):
         """Return only the heat mode, because the device can't be turned off."""
         return (HVACMode.HEAT,)
 
-    async def cluster_handler_attribute_updated(self, record) -> None:
+    async def handle_cluster_handler_attribute_updated(self, record) -> None:
         """Handle attribute update from device."""
         if record.attr_name == "operation_preset":
             if record.value == 0:
@@ -811,7 +811,7 @@ class BecaThermostat(Thermostat):
                 self._preset = Preset.BOOST
             if record.value == 7:
                 self._preset = Preset.TEMP_MANUAL
-        await super().cluster_handler_attribute_updated(record)
+        await super().handle_cluster_handler_attribute_updated(record)
 
     async def async_preset_handler(self, preset: str, enable: bool = False) -> bool:
         """Set the preset mode."""
