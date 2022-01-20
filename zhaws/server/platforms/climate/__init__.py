@@ -13,7 +13,10 @@ from zhaws.backports.enum import StrEnum
 from zhaws.server.decorators import periodic
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
-from zhaws.server.zigbee.cluster import CLUSTER_HANDLER_EVENT
+from zhaws.server.zigbee.cluster import (
+    CLUSTER_HANDLER_EVENT,
+    ClusterAttributeUpdatedEvent,
+)
 from zhaws.server.zigbee.cluster.const import (
     CLUSTER_HANDLER_FAN,
     CLUSTER_HANDLER_THERMOSTAT,
@@ -437,10 +440,12 @@ class Thermostat(PlatformEntity):
             return self.DEFAULT_MIN_TEMP
         return round(min(temps) / ZCL_TEMP, 1)
 
-    async def handle_cluster_handler_attribute_updated(self, record) -> None:
+    async def handle_cluster_handler_attribute_updated(
+        self, event: ClusterAttributeUpdatedEvent
+    ) -> None:
         """Handle attribute update from device."""
         if (
-            record.attr_name in (ATTR_OCCP_COOL_SETPT, ATTR_OCCP_HEAT_SETPT)
+            event.name in (ATTR_OCCP_COOL_SETPT, ATTR_OCCP_HEAT_SETPT)
             and self.preset_mode == Preset.AWAY
         ):
             # occupancy attribute is an unreportable attribute, but if we get
@@ -449,7 +454,7 @@ class Thermostat(PlatformEntity):
             if await self._thermostat_cluster_handler.get_occupancy() is True:
                 self._preset = Preset.NONE
 
-        self.debug("Attribute '%s' = %s update", record.attr_name, record.value)
+        self.debug("Attribute '%s' = %s update", event.name, event.value)
         self.send_state_changed_event()
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
@@ -709,24 +714,26 @@ class MoesThermostat(Thermostat):
         """Return only the heat mode, because the device can't be turned off."""
         return (HVACMode.HEAT,)
 
-    async def handle_cluster_handler_attribute_updated(self, record):
+    async def handle_cluster_handler_attribute_updated(
+        self, event: ClusterAttributeUpdatedEvent
+    ) -> None:
         """Handle attribute update from device."""
-        if record.attr_name == "operation_preset":
-            if record.value == 0:
+        if event.name == "operation_preset":
+            if event.value == 0:
                 self._preset = Preset.AWAY
-            if record.value == 1:
+            if event.value == 1:
                 self._preset = Preset.SCHEDULE
-            if record.value == 2:
+            if event.value == 2:
                 self._preset = Preset.NONE
-            if record.value == 3:
+            if event.value == 3:
                 self._preset = Preset.COMFORT
-            if record.value == 4:
+            if event.value == 4:
                 self._preset = Preset.ECO
-            if record.value == 5:
+            if event.value == 5:
                 self._preset = Preset.BOOST
-            if record.value == 6:
+            if event.value == 6:
                 self._preset = Preset.COMPLEX
-        await super().handle_cluster_handler_attribute_updated(record)
+        await super().handle_cluster_handler_attribute_updated(event)
 
     async def async_preset_handler(self, preset: str, enable: bool = False) -> bool:
         """Set the preset mode."""
@@ -796,22 +803,24 @@ class BecaThermostat(Thermostat):
         """Return only the heat mode, because the device can't be turned off."""
         return (HVACMode.HEAT,)
 
-    async def handle_cluster_handler_attribute_updated(self, record) -> None:
+    async def handle_cluster_handler_attribute_updated(
+        self, event: ClusterAttributeUpdatedEvent
+    ) -> None:
         """Handle attribute update from device."""
-        if record.attr_name == "operation_preset":
-            if record.value == 0:
+        if event.name == "operation_preset":
+            if event.value == 0:
                 self._preset = Preset.AWAY
-            if record.value == 1:
+            if event.value == 1:
                 self._preset = Preset.SCHEDULE
-            if record.value == 2:
+            if event.value == 2:
                 self._preset = Preset.NONE
-            if record.value == 4:
+            if event.value == 4:
                 self._preset = Preset.ECO
-            if record.value == 5:
+            if event.value == 5:
                 self._preset = Preset.BOOST
-            if record.value == 7:
+            if event.value == 7:
                 self._preset = Preset.TEMP_MANUAL
-        await super().handle_cluster_handler_attribute_updated(record)
+        await super().handle_cluster_handler_attribute_updated(event)
 
     async def async_preset_handler(self, preset: str, enable: bool = False) -> bool:
         """Set the preset mode."""
