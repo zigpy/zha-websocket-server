@@ -8,6 +8,10 @@ from typing import TYPE_CHECKING, Any, Dict, Final, Union
 
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
+from zhaws.server.zigbee.cluster import (
+    CLUSTER_HANDLER_EVENT,
+    ClusterAttributeUpdatedEvent,
+)
 from zhaws.server.zigbee.cluster.const import CLUSTER_HANDLER_FAN
 
 if TYPE_CHECKING:
@@ -140,8 +144,11 @@ class BaseFan(PlatformEntity):
     async def _async_set_fan_mode(self, fan_mode: int) -> None:
         """Set the fan mode for the fan."""
 
-    def async_set_state(self, attr_id: int, attr_name: str, value: Any) -> None:
+    def handle_cluster_handler_attribute_updated(
+        self, event: ClusterAttributeUpdatedEvent
+    ) -> None:
         """Handle state update from cluster handler."""
+        self.send_state_changed_event()
 
     def to_json(self) -> dict:
         """Return a JSON representation of the binary sensor."""
@@ -168,7 +175,9 @@ class Fan(BaseFan):
         self._fan_cluster_handler: ClusterHandler = self.cluster_handlers[
             CLUSTER_HANDLER_FAN
         ]
-        self._fan_cluster_handler.add_listener(self)
+        self._fan_cluster_handler.on_event(
+            CLUSTER_HANDLER_EVENT, self._handle_event_protocol
+        )
 
     @property
     def percentage(self) -> Union[int, None]:

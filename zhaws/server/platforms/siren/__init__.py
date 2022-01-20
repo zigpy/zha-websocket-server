@@ -98,7 +98,6 @@ class Siren(PlatformEntity):
         self._cluster_handler: ClusterHandler = cluster_handlers[0]
         self._attr_is_on: bool = False
         self._off_listener: asyncio.TimerHandle | None = None
-        self._cluster_handler.add_listener(self)
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on siren."""

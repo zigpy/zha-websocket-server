@@ -10,12 +10,17 @@ from zigpy.zcl.foundation import Status
 
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
+from zhaws.server.zigbee.cluster import (
+    CLUSTER_HANDLER_EVENT,
+    ClusterAttributeUpdatedEvent,
+)
 from zhaws.server.zigbee.cluster.const import (
     CLUSTER_HANDLER_COVER,
     CLUSTER_HANDLER_LEVEL,
     CLUSTER_HANDLER_ON_OFF,
     CLUSTER_HANDLER_SHADE,
 )
+from zhaws.server.zigbee.cluster.general import LevelChangeEvent
 
 if TYPE_CHECKING:
     from zhaws.server.zigbee.cluster import ClusterHandler
@@ -57,7 +62,9 @@ class Cover(PlatformEntity):
         ]
         self._current_position = None
         self._state = None
-        if self._cover_cluster_handler:
+        if (
+            self._cover_cluster_handler
+        ):  # TODO this should brobably be changed to raise if None
             self._current_position = 100 - self._cover_cluster_handler.cluster.get(
                 "current_position_lift_percentage"
             )
@@ -65,7 +72,9 @@ class Cover(PlatformEntity):
                 self._state = STATE_CLOSED
             elif self._current_position == 100:
                 self._state = STATE_OPEN
-        self._cover_cluster_handler.add_listener(self)
+        self._cover_cluster_handler.on_event(
+            CLUSTER_HANDLER_EVENT, self._handle_event_protocol
+        )
 
     @property
     def is_closed(self) -> bool | None:
@@ -91,12 +100,12 @@ class Cover(PlatformEntity):
         """
         return self._current_position
 
-    def cluster_handler_attribute_updated(
-        self, attr_id: int, attr_name: str, value: Any
+    def handle_cluster_handler_attribute_updated(
+        self, event: ClusterAttributeUpdatedEvent
     ) -> None:
         """Handle position update from cluster handler."""
-        _LOGGER.debug("setting position: %s", value)
-        self._current_position = 100 - value
+        _LOGGER.debug("setting position: %s", event.value)
+        self._current_position = 100 - event.value
         if self._current_position == 0:
             self._state = STATE_CLOSED
         elif self._current_position == 100:
@@ -211,8 +220,12 @@ class Shade(PlatformEntity):
         position = self._level_cluster_handler.cluster.get("current_level")
         position = max(0, min(255, position))
         self._position: Union[int, None] = int(position * 100 / 255)
-        self._on_off_cluster_handler.add_listener(self)
-        self._level_cluster_handler.add_listener(self)
+        self._on_off_cluster_handler.on_event(
+            CLUSTER_HANDLER_EVENT, self._handle_event_protocol
+        )
+        self._level_cluster_handler.on_event(
+            CLUSTER_HANDLER_EVENT, self._handle_event_protocol
+        )
 
     @property
     def current_cover_position(self) -> int | None:
@@ -228,16 +241,16 @@ class Shade(PlatformEntity):
             return None
         return not self._is_open
 
-    def cluster_handler_attribute_updated(
-        self, attr_id: int, attr_name: str, value: bool
+    def handle_cluster_handler_attribute_updated(
+        self, event: ClusterAttributeUpdatedEvent
     ) -> None:
         """Set open/closed state."""
-        self._is_open = bool(value)
+        self._is_open = bool(event.value)
         self.send_state_changed_event()
 
-    def cluster_handler_set_level(self, value: int) -> None:
+    def handle_cluster_handler_set_level(self, event: LevelChangeEvent) -> None:
         """Set the reported position."""
-        value = max(0, min(255, value))
+        value = max(0, min(255, event.level))
         self._position = int(value * 100 / 255)
         self.send_state_changed_event()
 

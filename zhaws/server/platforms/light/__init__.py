@@ -12,12 +12,17 @@ from zhaws.server.decorators import periodic
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhaws.server.platforms.util import color as color_util
+from zhaws.server.zigbee.cluster import (
+    CLUSTER_HANDLER_EVENT,
+    ClusterAttributeUpdatedEvent,
+)
 from zhaws.server.zigbee.cluster.const import (
     CLUSTER_HANDLER_COLOR,
     CLUSTER_HANDLER_IDENTIFY,
     CLUSTER_HANDLER_LEVEL,
     CLUSTER_HANDLER_ON_OFF,
 )
+from zhaws.server.zigbee.cluster.general import LevelChangeEvent
 
 if TYPE_CHECKING:
     from zhaws.server.zigbee.cluster import ClusterHandler
@@ -172,13 +177,13 @@ class BaseLight(PlatformEntity):
         """Return the warmest color_temp that this light supports."""
         return self._max_mireds
 
-    def cluster_handler_set_level(self, value: int) -> None:
+    def handle_cluster_handler_set_level(self, event: LevelChangeEvent) -> None:
         """Set the brightness of this light between 0..254.
         brightness level 255 is a special value instructing the device to come
         on at `on_level` Zigbee attribute value, regardless of the last set
         level
         """
-        value = max(0, min(254, value))
+        value = max(0, min(254, event.level))
         self._brightness = value
         self.send_state_changed_event()
 
@@ -421,8 +426,14 @@ class Light(BaseLight):
         )
         """
 
-        self._on_off_cluster_handler.add_listener(self)
-        self._level_cluster_handler.add_listener(self)
+        self._on_off_cluster_handler.on_event(
+            CLUSTER_HANDLER_EVENT, self._handle_event_protocol
+        )
+
+        if self._level_cluster_handler:
+            self._level_cluster_handler.on_event(
+                CLUSTER_HANDLER_EVENT, self._handle_event_protocol
+            )
 
         @periodic(self._REFRESH_INTERVAL)
         async def _refresh() -> None:
@@ -441,12 +452,12 @@ class Light(BaseLight):
         )
         """
 
-    def cluster_handler_attribute_updated(
-        self, attr_id: int, attr_name: str, value: Any
+    def handle_cluster_handler_attribute_updated(
+        self, event: ClusterAttributeUpdatedEvent
     ) -> None:
         """Set the state."""
-        self._state = bool(value)
-        if value:
+        self._state = bool(event.value)
+        if event.value:
             self._off_brightness = None
         self.send_state_changed_event()
 

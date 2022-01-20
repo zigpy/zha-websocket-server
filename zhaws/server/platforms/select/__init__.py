@@ -49,7 +49,6 @@ class EnumSelect(PlatformEntity):
                 last_state.state.replace(" ", "_")
             ]
         """
-        self._cluster_handler.add_listener(self)
 
     @property
     def current_option(self) -> Union[str, None]:

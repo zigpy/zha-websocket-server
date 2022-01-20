@@ -8,8 +8,8 @@ from typing import Annotated, Any, Literal, Optional, Union
 
 from pydantic.fields import Field
 
-from zhaws.client.event import EventBase
-from zhaws.client.model import BaseModel
+from zhaws.event import EventBase
+from zhaws.model import BaseModel
 
 
 class BaseEventedModel(EventBase, BaseModel):

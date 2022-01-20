@@ -4,12 +4,16 @@ from __future__ import annotations
 import asyncio
 import functools
 import time
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from zhaws.server.decorators import periodic
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhaws.server.platforms.sensor import Battery
+from zhaws.server.zigbee.cluster import (
+    CLUSTER_HANDLER_EVENT,
+    ClusterAttributeUpdatedEvent,
+)
 from zhaws.server.zigbee.cluster.const import CLUSTER_HANDLER_POWER_CONFIGURATION
 
 if TYPE_CHECKING:
@@ -44,7 +48,9 @@ class DeviceTracker(PlatformEntity):
         self._keepalive_interval: int = 60
         self._should_poll: bool = True
         self._battery_level: float | None = None
-        self._battery_cluster_handler.add_listener(self)
+        self._battery_cluster_handler.on_event(
+            CLUSTER_HANDLER_EVENT, self._handle_event_protocol
+        )
         self._cancel_refresh_handle = asyncio.create_task(self._refresh())
 
     async def async_update(self) -> None:
@@ -71,15 +77,15 @@ class DeviceTracker(PlatformEntity):
         """Return true if the device is connected to the network."""
         return self._connected
 
-    def cluster_handler_attribute_updated(
-        self, attr_id: int, attr_name: str, value: Any
+    def handle_cluster_handler_attribute_updated(
+        self, event: ClusterAttributeUpdatedEvent
     ) -> None:
         """Handle tracking."""
-        if attr_name != "battery_percentage_remaining":
+        if event.name != "battery_percentage_remaining":
             return
-        self.debug("battery_percentage_remaining updated: %s", value)
+        self.debug("battery_percentage_remaining updated: %s", event.value)
         self._connected = True
-        self._battery_level = Battery.formatter(value)
+        self._battery_level = Battery.formatter(event.value)
         self.send_state_changed_event()
 
     @property

@@ -3,17 +3,19 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Coroutine
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import zigpy.exceptions
 from zigpy.zcl import Cluster as ZigpyClusterType
 from zigpy.zcl.clusters import general
 from zigpy.zcl.foundation import Status
 
+from zhaws.model import BaseEvent
 from zhaws.server.zigbee import registries
 from zhaws.server.zigbee.cluster import (
-    SIGNAL_ATTR_UPDATED,
+    CLUSTER_HANDLER_EVENT,
     ClientClusterHandler,
+    ClusterAttributeUpdatedEvent,
     ClusterHandler,
 )
 from zhaws.server.zigbee.cluster.const import (
@@ -26,6 +28,14 @@ from zhaws.server.zigbee.cluster.util import parse_and_log_command
 
 if TYPE_CHECKING:
     from zhaws.server.zigbee.endpoint import Endpoint
+
+
+class LevelChangeEvent(BaseEvent):
+    """Event to signal that a cluster attribute has been updated."""
+
+    level: int
+    event_type: Literal["cluster_handler_event"] = "cluster_handler_event"
+    event: Literal["cluster_handler_move_level", "cluster_handler_set_level"]
 
 
 @registries.CLUSTER_HANDLER_REGISTRY.register(general.Alarms.cluster_id)
@@ -243,7 +253,13 @@ class LevelControlClusterHandler(ClusterHandler):
 
     def dispatch_level_change(self, command: str, level: int) -> None:
         """Dispatch level change."""
-        self.listener_event(f"cluster_handler_{command}", level)
+        self.emit(
+            CLUSTER_HANDLER_EVENT,
+            LevelChangeEvent(
+                level=level,
+                event=f"cluster_handler_{command}",
+            ),
+        )
 
 
 @registries.CLUSTER_HANDLER_REGISTRY.register(general.MultistateInput.cluster_id)
@@ -324,11 +340,13 @@ class OnOffClusterHandler(ClusterHandler):
     def attribute_updated(self, attrid: int, value: Any) -> None:
         """Handle attribute updates on this cluster."""
         if attrid == self.ON_OFF:
-            self.listener_event(
-                f"cluster_handler_{SIGNAL_ATTR_UPDATED}",
-                attrid,
-                "on_off",
-                value,
+            self.emit(
+                CLUSTER_HANDLER_EVENT,
+                ClusterAttributeUpdatedEvent(
+                    id=attrid,
+                    name="on_off",
+                    value=value,
+                ),
             )
             self._state = bool(value)
 

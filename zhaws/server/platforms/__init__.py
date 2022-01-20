@@ -6,6 +6,7 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, Any, Type, Union
 
+from zhaws.event import EventBase
 from zhaws.server.const import EVENT, EVENT_TYPE, EventTypes, PlatformEntityEvents
 from zhaws.server.platforms.registries import Platform
 
@@ -19,7 +20,7 @@ from zhaws.server.util import LogMixin
 _LOGGER = logging.getLogger(__name__)
 
 
-class PlatformEntity(LogMixin):
+class PlatformEntity(LogMixin, EventBase):
     """Class that represents an entity for a device platform."""
 
     PLATFORM: str = Platform.UNKNOWN
@@ -44,6 +45,7 @@ class PlatformEntity(LogMixin):
         device: Device,
     ):
         """Initialize the platform entity."""
+        super().__init__()
         self._unique_id: str = unique_id
         ieeetail = "".join([f"{o:02x}" for o in device.ieee[:4]])
         ch_names = ", ".join(sorted(ch.name for ch in cluster_handlers))

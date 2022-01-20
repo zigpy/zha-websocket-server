@@ -2,12 +2,16 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, Union, cast
 
 from zigpy.zcl.foundation import Status
 
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
+from zhaws.server.zigbee.cluster import (
+    CLUSTER_HANDLER_EVENT,
+    ClusterAttributeUpdatedEvent,
+)
 from zhaws.server.zigbee.cluster.const import CLUSTER_HANDLER_ON_OFF
 from zhaws.server.zigbee.cluster.general import OnOffClusterHandler
 
@@ -76,17 +80,19 @@ class Switch(BaseSwitch):
     ):
         """Initialize the switch."""
         super().__init__(unique_id, cluster_handlers, endpoint, device)
-        self._on_off_cluster_handler: OnOffClusterHandler = self.cluster_handlers[
-            CLUSTER_HANDLER_ON_OFF
-        ]
+        self._on_off_cluster_handler: OnOffClusterHandler = cast(
+            OnOffClusterHandler, self.cluster_handlers[CLUSTER_HANDLER_ON_OFF]
+        )
         self._state: bool = self._on_off_cluster_handler.cluster.get("on_off")
-        self._on_off_cluster_handler.add_listener(self)
+        self._on_off_cluster_handler.on_event(
+            CLUSTER_HANDLER_EVENT, self._handle_event_protocol
+        )
 
-    def cluster_handler_attribute_updated(
-        self, attr_id: int, attr_name: str, value: Any
+    def handle_cluster_handler_attribute_updated(
+        self, event: ClusterAttributeUpdatedEvent
     ) -> None:
         """Handle state update from cluster handler."""
-        self._state = bool(value)
+        self._state = bool(event.value)
         self.send_state_changed_event()
 
     async def async_update(self) -> None:
