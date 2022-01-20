@@ -25,10 +25,6 @@ class APICommands(StrEnum):
     LIGHT_TURN_ON = "light_turn_on"
     LIGHT_TURN_OFF = "light_turn_off"
 
-    # Group light API commands
-    GROUP_LIGHT_TURN_ON = "group_light_turn_on"
-    GROUP_LIGHT_TURN_OFF = "group_light_turn_off"
-
     # Switch API commands
     SWITCH_TURN_ON = "switch_turn_on"
     SWITCH_TURN_OFF = "switch_turn_off"
