@@ -10,7 +10,6 @@ from async_timeout import timeout
 
 from zhaws.client.client import Client
 from zhaws.client.device import Device
-from zhaws.event import EventBase
 from zhaws.client.group import Group
 from zhaws.client.helpers import attach_platform_entity_helpers
 from zhaws.client.model.commands import (
