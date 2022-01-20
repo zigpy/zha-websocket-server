@@ -97,7 +97,7 @@ class GroupMember(LogMixin):
         _LOGGER.log(level, msg, *args, **kwargs)
 
 
-class Group:
+class Group(LogMixin):
     """Representation of a Zigbee group."""
 
     def __init__(self, group: ZigpyGroup, server: Server) -> None:
@@ -208,8 +208,8 @@ class Group:
         }
         return group_info
 
-    def log(self, level: int, msg: str, *args: Any) -> None:
+    def log(self, level: int, msg: str, *args: Any, **kwargs: Any) -> None:
         """Log a message."""
         msg = f"[%s](%s): {msg}"
         args = (self.name, self.group_id) + args
-        _LOGGER.log(level, msg, *args)
+        _LOGGER.log(level, msg, *args, **kwargs)
