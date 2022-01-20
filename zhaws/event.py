@@ -47,14 +47,11 @@ class EventBase:
 
     def emit(self, event_name: str, data: BaseEvent) -> None:
         """Run all callbacks for an event."""
-        tasks = []
         for listener in self._listeners.get(event_name, []):
             if inspect.iscoroutinefunction(listener):
-                tasks.append(listener(data))
+                asyncio.create_task(listener(data))
             else:
                 listener(data)
-        if tasks:
-            asyncio.ensure_future(asyncio.gather(*tasks))
 
     def _handle_event_protocol(self, event: BaseEvent) -> None:
         """Process an event based on event protocol."""
