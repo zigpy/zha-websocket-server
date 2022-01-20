@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Any, Callable
 import zigpy.exceptions
 
 from zhaws.client.model.events import PlatformEntityEvent
-from zhaws.server.const import PlatformEntityEvents
 from zhaws.server.platforms import PlatformEntity
+from zhaws.server.platforms.model import STATE_CHANGED
 from zhaws.server.util import LogMixin
 
 if TYPE_CHECKING:
@@ -143,7 +143,7 @@ class Group(LogMixin):
         """Register a group entity."""
         self._group_entities[group_entity.unique_id] = group_entity
         self._entity_unsubs[group_entity.unique_id] = group_entity.on_event(
-            PlatformEntityEvents.PLATFORM_ENTITY_STATE_CHANGED,
+            STATE_CHANGED,
             self._maybe_update_group_members,
         )
         for platform_entity in self.get_platform_entities(group_entity.PLATFORM):
@@ -151,7 +151,7 @@ class Group(LogMixin):
                 self._entity_unsubs[
                     platform_entity.unique_id
                 ] = platform_entity.on_event(
-                    PlatformEntityEvents.PLATFORM_ENTITY_STATE_CHANGED,
+                    STATE_CHANGED,
                     group_entity.update,
                 )
 

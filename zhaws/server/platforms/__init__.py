@@ -6,9 +6,9 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, Any, Type, Union
 
-from zhaws.client.model.events import PlatformEntityEvent
 from zhaws.event import EventBase
 from zhaws.server.const import EVENT, EVENT_TYPE, EventTypes, PlatformEntityEvents
+from zhaws.server.platforms.model import STATE_CHANGED, EntityStateChangedEvent
 from zhaws.server.platforms.registries import Platform
 
 if TYPE_CHECKING:
@@ -45,6 +45,10 @@ class BaseEntity(LogMixin, EventBase):
         """Broadcast an event from this platform entity."""
 
     @abc.abstractmethod
+    def get_identifiers(self) -> dict[str, str | int]:
+        """Return a dict with the information necessary to identify this entity."""
+
+    @abc.abstractmethod
     def get_state(self) -> Union[float, bool, int, str, dict, None]:
         """Return the arguments to use in the command."""
 
@@ -59,6 +63,9 @@ class BaseEntity(LogMixin, EventBase):
                 EVENT: PlatformEntityEvents.PLATFORM_ENTITY_STATE_CHANGED,
                 EVENT_TYPE: EventTypes.PLATFORM_ENTITY_EVENT,
             }
+        )
+        self.emit(
+            STATE_CHANGED, EntityStateChangedEvent.parse_obj(self.get_identifiers())
         )
 
     def to_json(self) -> dict:
@@ -155,6 +162,15 @@ class PlatformEntity(BaseEntity):
         """Return the name of the platform entity."""
         return self._name
 
+    def get_identifiers(self) -> dict[str, str | int]:
+        """Return a dict with the information necessary to identify this entity."""
+        return {
+            "unique_id": self.unique_id,
+            "platform": self.PLATFORM,
+            "device_ieee": self.device.ieee,
+            "endpoint_id": self.endpoint.id,
+        }
+
     def send_event(self, signal: dict[str, Any]) -> None:
         """Broadcast an event from this platform entity."""
         signal["platform_entity"] = {
@@ -167,13 +183,6 @@ class PlatformEntity(BaseEntity):
         }
         _LOGGER.info("Sending event from platform entity: %s", signal)
         self.device.send_event(signal)
-        event = {}
-        event.update(signal)
-        event["state"] = self.get_state()
-        self.emit(
-            PlatformEntityEvents.PLATFORM_ENTITY_STATE_CHANGED,
-            PlatformEntityEvent.parse_obj(event),
-        )
 
     def to_json(self) -> dict:
         """Return a JSON representation of the platform entity."""
@@ -228,6 +237,14 @@ class GroupEntity(BaseEntity):
         """Return the group."""
         return self._group
 
+    def get_identifiers(self) -> dict[str, str | int]:
+        """Return a dict with the information necessary to identify this entity."""
+        return {
+            "unique_id": self.unique_id,
+            "platform": self.PLATFORM,
+            "group_id": self.group.group_id,
+        }
+
     def update(self) -> None:
         """Update the state of this group entity."""
 
@@ -243,13 +260,6 @@ class GroupEntity(BaseEntity):
         }
         _LOGGER.info("Sending event from group entity: %s", signal)
         self._group.send_event(signal)
-        event = {}
-        event.update(signal)
-        event["state"] = self.get_state()
-        self.emit(
-            PlatformEntityEvents.PLATFORM_ENTITY_STATE_CHANGED,
-            PlatformEntityEvent.parse_obj(event),
-        )
 
     def to_json(self) -> dict[str, Any]:
         """Return a JSON representation of the group."""
