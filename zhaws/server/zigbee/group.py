@@ -8,9 +8,8 @@ from typing import TYPE_CHECKING, Any, Callable
 
 import zigpy.exceptions
 
-from zhaws.client.model.events import PlatformEntityEvent
 from zhaws.server.platforms import PlatformEntity
-from zhaws.server.platforms.model import STATE_CHANGED
+from zhaws.server.platforms.model import STATE_CHANGED, EntityStateChangedEvent
 from zhaws.server.util import LogMixin
 
 if TYPE_CHECKING:
@@ -159,10 +158,10 @@ class Group(LogMixin):
         """Send an event from this group."""
         self._server.client_manager.broadcast(event)
 
-    async def _maybe_update_group_members(self, event: PlatformEntityEvent) -> None:
+    async def _maybe_update_group_members(self, event: EntityStateChangedEvent) -> None:
         """Update the state of the entities that make up the group if they are marked as should poll."""
         tasks = []
-        platform_entities = self.get_platform_entities(event.platform_entity.platform)
+        platform_entities = self.get_platform_entities(event.platform)
         for platform_entity in platform_entities:
             if platform_entity.should_poll:
                 tasks.append(platform_entity.async_update())
