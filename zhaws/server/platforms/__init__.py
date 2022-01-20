@@ -6,6 +6,7 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, Any, Type, Union
 
+from zhaws.client.model.events import PlatformEntityEvent
 from zhaws.event import EventBase
 from zhaws.server.const import EVENT, EVENT_TYPE, EventTypes, PlatformEntityEvents
 from zhaws.server.platforms.registries import Platform
@@ -166,6 +167,13 @@ class PlatformEntity(BaseEntity):
         }
         _LOGGER.info("Sending event from platform entity: %s", signal)
         self.device.send_event(signal)
+        event = {}
+        event.update(signal)
+        event["state"] = self.get_state()
+        self.emit(
+            PlatformEntityEvents.PLATFORM_ENTITY_STATE_CHANGED,
+            PlatformEntityEvent.parse_obj(event),
+        )
 
     def to_json(self) -> dict:
         """Return a JSON representation of the platform entity."""
@@ -235,6 +243,13 @@ class GroupEntity(BaseEntity):
         }
         _LOGGER.info("Sending event from group entity: %s", signal)
         self._group.send_event(signal)
+        event = {}
+        event.update(signal)
+        event["state"] = self.get_state()
+        self.emit(
+            PlatformEntityEvents.PLATFORM_ENTITY_STATE_CHANGED,
+            PlatformEntityEvent.parse_obj(event),
+        )
 
     def to_json(self) -> dict[str, Any]:
         """Return a JSON representation of the group."""

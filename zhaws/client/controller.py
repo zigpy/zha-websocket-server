@@ -101,11 +101,18 @@ class Controller(EventBase):
     def handle_platform_entity_event(self, event: PlatformEntityEvent) -> None:
         """Handle a platform_entity_event from the websocket server."""
         _LOGGER.debug("platform_entity_event: %s", event)
-        device = self.devices.get(event.device.ieee)
-        if device is None:
-            _LOGGER.warning("Received event from unknown device: %s", event)
-            return
-        entity = device.device.entities.get(event.platform_entity.unique_id)
+        if event.device:
+            device = self.devices.get(event.device.ieee)
+            if device is None:
+                _LOGGER.warning("Received event from unknown device: %s", event)
+                return
+            entity = device.device.entities.get(event.platform_entity.unique_id)
+        elif event.group:
+            group = self.groups.get(event.group.id)
+            if not group:
+                _LOGGER.warning("Received event from unknown group: %s", event)
+                return
+            entity = group.group.entities.get(event.platform_entity.unique_id)
         if entity is None:
             _LOGGER.warning("Received event for an unknown entity: %s", event)
             return

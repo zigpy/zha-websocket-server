@@ -3,7 +3,7 @@
 Events are unprompted messages from the server -> client and they contain only the data that is necessary to handle the event.
 """
 
-from typing import Annotated, Any, Literal, Union
+from typing import Annotated, Any, Literal, Optional, Union
 
 from pydantic.fields import Field
 
@@ -55,6 +55,12 @@ class MinimalClusterHandler(BaseModel):
     cluster: MinimalCluster
 
 
+class MinimalGroup(BaseModel):
+    """Minimal group model."""
+
+    id: int
+
+
 class PlatformEntityEvent(BaseEvent):
     """Platform entity event."""
 
@@ -62,8 +68,9 @@ class PlatformEntityEvent(BaseEvent):
     event_type: Literal["platform_entity_event"] = "platform_entity_event"
     event: Literal["platform_entity_state_changed"] = "platform_entity_state_changed"
     platform_entity: MinimalPlatformEntity
-    endpoint: MinimalEndpoint
-    device: MinimalDevice
+    endpoint: Optional[MinimalEndpoint]
+    device: Optional[MinimalDevice]
+    group: Optional[MinimalGroup]
     state: Any
 
 

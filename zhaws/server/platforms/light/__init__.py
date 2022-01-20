@@ -590,12 +590,15 @@ class LightGroup(GroupEntity, BaseLight):
         self.update()
         self.send_state_changed_event()
 
-    def update(self) -> None:
+    def update(self, _) -> None:
         # Query all members and determine the light group state.
+        self.warning("Updating light group state")
         previous_state = self._state
         all_states = [
-            entity.get_state() for entity in self._group.group_entities.values()
+            entity.get_state()
+            for entity in self._group.get_platform_entities(self.PLATFORM)
         ]
+        self.warning("All states: %s", all_states)
         on_states = [state for state in all_states if state["on"]]
 
         self._state = len(on_states) > 0
