@@ -4,10 +4,12 @@ from __future__ import annotations
 import asyncio
 import collections
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable
 
 import zigpy.exceptions
 
+from zhaws.client.model.events import PlatformEntityEvent
+from zhaws.server.const import PlatformEntityEvents
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.util import LogMixin
 
@@ -104,7 +106,8 @@ class Group(LogMixin):
         """Initialize the group."""
         self._group: ZigpyGroup = group
         self._server: Server = server
-        self._platform_entities: dict[str, GroupEntity] = {}
+        self._group_entities: dict[str, GroupEntity] = {}
+        self._entity_unsubs: dict[str, Callable] = {}
 
     @property
     def group_id(self) -> int:
@@ -117,9 +120,9 @@ class Group(LogMixin):
         return self._group.name
 
     @property
-    def platform_entities(self) -> dict[str, GroupEntity]:
+    def group_entities(self) -> dict[str, GroupEntity]:
         """Return the platform entities of the group."""
-        return self._platform_entities
+        return self._group_entities
 
     @property
     def zigpy_group(self) -> ZigpyGroup:
@@ -136,9 +139,35 @@ class Group(LogMixin):
             if member_ieee in devices
         ]
 
+    def register_group_entity(self, group_entity: GroupEntity) -> None:
+        """Register a group entity."""
+        self._group_entities[group_entity.unique_id] = group_entity
+        self._entity_unsubs[group_entity.unique_id] = group_entity.on_event(
+            PlatformEntityEvents.PLATFORM_ENTITY_STATE_CHANGED,
+            self._maybe_update_group_members,
+        )
+        for platform_entity in self.get_platform_entities(group_entity.PLATFORM):
+            if platform_entity.unique_id not in self._entity_unsubs:
+                self._entity_unsubs[
+                    platform_entity.unique_id
+                ] = platform_entity.on_event(
+                    PlatformEntityEvents.PLATFORM_ENTITY_STATE_CHANGED,
+                    group_entity.update,
+                )
+
     def send_event(self, event: dict[str, Any]) -> None:
         """Send an event from this group."""
         self._server.client_manager.broadcast(event)
+
+    async def _maybe_update_group_members(self, event: PlatformEntityEvent) -> None:
+        """Update the state of the entities that make up the group if they are marked as should poll."""
+        tasks = []
+        platform_entities = self.get_platform_entities(event.platform_entity.platform)
+        for platform_entity in platform_entities:
+            if platform_entity.should_poll:
+                tasks.append(platform_entity.async_update())
+        if tasks:
+            await asyncio.gather(*tasks)
 
     async def async_add_members(self, members: list[GroupMemberReference]) -> None:
         """Add members to this group."""
@@ -208,7 +237,7 @@ class Group(LogMixin):
         }
         group_info["entities"] = {
             unique_id: entity.to_json()
-            for unique_id, entity in self._platform_entities.items()
+            for unique_id, entity in self._group_entities.items()
         }
         return group_info
 

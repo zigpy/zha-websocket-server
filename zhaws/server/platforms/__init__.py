@@ -34,6 +34,11 @@ class BaseEntity(LogMixin, EventBase):
         super().__init__()
         self._unique_id: str = unique_id
 
+    @property
+    def unique_id(self) -> str:
+        """Return the unique id."""
+        return self._unique_id
+
     @abc.abstractmethod
     def send_event(self, signal: dict[str, Any]) -> None:
         """Broadcast an event from this platform entity."""
@@ -41,6 +46,9 @@ class BaseEntity(LogMixin, EventBase):
     @abc.abstractmethod
     def get_state(self) -> Union[float, bool, int, str, dict, None]:
         """Return the arguments to use in the command."""
+
+    async def async_update(self) -> None:
+        """Retrieve latest state."""
 
     def send_state_changed_event(self) -> None:
         """Send the state of this platform entity."""
@@ -132,11 +140,6 @@ class PlatformEntity(BaseEntity):
         return self._endpoint
 
     @property
-    def unique_id(self) -> str:
-        """Return the unique id."""
-        return self._unique_id
-
-    @property
     def should_poll(self) -> bool:
         """Return True if we need to poll for state changes."""
         return False
@@ -200,7 +203,7 @@ class GroupEntity(BaseEntity):
         self._zigpy_group: Group = group
         self._name: str = f"{group.name}_0x{group.group_id:04x}"
         self._group: Group = group
-        self._group.platform_entities[self._unique_id] = self
+        self._group.register_group_entity(self)
 
     @property
     def name(self) -> str:
@@ -216,6 +219,9 @@ class GroupEntity(BaseEntity):
     def group(self) -> Group:
         """Return the group."""
         return self._group
+
+    def update(self) -> None:
+        """Update the state of this group entity."""
 
     def send_event(self, signal: dict[str, Any]) -> None:
         """Broadcast an event from this group entity."""

@@ -95,7 +95,7 @@ async def execute_group_entity_command(
     """Get the group entity and execute a command."""
     try:
         group = server.controller.get_group(request_message["group_id"])
-        group_entity = group.platform_entities.get(request_message[ATTR_UNIQUE_ID])
+        group_entity = group.group_entities.get(request_message[ATTR_UNIQUE_ID])
     except ValueError as err:
         _LOGGER.exception("Error executing command: %s", command, exc_info=err)
         client.send_result_error(

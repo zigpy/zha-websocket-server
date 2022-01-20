@@ -590,17 +590,18 @@ class LightGroup(GroupEntity, BaseLight):
         self.update()
         self.send_state_changed_event()
 
-    def send_event(self, signal: dict[str, Any]) -> None:
-        """Broadcast an event from this platform entity."""
-
     def update(self) -> None:
         # Query all members and determine the light group state.
+        previous_state = self._state
         all_states = [
-            entity.get_state() for entity in self._group.platform_entities.values()
+            entity.get_state() for entity in self._group.group_entities.values()
         ]
         on_states = [state for state in all_states if state["on"]]
 
         self._state = len(on_states) > 0
+
+        if self._state != previous_state:
+            self.send_state_changed_event()
         """TODO
         self._available = any(state.state != STATE_UNAVAILABLE for state in states)
 
