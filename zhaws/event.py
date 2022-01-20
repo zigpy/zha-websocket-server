@@ -54,7 +54,7 @@ class EventBase:
             else:
                 listener(data)
         if tasks:
-            asyncio.create_task(asyncio.gather(*tasks))
+            asyncio.ensure_future(asyncio.gather(*tasks))
 
     def _handle_event_protocol(self, event: BaseEvent) -> None:
         """Process an event based on event protocol."""
