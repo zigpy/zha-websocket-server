@@ -65,7 +65,7 @@ class Controller:
     def is_running(self) -> bool:
         """Return true if the controller is running."""
         return (
-            self._application_controller
+            self._application_controller is not None
             and self._application_controller.is_controller_running
         )
 
@@ -88,6 +88,11 @@ class Controller:
     def devices(self) -> dict[EUI64, Device]:
         """Get devices."""
         return self._devices
+
+    @property
+    def groups(self) -> dict[int, Group]:
+        """Get groups."""
+        return self._groups
 
     async def start_network(self, configuration: dict) -> None:
         """Start the Zigbee network."""
@@ -143,18 +148,6 @@ class Controller:
         """Stop the Zigbee network."""
         await self._application_controller.pre_shutdown()
 
-    def get_devices(self) -> dict[str, Any]:
-        """Get Zigbee devices."""
-        # TODO temporary to test response
-        return {
-            str(ieee): device.zha_device_info for ieee, device in self._devices.items()
-        }
-
-    def get_groups_json(self) -> dict[int, Any]:
-        """Get Zigbee devices."""
-        # TODO temporary to test response
-        return {id: group.to_json() for id, group in self._groups.items()}
-
     def get_device(self, ieee: Union[EUI64, str]) -> Device:
         """Get a device by ieee address."""
         if isinstance(ieee, str):
@@ -170,10 +163,6 @@ class Controller:
         if not group:
             raise ValueError(f"Group {str(group_id)} not found")
         return group
-
-    def get_groups(self) -> dict[int, Group]:
-        """Get Zigbee groups."""
-        return self._groups
 
     def device_joined(self, device: ZigpyDeviceType) -> None:
         """Handle device joined.
@@ -245,7 +234,6 @@ class Controller:
     def group_member_removed(self, zigpy_group: ZigpyGroup, endpoint: Endpoint) -> None:
         """Handle zigpy group member removed event."""
         # need to handle endpoint correctly on groups
-        # TODO handle entity change unsubs and sub for new events
         group = self.get_or_create_group(zigpy_group)
         group.info("group_member_removed - endpoint: %s", endpoint)
         message: dict[str, Any] = {"group": group.to_json()}
@@ -257,7 +245,6 @@ class Controller:
     def group_member_added(self, zigpy_group: ZigpyGroup, endpoint: Endpoint) -> None:
         """Handle zigpy group member added event."""
         # need to handle endpoint correctly on groups
-        # TODO handle entity change unsubs and sub for new events
         group = self.get_or_create_group(zigpy_group)
         group.info("group_member_added - endpoint: %s", endpoint)
         message: dict[str, Any] = {"group": group.to_json()}
@@ -265,7 +252,7 @@ class Controller:
         message[EVENT_TYPE] = EventTypes.CONTROLLER_EVENT
         message[EVENT] = ControllerEvents.GROUP_MEMBER_ADDED
         self.server.client_manager.broadcast(message)
-        if len(group.members) == 2:
+        if len(group.members) > 1:
             # we need to do this because there wasn't already a group entity to remove and re-add
             discovery.GROUP_PROBE.discover_group_entities(group)
 

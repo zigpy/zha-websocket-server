@@ -83,9 +83,12 @@ async def stop_network(server: Server, client: Client, message: dict[str, Any]) 
 @decorators.async_response
 async def get_devices(server: Server, client: Client, message: dict[str, Any]) -> None:
     """Get Zigbee devices."""
-    devices: dict[str, Any] = server.controller.get_devices()
-    _LOGGER.info("devices: %s", devices)
-    client.send_result_success(message, {DEVICES: devices})
+    response_devices: dict[str, dict] = {
+        str(ieee): device.zha_device_info
+        for ieee, device in server.controller.devices.items()
+    }
+    _LOGGER.info("devices: %s", response_devices)
+    client.send_result_success(message, {DEVICES: response_devices})
 
 
 @decorators.websocket_command(
@@ -96,7 +99,9 @@ async def get_devices(server: Server, client: Client, message: dict[str, Any]) -
 @decorators.async_response
 async def get_groups(server: Server, client: Client, message: dict[str, Any]) -> None:
     """Get Zigbee groups."""
-    groups: dict[int, Any] = server.controller.get_groups_json()
+    groups: dict[int, Any] = {
+        id: group.to_json() for id, group in server.controller.groups.items()
+    }
     _LOGGER.info("groups: %s", groups)
     client.send_result_success(message, {GROUPS: groups})
 
@@ -204,7 +209,9 @@ async def remove_groups(
         await asyncio.gather(*tasks)
     else:
         await controller.async_remove_zigpy_group(group_ids[0])
-    groups: dict[int, Any] = server.controller.get_groups_json()
+    groups: dict[int, Any] = {
+        id: group.to_json() for id, group in server.controller.groups.items()
+    }
     client.send_result_success(message, {GROUPS: groups})
 
 
@@ -225,8 +232,8 @@ async def add_group_members(
     members = cast(list[GroupMemberReference], message.get(ATTR_MEMBERS))
     group = None
 
-    if group_id in controller.get_groups():
-        group = controller.get_groups()[group_id]
+    if group_id in controller.groups:
+        group = controller.groups[group_id]
         await group.async_add_members(members)
     if not group:
         client.send_result_error(message, "G1", "ZHA Group not found")
@@ -252,8 +259,8 @@ async def remove_group_members(
     members = cast(list[GroupMemberReference], message.get(ATTR_MEMBERS))
     group = None
 
-    if group_id in controller.get_groups():
-        group = controller.get_groups()[group_id]
+    if group_id in controller.groups:
+        group = controller.groups[group_id]
         await group.async_remove_members(members)
     if not group:
         client.send_result_error(message, "G1", "ZHA Group not found")

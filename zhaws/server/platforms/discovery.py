@@ -267,7 +267,7 @@ class GroupProbe:
         """Reprobe a group for entities after its members change."""
         assert self._server is not None
         controller: Controller = self._server.controller
-        if (group := controller.get_groups().get(group_id)) is None:
+        if (group := controller.groups.get(group_id)) is None:
             return
         self.discover_group_entities(group)
 
