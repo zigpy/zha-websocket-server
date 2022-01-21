@@ -6,13 +6,17 @@ import functools
 import math
 from typing import TYPE_CHECKING, Any, Dict, Final, Union
 
-from zhaws.server.platforms import PlatformEntity
+from zigpy.exceptions import ZigbeeException
+from zigpy.zcl.clusters import hvac
+
+from zhaws.server.platforms import GroupEntity, PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhaws.server.zigbee.cluster import (
     CLUSTER_HANDLER_EVENT,
     ClusterAttributeUpdatedEvent,
 )
 from zhaws.server.zigbee.cluster.const import CLUSTER_HANDLER_FAN
+from zhaws.server.zigbee.group import Group
 
 if TYPE_CHECKING:
     from zhaws.server.zigbee.cluster import ClusterHandler
@@ -20,6 +24,7 @@ if TYPE_CHECKING:
     from zhaws.server.zigbee.endpoint import Endpoint
 
 STRICT_MATCH = functools.partial(PLATFORM_ENTITIES.strict_match, Platform.FAN)
+GROUP_MATCH = functools.partial(PLATFORM_ENTITIES.group_match, Platform.FAN)
 
 # Additional speeds in zigbee's ZCL
 # Spec is unclear as to what this value means. On King Of Fans HBUniversal
@@ -212,3 +217,71 @@ class Fan(BaseFan):
             "preset_mode": self.preset_mode,
             "percentage": self.percentage,
         }
+
+
+@GROUP_MATCH()
+class FanGroup(GroupEntity, BaseFan):
+    """Representation of a fan group."""
+
+    def __init__(self, group: Group):
+        """Initialize a fan group."""
+        super().__init__(group)
+        self._fan_channel = group.zigpy_group.endpoint[hvac.Fan.cluster_id]
+        self._percentage = None
+        self._preset_mode = None
+
+    @property
+    def percentage(self) -> int | None:
+        """Return the current speed percentage."""
+        return self._percentage
+
+    @property
+    def preset_mode(self) -> str | None:
+        """Return the current preset mode."""
+        return self._preset_mode
+
+    def get_state(self) -> Union[str, Dict, None]:
+        return {
+            "preset_mode": self.preset_mode,
+            "percentage": self.percentage,
+        }
+
+    async def _async_set_fan_mode(self, fan_mode: int) -> None:
+        """Set the fan mode for the group."""
+        try:
+            await self._fan_channel.write_attributes({"fan_mode": fan_mode})
+        except ZigbeeException as ex:
+            self.error("Could not set fan mode: %s", ex)
+        self.update()
+
+    def update(self, _: Any = None) -> None:
+        """Attempt to retrieve on off state from the fan."""
+        self.debug("Updating fan group entity state")
+        previous_state = self.get_state()
+        platform_entities = self._group.get_platform_entities(self.PLATFORM)
+        all_entities = [entity.to_json() for entity in platform_entities]
+        all_states = [entity["state"] for entity in all_entities]
+        self.debug(
+            "All platform entity states for group entity members: %s", all_states
+        )
+
+        self._available = any(entity.available for entity in platform_entities)
+        percentage_states: list[dict] = [
+            state for state in all_states if state.get(ATTR_PERCENTAGE)
+        ]
+        preset_mode_states: list[dict] = [
+            state for state in all_states if state.get(ATTR_PRESET_MODE)
+        ]
+
+        if percentage_states:
+            self._percentage = percentage_states[0][ATTR_PERCENTAGE]
+            self._preset_mode = None
+        elif preset_mode_states:
+            self._preset_mode = preset_mode_states[0][ATTR_PRESET_MODE]
+            self._percentage = None
+        else:
+            self._percentage = None
+            self._preset_mode = None
+
+        if previous_state != self.get_state():
+            self.send_state_changed_event()
