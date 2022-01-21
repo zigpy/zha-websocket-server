@@ -170,6 +170,7 @@ class Group(LogMixin):
 
     async def async_add_members(self, members: list[GroupMemberReference]) -> None:
         """Add members to this group."""
+        # TODO handle entity change unsubs and sub for new events
         devices: dict[str, Device] = self._server.controller.get_devices()
         if len(members) > 1:
             tasks = []
@@ -188,6 +189,7 @@ class Group(LogMixin):
 
     async def async_remove_members(self, members: list[GroupMemberReference]) -> None:
         """Remove members from this group."""
+        # TODO handle entity change unsubs and sub for new events
         devices: dict[str, Device] = self._server.controller.get_devices()
         if len(members) > 1:
             tasks = []

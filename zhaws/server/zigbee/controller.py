@@ -30,7 +30,7 @@ from zhaws.server.const import (
     MessageTypes,
 )
 from zhaws.server.platforms import discovery
-from zhaws.server.zigbee.group import Group
+from zhaws.server.zigbee.group import Group, GroupMemberReference
 
 if TYPE_CHECKING:
     from zhaws.server.websocket.server import Server
@@ -244,15 +244,52 @@ class Controller:
 
     def group_member_removed(self, zigpy_group: ZigpyGroup, endpoint: Endpoint) -> None:
         """Handle zigpy group member removed event."""
+        # need to handle endpoint correctly on groups
+        # TODO handle entity change unsubs and sub for new events
+        group = self.get_or_create_group(zigpy_group)
+        group.info("group_member_removed - endpoint: %s", endpoint)
+        message: dict[str, Any] = {"group": group.to_json()}
+        message[MESSAGE_TYPE] = MessageTypes.EVENT
+        message[EVENT_TYPE] = EventTypes.CONTROLLER_EVENT
+        message[EVENT] = ControllerEvents.GROUP_MEMBER_REMOVED
+        self.server.client_manager.broadcast(message)
 
     def group_member_added(self, zigpy_group: ZigpyGroup, endpoint: Endpoint) -> None:
         """Handle zigpy group member added event."""
+        # need to handle endpoint correctly on groups
+        # TODO handle entity change unsubs and sub for new events
+        group = self.get_or_create_group(zigpy_group)
+        group.info("group_member_added - endpoint: %s", endpoint)
+        message: dict[str, Any] = {"group": group.to_json()}
+        message[MESSAGE_TYPE] = MessageTypes.EVENT
+        message[EVENT_TYPE] = EventTypes.CONTROLLER_EVENT
+        message[EVENT] = ControllerEvents.GROUP_MEMBER_ADDED
+        self.server.client_manager.broadcast(message)
+        if len(group.members) == 2:
+            # we need to do this because there wasn't already a group entity to remove and re-add
+            discovery.GROUP_PROBE.discover_group_entities(group)
 
     def group_added(self, zigpy_group: ZigpyGroup) -> None:
         """Handle zigpy group added event."""
+        group = self.get_or_create_group(zigpy_group)
+        group.info("group_added")
+        message: dict[str, Any] = {"group": group.to_json()}
+        message[MESSAGE_TYPE] = MessageTypes.EVENT
+        message[EVENT_TYPE] = EventTypes.CONTROLLER_EVENT
+        message[EVENT] = ControllerEvents.GROUP_ADDED
+        self.server.client_manager.broadcast(message)
 
     def group_removed(self, zigpy_group: ZigpyGroup) -> None:
         """Handle zigpy group removed event."""
+        # TODO handle entity change unsubs and sub for new events
+        group = self._groups.pop(zigpy_group.group_id, None)
+        if group is not None:
+            group.info("group_removed")
+            message: dict[str, Any] = {"group": group.to_json()}
+            message[MESSAGE_TYPE] = MessageTypes.EVENT
+            message[EVENT_TYPE] = EventTypes.CONTROLLER_EVENT
+            message[EVENT] = ControllerEvents.GROUP_REMOVED
+            self.server.client_manager.broadcast(message)
 
     async def async_device_initialized(self, device: ZigpyDeviceType) -> None:
         """Handle device joined and basic information discovered (async)."""
@@ -298,6 +335,14 @@ class Controller:
             self._devices[zigpy_device.ieee] = device
         return device
 
+    def get_or_create_group(self, zigpy_group: ZigpyGroup) -> Group:
+        """Get or create a group."""
+        group = self._groups.get(zigpy_group.group_id)
+        if group is None:
+            group = Group(zigpy_group, self.server)
+            self._groups[zigpy_group.group_id] = group
+        return group
+
     async def _async_device_joined(self, device: Device) -> None:
         device.available = True
         message: dict[str, Any] = {DEVICE: device.device_info}
@@ -327,3 +372,58 @@ class Controller:
         # force async_initialize() to fire so don't explicitly call it
         device.available = False
         device.update_available(True)
+
+    def get_group_by_name(self, group_name: str) -> Group | None:
+        """Get ZHA group by name."""
+        for group in self._groups.values():
+            if group.name == group_name:
+                return group
+        return None
+
+    async def async_create_zigpy_group(
+        self,
+        name: str,
+        members: list[GroupMemberReference],
+        group_id: int | None = None,
+    ) -> Group:
+        """Create a new Zigpy Zigbee group."""
+        # we start with two to fill any gaps from a user removing existing groups
+
+        if group_id is None:
+            group_id = 2
+            while group_id in self._groups:
+                group_id += 1
+
+        # guard against group already existing
+        if self.get_group_by_name(name) is None:
+            self.application_controller.groups.add_group(group_id, name)
+            if members is not None:
+                tasks = []
+                for member in members:
+                    _LOGGER.debug(
+                        "Adding member with IEEE: %s and endpoint ID: %s to group: %s:0x%04x",
+                        member.ieee,
+                        member.endpoint_id,
+                        name,
+                        group_id,
+                    )
+                    tasks.append(
+                        self.devices[member.ieee].async_add_endpoint_to_group(
+                            member.endpoint_id, group_id
+                        )
+                    )
+                await asyncio.gather(*tasks)
+        return self._groups[group_id]
+
+    async def async_remove_zigpy_group(self, group_id: int) -> None:
+        """Remove a Zigbee group from Zigpy."""
+        if not (group := self._groups.get(group_id)):
+            _LOGGER.debug("Group: 0x%04x could not be found", group_id)
+            return
+        if group.members:
+            tasks = []
+            for member in group.members:
+                tasks.append(member.async_remove_from_group())
+            if tasks:
+                await asyncio.gather(*tasks)
+        self.application_controller.groups.pop(group_id)
