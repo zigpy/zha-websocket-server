@@ -4,9 +4,10 @@ from __future__ import annotations
 import functools
 from typing import TYPE_CHECKING, Any, Union, cast
 
+from zigpy.zcl.clusters.general import OnOff
 from zigpy.zcl.foundation import Status
 
-from zhaws.server.platforms import PlatformEntity
+from zhaws.server.platforms import GroupEntity, PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhaws.server.zigbee.cluster import (
     CLUSTER_HANDLER_EVENT,
@@ -14,6 +15,7 @@ from zhaws.server.zigbee.cluster import (
 )
 from zhaws.server.zigbee.cluster.const import CLUSTER_HANDLER_ON_OFF
 from zhaws.server.zigbee.cluster.general import OnOffClusterHandler
+from zhaws.server.zigbee.group import Group
 
 if TYPE_CHECKING:
     from zhaws.server.zigbee.cluster import ClusterHandler
@@ -21,6 +23,7 @@ if TYPE_CHECKING:
     from zhaws.server.zigbee.endpoint import Endpoint
 
 STRICT_MATCH = functools.partial(PLATFORM_ENTITIES.strict_match, Platform.SWITCH)
+GROUP_MATCH = functools.partial(PLATFORM_ENTITIES.group_match, Platform.SWITCH)
 
 
 class BaseSwitch(PlatformEntity):
@@ -105,3 +108,31 @@ class Switch(BaseSwitch):
                 self._state = state
                 if prev_state != self._state:
                     self.send_state_changed_event()
+
+
+@GROUP_MATCH()
+class SwitchGroup(GroupEntity, BaseSwitch):
+    """Representation of a switch group."""
+
+    def __init__(self, group: Group):
+        """Initialize a switch group."""
+        super().__init__(group)
+        self._on_off_channel = group.zigpy_group.endpoint[OnOff.cluster_id]
+
+    async def async_update(self) -> None:
+        """Query all members and determine the light group state."""
+        self.debug("Updating switch group entity state")
+        previous_state = self.get_state()
+        platform_entities = self._group.get_platform_entities(self.PLATFORM)
+        all_entities = [entity.to_json() for entity in platform_entities]
+        all_states = [entity["state"] for entity in all_entities]
+        self.debug(
+            "All platform entity states for group entity members: %s", all_states
+        )
+        on_states = [state for state in all_states if state["on"]]
+
+        self._state = len(on_states) > 0
+        self._available = any(entity.available for entity in platform_entities)
+
+        if previous_state != self.get_state():
+            self.send_state_changed_event()
