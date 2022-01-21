@@ -134,7 +134,8 @@ class SwitchHelper:
         self._client: Client = client
 
     async def turn_on(
-        self, switch_platform_entity: BasePlatformEntity
+        self,
+        switch_platform_entity: BasePlatformEntity | GroupEntity,
     ) -> CommandResponse:
         """Turn on a switch."""
         if (
@@ -146,13 +147,19 @@ class SwitchHelper:
             )
 
         command = SwitchTurnOnCommand(
-            ieee=switch_platform_entity.device_ieee,
+            ieee=switch_platform_entity.device_ieee
+            if not isinstance(switch_platform_entity, GroupEntity)
+            else None,
+            group_id=switch_platform_entity.group_id
+            if isinstance(switch_platform_entity, GroupEntity)
+            else None,
             unique_id=switch_platform_entity.unique_id,
         )
         return await self._client.async_send_command(command.dict(exclude_none=True))
 
     async def turn_off(
-        self, switch_platform_entity: BasePlatformEntity
+        self,
+        switch_platform_entity: BasePlatformEntity | GroupEntity,
     ) -> CommandResponse:
         """Turn off a switch."""
         if (
@@ -164,7 +171,12 @@ class SwitchHelper:
             )
 
         command = SwitchTurnOffCommand(
-            ieee=switch_platform_entity.device_ieee,
+            ieee=switch_platform_entity.device_ieee
+            if not isinstance(switch_platform_entity, GroupEntity)
+            else None,
+            group_id=switch_platform_entity.group_id
+            if isinstance(switch_platform_entity, GroupEntity)
+            else None,
             unique_id=switch_platform_entity.unique_id,
         )
         return await self._client.async_send_command(command.dict(exclude_none=True))
@@ -347,7 +359,7 @@ class FanHelper:
 
     async def turn_on(
         self,
-        fan_platform_entity: BasePlatformEntity,
+        fan_platform_entity: BasePlatformEntity | GroupEntity,
         speed: Optional[str] = None,
         percentage: Optional[int] = None,
         preset_mode: Optional[str] = None,
@@ -359,7 +371,12 @@ class FanHelper:
             )
 
         command = FanTurnOnCommand(
-            ieee=fan_platform_entity.device_ieee,
+            ieee=fan_platform_entity.device_ieee
+            if not isinstance(fan_platform_entity, GroupEntity)
+            else None,
+            group_id=fan_platform_entity.group_id
+            if isinstance(fan_platform_entity, GroupEntity)
+            else None,
             unique_id=fan_platform_entity.unique_id,
             speed=speed,
             percentage=percentage,
@@ -368,7 +385,8 @@ class FanHelper:
         return await self._client.async_send_command(command.dict(exclude_none=True))
 
     async def turn_off(
-        self, fan_platform_entity: BasePlatformEntity
+        self,
+        fan_platform_entity: BasePlatformEntity | GroupEntity,
     ) -> CommandResponse:
         """Turn off a fan."""
         if fan_platform_entity is None or fan_platform_entity.platform != Platform.FAN:
@@ -377,14 +395,19 @@ class FanHelper:
             )
 
         command = FanTurnOffCommand(
-            ieee=fan_platform_entity.device_ieee,
+            ieee=fan_platform_entity.device_ieee
+            if not isinstance(fan_platform_entity, GroupEntity)
+            else None,
+            group_id=fan_platform_entity.group_id
+            if isinstance(fan_platform_entity, GroupEntity)
+            else None,
             unique_id=fan_platform_entity.unique_id,
         )
         return await self._client.async_send_command(command.dict(exclude_none=True))
 
     async def set_fan_percentage(
         self,
-        fan_platform_entity: BasePlatformEntity,
+        fan_platform_entity: BasePlatformEntity | GroupEntity,
         percentage: int,
     ) -> CommandResponse:
         """Set a fan percentage."""
@@ -394,7 +417,12 @@ class FanHelper:
             )
 
         command = FanSetPercentageCommand(
-            ieee=fan_platform_entity.device_ieee,
+            ieee=fan_platform_entity.device_ieee
+            if not isinstance(fan_platform_entity, GroupEntity)
+            else None,
+            group_id=fan_platform_entity.group_id
+            if isinstance(fan_platform_entity, GroupEntity)
+            else None,
             unique_id=fan_platform_entity.unique_id,
             percentage=percentage,
         )
@@ -402,7 +430,7 @@ class FanHelper:
 
     async def set_fan_preset_mode(
         self,
-        fan_platform_entity: BasePlatformEntity,
+        fan_platform_entity: BasePlatformEntity | GroupEntity,
         preset_mode: str,
     ) -> CommandResponse:
         """Set a fan preset mode."""
@@ -412,7 +440,12 @@ class FanHelper:
             )
 
         command = FanSetPresetModeCommand(
-            ieee=fan_platform_entity.device_ieee,
+            ieee=fan_platform_entity.device_ieee
+            if not isinstance(fan_platform_entity, GroupEntity)
+            else None,
+            group_id=fan_platform_entity.group_id
+            if isinstance(fan_platform_entity, GroupEntity)
+            else None,
             unique_id=fan_platform_entity.unique_id,
             preset_mode=preset_mode,
         )
