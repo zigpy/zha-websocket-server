@@ -169,15 +169,15 @@ def ensure_list(value: T | None) -> list[T] | list[Any]:
 
 @decorators.websocket_command(
     {
-        vol.Required(COMMAND): str(APICommands.ADD_GROUP),
+        vol.Required(COMMAND): str(APICommands.CREATE_GROUP),
         vol.Required(GROUP_NAME): str,
         vol.Optional(GROUP_ID): positive_int,
         vol.Optional(ATTR_MEMBERS): vol.All(ensure_list, [cv_group_member]),
     }
 )
 @decorators.async_response
-async def add_group(server: Server, client: Client, message: dict[str, Any]) -> None:
-    """Add a new group."""
+async def create_group(server: Server, client: Client, message: dict[str, Any]) -> None:
+    """create a new group."""
     controller: Controller = server.controller
     group_name = message[GROUP_NAME]
     members = cast(list[GroupMemberReference], message.get(ATTR_MEMBERS))
@@ -185,7 +185,7 @@ async def add_group(server: Server, client: Client, message: dict[str, Any]) -> 
     group: Group = await controller.async_create_zigpy_group(
         group_name, members, group_id
     )
-    client.send_result_success(message, group.to_json())
+    client.send_result_success(message, {"group": group.to_json()})
 
 
 @decorators.websocket_command(
@@ -275,7 +275,7 @@ def load_api(server: Server) -> None:
     register_api_command(server, stop_network)
     register_api_command(server, get_devices)
     register_api_command(server, get_groups)
-    register_api_command(server, add_group)
+    register_api_command(server, create_group)
     register_api_command(server, remove_groups)
     register_api_command(server, add_group_members)
     register_api_command(server, remove_group_members)

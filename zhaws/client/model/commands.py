@@ -5,7 +5,7 @@ from typing import Annotated, Literal, Optional, Tuple, Union
 from pydantic import conint
 from pydantic.fields import Field
 
-from zhaws.client.model.types import Device, Group
+from zhaws.client.model.types import Device, Group, GroupMemberReference
 from zhaws.model import BaseModel
 
 
@@ -13,6 +13,44 @@ class Command(BaseModel):
     """Base class for command that are sent to the server."""
 
     command: str
+
+
+class GetGroupsCommand(Command):
+    """Command to get groups."""
+
+    command: Literal["get_groups"] = "get_groups"
+
+
+class CreateGroupCommand(Command):
+    """Command to create a group."""
+
+    command: Literal["create_group"] = "create_group"
+    group_name: str
+    group_id: Optional[int]
+    members: Optional[list[GroupMemberReference]]
+
+
+class RemoveGroupsCommand(Command):
+    """Command to remove groups."""
+
+    command: Literal["remove_groups"] = "remove_groups"
+    group_ids: list[int]
+
+
+class AddGroupMembersCommand(Command):
+    """Command to add members to a group."""
+
+    command: Literal["add_group_members"] = "add_group_members"
+    group_id: int
+    members: list[GroupMemberReference]
+
+
+class RemoveGroupMembersCommand(Command):
+    """Command to remove members from a group."""
+
+    command: Literal["remove_group_members"] = "remove_group_members"
+    group_id: int
+    members: list[GroupMemberReference]
 
 
 class PlatformEntityCommand(Command):
@@ -346,16 +384,27 @@ class GetDevicesResponse(CommandResponse):
     devices: dict[str, Device]
 
 
-class GetGroupsResponse(CommandResponse):
+class GroupsResponse(CommandResponse):
     """Get groups response."""
 
-    command: Literal["get_groups"] = "get_groups"
+    command: Literal["get_groups", "create_group"]
     groups: dict[int, Group]
+
+
+class UpdateGroupResponse(CommandResponse):
+    """Update group response."""
+
+    command: Literal["create_group", "add_group_members", "remove_group_members"]
+    group: Group
 
 
 CommandResponses = Annotated[
     Union[
-        DefaultResponse, GetDevicesResponse, GetGroupsResponse, PermitJoiningResponse
+        DefaultResponse,
+        GetDevicesResponse,
+        GroupsResponse,
+        PermitJoiningResponse,
+        UpdateGroupResponse,
     ],
     Field(discriminator="command"),  # noqa: F821
 ]

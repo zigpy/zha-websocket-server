@@ -11,12 +11,27 @@ from async_timeout import timeout
 from zhaws.client.client import Client
 from zhaws.client.device import Device
 from zhaws.client.group import Group
-from zhaws.client.helpers import attach_platform_entity_helpers
+from zhaws.client.helpers import (
+    AlarmControlPanelHelper,
+    ButtonHelper,
+    ClientHelper,
+    ClimateHelper,
+    CoverHelper,
+    FanHelper,
+    GroupHelper,
+    LightHelper,
+    LockHelper,
+    NumberHelper,
+    PlatformEntityHelper,
+    SelectHelper,
+    SirenHelper,
+    SwitchHelper,
+)
 from zhaws.client.model.commands import (
     Command,
     CommandResponse,
     GetDevicesResponse,
-    GetGroupsResponse,
+    GroupsResponse,
 )
 from zhaws.client.model.events import (
     DeviceConfiguredEvent,
@@ -49,7 +64,22 @@ class Controller(EventBase):
             "platform_entity_event", self.handle_platform_entity_event
         )
         self._client.on_event("controller_event", self._handle_event_protocol)
-        attach_platform_entity_helpers(self, self._client)
+        self.lights: LightHelper = LightHelper(self._client)
+        self.switches: SwitchHelper = SwitchHelper(self._client)
+        self.sirens: SirenHelper = SirenHelper(self._client)
+        self.buttons: ButtonHelper = ButtonHelper(self._client)
+        self.covers: CoverHelper = CoverHelper(self._client)
+        self.fans: FanHelper = FanHelper(self._client)
+        self.locks: LockHelper = LockHelper(self._client)
+        self.numbers: NumberHelper = NumberHelper(self._client)
+        self.selects: SelectHelper = SelectHelper(self._client)
+        self.thermostats: ClimateHelper = ClimateHelper(self._client)
+        self.alarm_control_panels: AlarmControlPanelHelper = AlarmControlPanelHelper(
+            self._client
+        )
+        self.entities: PlatformEntityHelper = PlatformEntityHelper(self._client)
+        self.clients: ClientHelper = ClientHelper(self._client)
+        self.groups_helper: GroupHelper = GroupHelper(self._client)
 
     @property
     def devices(self) -> dict[str, Device]:
@@ -92,9 +122,7 @@ class Controller(EventBase):
 
     async def load_groups(self) -> None:
         """Load groups from the websocket server."""
-        response: GetGroupsResponse = await self._client.async_send_command(  # type: ignore
-            {"command": "get_groups"}
-        )
+        response: GroupsResponse = await self.groups_helper.get_groups()
         for id, group in response.groups.items():
             self._groups[id] = Group(group, self, self._client)
 

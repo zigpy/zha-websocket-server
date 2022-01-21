@@ -1,10 +1,11 @@
 """Helper classes for zhaws.client."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union, cast
 
 from zhaws.client.client import Client
 from zhaws.client.model.commands import (
+    AddGroupMembersCommand,
     AlarmControlPanelArmAwayCommand,
     AlarmControlPanelArmHomeCommand,
     AlarmControlPanelArmNightCommand,
@@ -23,10 +24,13 @@ from zhaws.client.model.commands import (
     CoverOpenCommand,
     CoverSetPositionCommand,
     CoverStopCommand,
+    CreateGroupCommand,
     FanSetPercentageCommand,
     FanSetPresetModeCommand,
     FanTurnOffCommand,
     FanTurnOnCommand,
+    GetGroupsCommand,
+    GroupsResponse,
     LightTurnOffCommand,
     LightTurnOnCommand,
     LockClearUserLockCodeCommand,
@@ -37,23 +41,21 @@ from zhaws.client.model.commands import (
     LockUnlockCommand,
     NumberSetValueCommand,
     PlatformEntityRefreshStateCommand,
+    RemoveGroupMembersCommand,
+    RemoveGroupsCommand,
     SelectSelectOptionCommand,
     SirenTurnOffCommand,
     SirenTurnOnCommand,
     SwitchTurnOffCommand,
     SwitchTurnOnCommand,
+    UpdateGroupResponse,
 )
-from zhaws.client.model.types import BasePlatformEntity, GroupEntity
+from zhaws.client.model.types import BasePlatformEntity, Group, GroupEntity
 from zhaws.server.platforms.registries import Platform
-
-if TYPE_CHECKING:
-    from zhaws.client.controller import Controller
 
 
 class LightHelper:
     """Helper to issue light commands."""
-
-    CONTROLLER_ATTRIBUTE = "lights"
 
     def __init__(self, client: Client):
         """Initialize the light helper."""
@@ -127,8 +129,6 @@ class LightHelper:
 class SwitchHelper:
     """Helper to issue switch commands."""
 
-    CONTROLLER_ATTRIBUTE = "switches"
-
     def __init__(self, client: Client):
         """Initialize the switch helper."""
         self._client: Client = client
@@ -185,8 +185,6 @@ class SwitchHelper:
 class SirenHelper:
     """Helper to issue siren commands."""
 
-    CONTROLLER_ATTRIBUTE = "sirens"
-
     def __init__(self, client: Client):
         """Initialize the siren helper."""
         self._client: Client = client
@@ -238,8 +236,6 @@ class SirenHelper:
 class ButtonHelper:
     """Helper to issue button commands."""
 
-    CONTROLLER_ATTRIBUTE = "buttons"
-
     def __init__(self, client: Client):
         """Initialize the button helper."""
         self._client: Client = client
@@ -265,8 +261,6 @@ class ButtonHelper:
 
 class CoverHelper:
     """helper to issue cover commands"""
-
-    CONTROLLER_ATTRIBUTE = "covers"
 
     def __init__(self, client: Client):
         """Initialize the cover helper."""
@@ -350,8 +344,6 @@ class CoverHelper:
 
 class FanHelper:
     """Helper to issue fan commands."""
-
-    CONTROLLER_ATTRIBUTE = "fans"
 
     def __init__(self, client: Client):
         """Initialize the fan helper."""
@@ -454,8 +446,6 @@ class FanHelper:
 
 class LockHelper:
     """Helper to issue lock commands."""
-
-    CONTROLLER_ATTRIBUTE = "locks"
 
     def __init__(self, client: Client):
         """Initialize the lock helper."""
@@ -583,8 +573,6 @@ class LockHelper:
 class NumberHelper:
     """Helper to issue number commands."""
 
-    CONTROLLER_ATTRIBUTE = "numbers"
-
     def __init__(self, client: Client):
         """Initialize the number helper."""
         self._client: Client = client
@@ -614,8 +602,6 @@ class NumberHelper:
 class SelectHelper:
     """Helper to issue select commands."""
 
-    CONTROLLER_ATTRIBUTE = "selects"
-
     def __init__(self, client: Client):
         """Initialize the select helper."""
         self._client: Client = client
@@ -644,8 +630,6 @@ class SelectHelper:
 
 class ClimateHelper:
     """Helper to issue climate commands."""
-
-    CONTROLLER_ATTRIBUTE = "climates"
 
     def __init__(self, client: Client):
         """Initialize the climate helper."""
@@ -748,8 +732,6 @@ class ClimateHelper:
 
 class AlarmControlPanelHelper:
     """Helper to issue alarm control panel commands."""
-
-    CONTROLLER_ATTRIBUTE = "alarm_control_panels"
 
     def __init__(self, client: Client):
         """Initialize the alarm control panel helper."""
@@ -859,8 +841,6 @@ class AlarmControlPanelHelper:
 class PlatformEntityHelper:
     """Helper to send global platform entity commands."""
 
-    CONTROLLER_ATTRIBUTE = "entities"
-
     def __init__(self, client: Client):
         """Initialize the platform entity helper."""
         self._client: Client = client
@@ -878,8 +858,6 @@ class PlatformEntityHelper:
 
 class ClientHelper:
     """Helper to send client specific commands."""
-
-    CONTROLLER_ATTRIBUTE = "clients"
 
     def __init__(self, client: Client):
         """Initialize the client helper."""
@@ -901,26 +879,86 @@ class ClientHelper:
         return await self._client.async_send_command(command.dict(exclude_none=True))
 
 
-def attach_platform_entity_helpers(controller: Controller, client: Client) -> None:
-    """Attach helper methods to the controller."""
-    setattr(controller, LightHelper.CONTROLLER_ATTRIBUTE, LightHelper(client))
-    setattr(controller, SwitchHelper.CONTROLLER_ATTRIBUTE, SwitchHelper(client))
-    setattr(controller, SirenHelper.CONTROLLER_ATTRIBUTE, SirenHelper(client))
-    setattr(controller, ButtonHelper.CONTROLLER_ATTRIBUTE, ButtonHelper(client))
-    setattr(controller, CoverHelper.CONTROLLER_ATTRIBUTE, CoverHelper(client))
-    setattr(controller, FanHelper.CONTROLLER_ATTRIBUTE, FanHelper(client))
-    setattr(controller, LockHelper.CONTROLLER_ATTRIBUTE, LockHelper(client))
-    setattr(controller, NumberHelper.CONTROLLER_ATTRIBUTE, NumberHelper(client))
-    setattr(controller, SelectHelper.CONTROLLER_ATTRIBUTE, SelectHelper(client))
-    setattr(controller, ClimateHelper.CONTROLLER_ATTRIBUTE, ClimateHelper(client))
-    setattr(
-        controller,
-        AlarmControlPanelHelper.CONTROLLER_ATTRIBUTE,
-        AlarmControlPanelHelper(client),
-    )
-    setattr(
-        controller,
-        PlatformEntityHelper.CONTROLLER_ATTRIBUTE,
-        PlatformEntityHelper(client),
-    )
-    setattr(controller, ClientHelper.CONTROLLER_ATTRIBUTE, ClientHelper(client))
+class GroupHelper:
+    """Helper to send group commands."""
+
+    def __init__(self, client: Client):
+        """Initialize the group helper."""
+        self._client: Client = client
+
+    async def get_groups(self) -> GroupsResponse:
+        """Get the groups."""
+        response = await self._client.async_send_command(
+            GetGroupsCommand().dict(exclude_none=True)
+        )
+        return cast(GroupsResponse, response)
+
+    async def create_group(
+        self,
+        name: str,
+        unique_id: Optional[int] = None,
+        members: Optional[list[BasePlatformEntity]] = None,
+    ) -> UpdateGroupResponse:
+        """Create a new group."""
+        request_data: dict[str, Any] = {
+            "group_name": name,
+            "group_id": unique_id,
+        }
+        if members is not None:
+            request_data["members"] = [
+                {"ieee": member.device_ieee, "endpoint_id": member.endpoint_id}
+                for member in members
+            ]
+
+        command = CreateGroupCommand(**request_data)
+        response = await self._client.async_send_command(
+            command.dict(exclude_none=True)
+        )
+        return cast(UpdateGroupResponse, response)
+
+    async def remove_groups(self, groups: list[Group]) -> GroupsResponse:
+        """Remove groups."""
+        request: dict[str, Any] = {
+            "group_ids": [group.id for group in groups],
+        }
+        command = RemoveGroupsCommand(**request)
+        response = await self._client.async_send_command(
+            command.dict(exclude_none=True)
+        )
+        return cast(GroupsResponse, response)
+
+    async def add_group_members(
+        self, group: Group, members: list[BasePlatformEntity]
+    ) -> UpdateGroupResponse:
+        """Add members to a group."""
+        request_data: dict[str, Any] = {
+            "group_id": group.id,
+            "members": [
+                {"ieee": member.device_ieee, "endpoint_id": member.endpoint_id}
+                for member in members
+            ],
+        }
+
+        command = AddGroupMembersCommand(**request_data)
+        response = await self._client.async_send_command(
+            command.dict(exclude_none=True)
+        )
+        return cast(UpdateGroupResponse, response)
+
+    async def remove_group_members(
+        self, group: Group, members: list[BasePlatformEntity]
+    ) -> UpdateGroupResponse:
+        """Remove members from a group."""
+        request_data: dict[str, Any] = {
+            "group_id": group.id,
+            "members": [
+                {"ieee": member.device_ieee, "endpoint_id": member.endpoint_id}
+                for member in members
+            ],
+        }
+
+        command = RemoveGroupMembersCommand(**request_data)
+        response = await self._client.async_send_command(
+            command.dict(exclude_none=True)
+        )
+        return cast(UpdateGroupResponse, response)

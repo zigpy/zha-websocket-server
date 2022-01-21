@@ -20,7 +20,7 @@ class APICommands(StrEnum):
 
     # Group commands
     GET_GROUPS = "get_groups"
-    ADD_GROUP = "add_group"
+    CREATE_GROUP = "create_group"
     REMOVE_GROUPS = "remove_groups"
     ADD_GROUP_MEMBERS = "add_group_members"
     REMOVE_GROUP_MEMBERS = "remove_group_members"

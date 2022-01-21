@@ -476,3 +476,10 @@ class Group(BaseModel):
             Field(discriminator="class_name"),  # noqa: F821
         ],
     ]
+
+
+class GroupMemberReference(BaseModel):
+    """Group member reference model."""
+
+    device_ieee: str
+    endpoint_id: int
