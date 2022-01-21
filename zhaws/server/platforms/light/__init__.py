@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import asyncio
+from collections import Counter
 import enum
 import functools
+import itertools
 from typing import TYPE_CHECKING, Any, Final, Optional, Union
 
 from zigpy.zcl.clusters.general import Identify, LevelControl, OnOff
@@ -11,7 +13,7 @@ from zigpy.zcl.clusters.lighting import Color
 from zigpy.zcl.foundation import Status
 
 from zhaws.server.decorators import periodic
-from zhaws.server.platforms import BaseEntity, GroupEntity, PlatformEntity
+from zhaws.server.platforms import BaseEntity, GroupEntity, PlatformEntity, helpers
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhaws.server.platforms.util import color as color_util
 from zhaws.server.zigbee.cluster import (
@@ -88,6 +90,8 @@ EFFECT_COLORLOOP: Final[str] = "colorloop"
 EFFECT_RANDOM: Final[str] = "random"
 EFFECT_WHITE: Final[str] = "white"
 
+ATTR_SUPPORTED_FEATURES: Final[str] = "supported_features"
+
 # Bitfield of features supported by the light entity
 SUPPORT_BRIGHTNESS: Final[int] = 1  # Deprecated, replaced by color modes
 SUPPORT_COLOR_TEMP: Final[int] = 2  # Deprecated, replaced by color modes
@@ -106,6 +110,15 @@ FLASH_EFFECTS: Final[dict[str, int]] = {
     FLASH_SHORT: EFFECT_BLINK,
     FLASH_LONG: EFFECT_BREATHE,
 }
+
+SUPPORT_GROUP_LIGHT = (
+    SUPPORT_BRIGHTNESS
+    | SUPPORT_COLOR_TEMP
+    | SUPPORT_EFFECT
+    | SUPPORT_FLASH
+    | SUPPORT_COLOR
+    | SUPPORT_TRANSITION
+)
 
 
 class LightColorMode(enum.IntEnum):
@@ -583,30 +596,21 @@ class LightGroup(GroupEntity, BaseLight):
         )
         """
 
-    def handle_cluster_handler_attribute_updated(
-        self, event: ClusterAttributeUpdatedEvent
-    ) -> None:
-        """Set the state."""
-        self.update()
-        self.send_state_changed_event()
-
     def update(self, _: Any = None) -> None:
         # Query all members and determine the light group state.
-        self.warning("Updating light group state")
-        previous_state = self._state
-        all_states = [
-            entity.get_state()
-            for entity in self._group.get_platform_entities(self.PLATFORM)
-        ]
-        self.warning("All states: %s", all_states)
+        self.debug("Updating light group entity state")
+        previous_state = self.get_state()
+        platform_entities = self._group.get_platform_entities(self.PLATFORM)
+        all_entities = [entity.to_json() for entity in platform_entities]
+        all_states = [entity["state"] for entity in all_entities]
+        self.debug(
+            "All platform entity states for group entity members: %s", all_states
+        )
         on_states = [state for state in all_states if state["on"]]
 
         self._state = len(on_states) > 0
 
-        if self._state != previous_state:
-            self.send_state_changed_event()
-        """TODO
-        self._available = any(state.state != STATE_UNAVAILABLE for state in states)
+        self._available = any(entity.available for entity in platform_entities)
 
         self._brightness = helpers.reduce_attribute(on_states, ATTR_BRIGHTNESS)
 
@@ -616,31 +620,37 @@ class LightGroup(GroupEntity, BaseLight):
 
         self._color_temp = helpers.reduce_attribute(on_states, ATTR_COLOR_TEMP)
         self._min_mireds = helpers.reduce_attribute(
-            states, ATTR_MIN_MIREDS, default=153, reduce=min
+            all_entities, ATTR_MIN_MIREDS, default=153, reduce=min
         )
         self._max_mireds = helpers.reduce_attribute(
-            states, ATTR_MAX_MIREDS, default=500, reduce=max
+            all_entities, ATTR_MAX_MIREDS, default=500, reduce=max
         )
 
         self._effect_list = None
-        all_effect_lists = list(helpers.find_state_attributes(states, ATTR_EFFECT_LIST))
+        all_effect_lists = list(
+            helpers.find_state_attributes(all_entities, ATTR_EFFECT_LIST)
+        )
         if all_effect_lists:
             # Merge all effects from all effect_lists with a union merge.
             self._effect_list = list(set().union(*all_effect_lists))
 
         self._effect = None
-        all_effects = list(helpers.find_state_attributes(on_states, ATTR_EFFECT))
+        all_effects = list(helpers.find_state_attributes(all_states, ATTR_EFFECT))
         if all_effects:
             # Report the most common effect.
             effects_count = Counter(itertools.chain(all_effects))
             self._effect = effects_count.most_common(1)[0][0]
 
         self._supported_features = 0
-        for support in helpers.find_state_attributes(states, ATTR_SUPPORTED_FEATURES):
+        for support in helpers.find_state_attributes(
+            all_entities, ATTR_SUPPORTED_FEATURES
+        ):
             # Merge supported features by emulating support for every feature
             # we find.
             self._supported_features |= support
         # Bitwise-and the supported features with the GroupedLight's features
         # so that we don't break in the future when a new feature is added.
         self._supported_features &= SUPPORT_GROUP_LIGHT
-        """
+
+        if self.get_state() != previous_state:
+            self.send_state_changed_event()
