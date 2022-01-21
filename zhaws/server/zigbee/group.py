@@ -140,19 +140,13 @@ class Group(LogMixin):
 
     def register_group_entity(self, group_entity: GroupEntity) -> None:
         """Register a group entity."""
-        self._group_entities[group_entity.unique_id] = group_entity
-        self._entity_unsubs[group_entity.unique_id] = group_entity.on_event(
-            STATE_CHANGED,
-            self._maybe_update_group_members,
-        )
-        for platform_entity in self.get_platform_entities(group_entity.PLATFORM):
-            if platform_entity.unique_id not in self._entity_unsubs:
-                self._entity_unsubs[
-                    platform_entity.unique_id
-                ] = platform_entity.on_event(
-                    STATE_CHANGED,
-                    group_entity.update,
-                )
+        if group_entity.unique_id in self._group_entities:
+            self._group_entities[group_entity.unique_id] = group_entity
+            self._entity_unsubs[group_entity.unique_id] = group_entity.on_event(
+                STATE_CHANGED,
+                self._maybe_update_group_members,
+            )
+        self.update_entity_subscriptions()
 
     def send_event(self, event: dict[str, Any]) -> None:
         """Send an event from this group."""
@@ -168,10 +162,38 @@ class Group(LogMixin):
         if tasks:
             await asyncio.gather(*tasks)
 
+    def update_entity_subscriptions(self) -> None:
+        """Update the entity event subscriptions.
+
+        Loop over all the entities in the group and update the event subscriptions. Get all of the unique ids
+        for both the group entities and the entities that they are compositions of. As we loop through the member
+        entities we establish subscriptions for their events if they do not exist. We also add the entity unique id
+        to a list for future processing. Once we have processed all group entities we combine the list of unique ids
+        for group entities and the platrom entities that we processed. Then we loop over all of the unsub ids and we
+        execute the unsubscribe method for each one that isn't in the combined list.
+        """
+        group_entity_ids = list(self._group_entities.keys())
+        processed_platform_entity_ids = []
+        for group_entity in self._group_entities.values():
+            for platform_entity in self.get_platform_entities(group_entity.PLATFORM):
+                processed_platform_entity_ids.append(platform_entity.unique_id)
+                if platform_entity.unique_id not in self._entity_unsubs:
+                    self._entity_unsubs[
+                        platform_entity.unique_id
+                    ] = platform_entity.on_event(
+                        STATE_CHANGED,
+                        group_entity.update,
+                    )
+        all_ids = group_entity_ids + processed_platform_entity_ids
+        existing_unsub_ids = self._entity_unsubs.keys()
+        for unsub_id in existing_unsub_ids:
+            if unsub_id not in all_ids:
+                self._entity_unsubs[unsub_id]()
+
     async def async_add_members(self, members: list[GroupMemberReference]) -> None:
         """Add members to this group."""
         # TODO handle entity change unsubs and sub for new events
-        devices: dict[str, Device] = self._server.controller.get_devices()
+        devices: dict[EUI64, Device] = self._server.controller.devices
         if len(members) > 1:
             tasks = []
             for member in members:
@@ -186,11 +208,12 @@ class Group(LogMixin):
             await devices[member.ieee].async_add_endpoint_to_group(
                 member.endpoint_id, self.group_id
             )
+        self.update_entity_subscriptions()
 
     async def async_remove_members(self, members: list[GroupMemberReference]) -> None:
         """Remove members from this group."""
         # TODO handle entity change unsubs and sub for new events
-        devices: dict[str, Device] = self._server.controller.get_devices()
+        devices: dict[EUI64, Device] = self._server.controller.devices
         if len(members) > 1:
             tasks = []
             for member in members:
@@ -205,6 +228,7 @@ class Group(LogMixin):
             await devices[member.ieee].async_remove_endpoint_from_group(
                 member.endpoint_id, self.group_id
             )
+        self.update_entity_subscriptions()
 
     @property
     def member_entity_ids(self) -> list[PlatformEntity]:
