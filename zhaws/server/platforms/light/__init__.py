@@ -200,7 +200,7 @@ class BaseLight(BaseEntity):
         """
         value = max(0, min(254, event.level))
         self._brightness = value
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     @property
     def hs_color(self) -> Optional[tuple[float, float]]:
@@ -346,7 +346,7 @@ class BaseLight(BaseEntity):
 
         self._off_brightness = None
         self.debug("turned on: %s", t_log)
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     async def async_turn_off(
         self, transition: int | None = None, **kwargs: Any
@@ -371,7 +371,7 @@ class BaseLight(BaseEntity):
             # store current brightness so that the next turn_on uses it.
             self._off_brightness = self._brightness
 
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
 
 @STRICT_MATCH(
@@ -461,7 +461,7 @@ class Light(PlatformEntity, BaseLight):
         async def _refresh() -> None:
             """Call async_get_state at an interval."""
             await self.async_update()
-            self.send_state_changed_event()
+            self.maybe_send_state_changed_event()
 
         self._cancel_refresh_handle = asyncio.create_task(_refresh())
 
@@ -481,7 +481,7 @@ class Light(PlatformEntity, BaseLight):
         self._state = bool(event.value)
         if event.value:
             self._off_brightness = None
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     async def async_update(self) -> None:
         """Attempt to retrieve the state from the light."""
@@ -599,7 +599,6 @@ class LightGroup(GroupEntity, BaseLight):
     def update(self, _: Any = None) -> None:
         # Query all members and determine the light group state.
         self.debug("Updating light group entity state")
-        previous_state = self.get_state()
         platform_entities = self._group.get_platform_entities(self.PLATFORM)
         all_entities = [entity.to_json() for entity in platform_entities]
         all_states = [entity["state"] for entity in all_entities]
@@ -652,5 +651,4 @@ class LightGroup(GroupEntity, BaseLight):
         # so that we don't break in the future when a new feature is added.
         self._supported_features &= SUPPORT_GROUP_LIGHT
 
-        if self.get_state() != previous_state:
-            self.send_state_changed_event()
+        self.maybe_send_state_changed_event()

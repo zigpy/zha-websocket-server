@@ -55,7 +55,6 @@ class DeviceTracker(PlatformEntity):
 
     async def async_update(self) -> None:
         """Handle polling."""
-        previous_state = self._connected
         if self.device.last_seen is None:
             self._connected = False
         else:
@@ -64,8 +63,7 @@ class DeviceTracker(PlatformEntity):
                 self._connected = False
             else:
                 self._connected = True
-        if previous_state != self._connected:
-            self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     @periodic((30, 45))
     async def _refresh(self) -> None:
@@ -86,7 +84,7 @@ class DeviceTracker(PlatformEntity):
         self.debug("battery_percentage_remaining updated: %s", event.value)
         self._connected = True
         self._battery_level = Battery.formatter(event.value)
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     @property
     def battery_level(self) -> float | None:

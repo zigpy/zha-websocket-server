@@ -129,7 +129,7 @@ class Sensor(PlatformEntity):
         self, event: ClusterAttributeUpdatedEvent
     ) -> None:
         """handle attribute updates from the cluster handler."""
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     @periodic(_REFRESH_INTERVAL)
     async def _refresh(self) -> None:

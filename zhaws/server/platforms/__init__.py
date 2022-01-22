@@ -34,6 +34,7 @@ class BaseEntity(LogMixin, EventBase):
         """Initialize the platform entity."""
         super().__init__()
         self._unique_id: str = unique_id
+        self._previous_state: Any = None
 
     @property
     def unique_id(self) -> str:
@@ -55,18 +56,21 @@ class BaseEntity(LogMixin, EventBase):
     async def async_update(self) -> None:
         """Retrieve latest state."""
 
-    def send_state_changed_event(self) -> None:
+    def maybe_send_state_changed_event(self) -> None:
         """Send the state of this platform entity."""
-        self.send_event(
-            {
-                "state": self.get_state(),
-                EVENT: PlatformEntityEvents.PLATFORM_ENTITY_STATE_CHANGED,
-                EVENT_TYPE: EventTypes.PLATFORM_ENTITY_EVENT,
-            }
-        )
-        self.emit(
-            STATE_CHANGED, EntityStateChangedEvent.parse_obj(self.get_identifiers())
-        )
+        state = self.get_state()
+        if self._previous_state != state:
+            self.send_event(
+                {
+                    "state": self.get_state(),
+                    EVENT: PlatformEntityEvents.PLATFORM_ENTITY_STATE_CHANGED,
+                    EVENT_TYPE: EventTypes.PLATFORM_ENTITY_EVENT,
+                }
+            )
+            self.emit(
+                STATE_CHANGED, EntityStateChangedEvent.parse_obj(self.get_identifiers())
+            )
+            self._previous_state = state
 
     def to_json(self) -> dict:
         """Return a JSON representation of the platform entity."""
@@ -195,7 +199,6 @@ class PlatformEntity(BaseEntity):
 
     async def async_update(self) -> None:
         """Retrieve latest state."""
-        previous_state = self.get_state()
         tasks = [
             cluster_handler.async_update()
             for cluster_handler in self.cluster_handlers.values()
@@ -203,9 +206,7 @@ class PlatformEntity(BaseEntity):
         ]
         if tasks:
             await asyncio.gather(*tasks)
-            state = self.get_state()
-            if state != previous_state:
-                self.send_state_changed_event()
+            self.maybe_send_state_changed_event()
 
 
 class GroupEntity(BaseEntity):
