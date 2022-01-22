@@ -53,8 +53,22 @@ from zhaws.client.model.commands import (
     SwitchTurnOnCommand,
     UpdateGroupResponse,
 )
-from zhaws.client.model.types import BasePlatformEntity, Device, Group, GroupEntity
+from zhaws.client.model.types import (
+    BaseEntity,
+    BasePlatformEntity,
+    Device,
+    Group,
+    GroupEntity,
+)
 from zhaws.server.platforms.registries import Platform
+
+
+def ensure_platform_entity(entity: BaseEntity, platform: Platform) -> None:
+    """Ensure an entity exists and is from the specified platform."""
+    if entity is None or entity.platform != platform:
+        raise ValueError(
+            f"entity must be provided and it must be a {platform} platform entity"
+        )
 
 
 class LightHelper:
@@ -75,14 +89,7 @@ class LightHelper:
         color_temp: int | None = None,
     ) -> CommandResponse:
         """Turn on a light."""
-        if (
-            light_platform_entity is None
-            or light_platform_entity.platform != Platform.LIGHT
-        ):
-            raise ValueError(
-                "light_platform_entity must be provided and it must be a light platform entity"
-            )
-
+        ensure_platform_entity(light_platform_entity, Platform.LIGHT)
         command = LightTurnOnCommand(
             ieee=light_platform_entity.device_ieee
             if not isinstance(light_platform_entity, GroupEntity)
@@ -107,14 +114,7 @@ class LightHelper:
         flash: bool | None = None,
     ) -> CommandResponse:
         """Turn off a light."""
-        if (
-            light_platform_entity is None
-            or light_platform_entity.platform != Platform.LIGHT
-        ):
-            raise ValueError(
-                "light_platform_entity must be provided and it must be a light platform entity"
-            )
-
+        ensure_platform_entity(light_platform_entity, Platform.LIGHT)
         command = LightTurnOffCommand(
             ieee=light_platform_entity.device_ieee
             if not isinstance(light_platform_entity, GroupEntity)
@@ -141,14 +141,7 @@ class SwitchHelper:
         switch_platform_entity: BasePlatformEntity | GroupEntity,
     ) -> CommandResponse:
         """Turn on a switch."""
-        if (
-            switch_platform_entity is None
-            or switch_platform_entity.platform != Platform.SWITCH
-        ):
-            raise ValueError(
-                "switch_platform_entity must be provided and it must be a switch platform entity"
-            )
-
+        ensure_platform_entity(switch_platform_entity, Platform.SWITCH)
         command = SwitchTurnOnCommand(
             ieee=switch_platform_entity.device_ieee
             if not isinstance(switch_platform_entity, GroupEntity)
@@ -165,14 +158,7 @@ class SwitchHelper:
         switch_platform_entity: BasePlatformEntity | GroupEntity,
     ) -> CommandResponse:
         """Turn off a switch."""
-        if (
-            switch_platform_entity is None
-            or switch_platform_entity.platform != Platform.SWITCH
-        ):
-            raise ValueError(
-                "switch_platform_entity must be provided and it must be a switch platform entity"
-            )
-
+        ensure_platform_entity(switch_platform_entity, Platform.SWITCH)
         command = SwitchTurnOffCommand(
             ieee=switch_platform_entity.device_ieee
             if not isinstance(switch_platform_entity, GroupEntity)
@@ -200,14 +186,7 @@ class SirenHelper:
         tone: Optional[str] = None,
     ) -> CommandResponse:
         """Turn on a siren."""
-        if (
-            siren_platform_entity is None
-            or siren_platform_entity.platform != Platform.SIREN
-        ):
-            raise ValueError(
-                "siren_platform_entity must be provided and it must be a siren platform entity"
-            )
-
+        ensure_platform_entity(siren_platform_entity, Platform.SIREN)
         command = SirenTurnOnCommand(
             ieee=siren_platform_entity.device_ieee,
             unique_id=siren_platform_entity.unique_id,
@@ -221,14 +200,7 @@ class SirenHelper:
         self, siren_platform_entity: BasePlatformEntity
     ) -> CommandResponse:
         """Turn off a siren."""
-        if (
-            siren_platform_entity is None
-            or siren_platform_entity.platform != Platform.SIREN
-        ):
-            raise ValueError(
-                "siren_platform_entity must be provided and it must be a siren platform entity"
-            )
-
+        ensure_platform_entity(siren_platform_entity, Platform.SIREN)
         command = SirenTurnOffCommand(
             ieee=siren_platform_entity.device_ieee,
             unique_id=siren_platform_entity.unique_id,
@@ -247,14 +219,7 @@ class ButtonHelper:
         self, button_platform_entity: BasePlatformEntity
     ) -> CommandResponse:
         """Press a button."""
-        if (
-            button_platform_entity is None
-            or button_platform_entity.platform != Platform.BUTTON
-        ):
-            raise ValueError(
-                "button_platform_entity must be provided and it must be a button platform entity"
-            )
-
+        ensure_platform_entity(button_platform_entity, Platform.BUTTON)
         command = ButtonPressCommand(
             ieee=button_platform_entity.device_ieee,
             unique_id=button_platform_entity.unique_id,
@@ -273,14 +238,7 @@ class CoverHelper:
         self, cover_platform_entity: BasePlatformEntity
     ) -> CommandResponse:
         """Open a cover."""
-        if (
-            cover_platform_entity is None
-            or cover_platform_entity.platform != Platform.COVER
-        ):
-            raise ValueError(
-                "cover_platform_entity must be provided and it must be a cover platform entity"
-            )
-
+        ensure_platform_entity(cover_platform_entity, Platform.COVER)
         command = CoverOpenCommand(
             ieee=cover_platform_entity.device_ieee,
             unique_id=cover_platform_entity.unique_id,
@@ -291,14 +249,7 @@ class CoverHelper:
         self, cover_platform_entity: BasePlatformEntity
     ) -> CommandResponse:
         """Close a cover."""
-        if (
-            cover_platform_entity is None
-            or cover_platform_entity.platform != Platform.COVER
-        ):
-            raise ValueError(
-                "cover_platform_entity must be provided and it must be a cover platform entity"
-            )
-
+        ensure_platform_entity(cover_platform_entity, Platform.COVER)
         command = CoverCloseCommand(
             ieee=cover_platform_entity.device_ieee,
             unique_id=cover_platform_entity.unique_id,
@@ -309,14 +260,7 @@ class CoverHelper:
         self, cover_platform_entity: BasePlatformEntity
     ) -> CommandResponse:
         """Stop a cover."""
-        if (
-            cover_platform_entity is None
-            or cover_platform_entity.platform != Platform.COVER
-        ):
-            raise ValueError(
-                "cover_platform_entity must be provided and it must be a cover platform entity"
-            )
-
+        ensure_platform_entity(cover_platform_entity, Platform.COVER)
         command = CoverStopCommand(
             ieee=cover_platform_entity.device_ieee,
             unique_id=cover_platform_entity.unique_id,
@@ -329,14 +273,7 @@ class CoverHelper:
         position: int,
     ) -> CommandResponse:
         """Set a cover position."""
-        if (
-            cover_platform_entity is None
-            or cover_platform_entity.platform != Platform.COVER
-        ):
-            raise ValueError(
-                "cover_platform_entity must be provided and it must be a cover platform entity"
-            )
-
+        ensure_platform_entity(cover_platform_entity, Platform.COVER)
         command = CoverSetPositionCommand(
             ieee=cover_platform_entity.device_ieee,
             unique_id=cover_platform_entity.unique_id,
@@ -360,11 +297,7 @@ class FanHelper:
         preset_mode: Optional[str] = None,
     ) -> CommandResponse:
         """Turn on a fan."""
-        if fan_platform_entity is None or fan_platform_entity.platform != Platform.FAN:
-            raise ValueError(
-                "fan_platform_entity must be provided and it must be a fan platform entity"
-            )
-
+        ensure_platform_entity(fan_platform_entity, Platform.FAN)
         command = FanTurnOnCommand(
             ieee=fan_platform_entity.device_ieee
             if not isinstance(fan_platform_entity, GroupEntity)
@@ -384,11 +317,7 @@ class FanHelper:
         fan_platform_entity: BasePlatformEntity | GroupEntity,
     ) -> CommandResponse:
         """Turn off a fan."""
-        if fan_platform_entity is None or fan_platform_entity.platform != Platform.FAN:
-            raise ValueError(
-                "fan_platform_entity must be provided and it must be a fan platform entity"
-            )
-
+        ensure_platform_entity(fan_platform_entity, Platform.FAN)
         command = FanTurnOffCommand(
             ieee=fan_platform_entity.device_ieee
             if not isinstance(fan_platform_entity, GroupEntity)
@@ -406,11 +335,7 @@ class FanHelper:
         percentage: int,
     ) -> CommandResponse:
         """Set a fan percentage."""
-        if fan_platform_entity is None or fan_platform_entity.platform != Platform.FAN:
-            raise ValueError(
-                "fan_platform_entity must be provided and it must be a fan platform entity"
-            )
-
+        ensure_platform_entity(fan_platform_entity, Platform.FAN)
         command = FanSetPercentageCommand(
             ieee=fan_platform_entity.device_ieee
             if not isinstance(fan_platform_entity, GroupEntity)
@@ -429,11 +354,7 @@ class FanHelper:
         preset_mode: str,
     ) -> CommandResponse:
         """Set a fan preset mode."""
-        if fan_platform_entity is None or fan_platform_entity.platform != Platform.FAN:
-            raise ValueError(
-                "fan_platform_entity must be provided and it must be a fan platform entity"
-            )
-
+        ensure_platform_entity(fan_platform_entity, Platform.FAN)
         command = FanSetPresetModeCommand(
             ieee=fan_platform_entity.device_ieee
             if not isinstance(fan_platform_entity, GroupEntity)
@@ -456,14 +377,7 @@ class LockHelper:
 
     async def lock(self, lock_platform_entity: BasePlatformEntity) -> CommandResponse:
         """Lock a lock."""
-        if (
-            lock_platform_entity is None
-            or lock_platform_entity.platform != Platform.LOCK
-        ):
-            raise ValueError(
-                "lock_platform_entity must be provided and it must be a lock platform entity"
-            )
-
+        ensure_platform_entity(lock_platform_entity, Platform.LOCK)
         command = LockLockCommand(
             ieee=lock_platform_entity.device_ieee,
             unique_id=lock_platform_entity.unique_id,
@@ -472,14 +386,7 @@ class LockHelper:
 
     async def unlock(self, lock_platform_entity: BasePlatformEntity) -> CommandResponse:
         """Unlock a lock."""
-        if (
-            lock_platform_entity is None
-            or lock_platform_entity.platform != Platform.LOCK
-        ):
-            raise ValueError(
-                "lock_platform_entity must be provided and it must be a lock platform entity"
-            )
-
+        ensure_platform_entity(lock_platform_entity, Platform.LOCK)
         command = LockUnlockCommand(
             ieee=lock_platform_entity.device_ieee,
             unique_id=lock_platform_entity.unique_id,
@@ -493,14 +400,7 @@ class LockHelper:
         user_code: str,
     ) -> CommandResponse:
         """Set a user lock code."""
-        if (
-            lock_platform_entity is None
-            or lock_platform_entity.platform != Platform.LOCK
-        ):
-            raise ValueError(
-                "lock_platform_entity must be provided and it must be a lock platform entity"
-            )
-
+        ensure_platform_entity(lock_platform_entity, Platform.LOCK)
         command = LockSetUserLockCodeCommand(
             ieee=lock_platform_entity.device_ieee,
             unique_id=lock_platform_entity.unique_id,
@@ -515,14 +415,7 @@ class LockHelper:
         code_slot: int,
     ) -> CommandResponse:
         """Clear a user lock code."""
-        if (
-            lock_platform_entity is None
-            or lock_platform_entity.platform != Platform.LOCK
-        ):
-            raise ValueError(
-                "lock_platform_entity must be provided and it must be a lock platform entity"
-            )
-
+        ensure_platform_entity(lock_platform_entity, Platform.LOCK)
         command = LockClearUserLockCodeCommand(
             ieee=lock_platform_entity.device_ieee,
             unique_id=lock_platform_entity.unique_id,
@@ -536,14 +429,7 @@ class LockHelper:
         code_slot: int,
     ) -> CommandResponse:
         """Enable a user lock code."""
-        if (
-            lock_platform_entity is None
-            or lock_platform_entity.platform != Platform.LOCK
-        ):
-            raise ValueError(
-                "lock_platform_entity must be provided and it must be a lock platform entity"
-            )
-
+        ensure_platform_entity(lock_platform_entity, Platform.LOCK)
         command = LockEnableUserLockCodeCommand(
             ieee=lock_platform_entity.device_ieee,
             unique_id=lock_platform_entity.unique_id,
@@ -557,14 +443,7 @@ class LockHelper:
         code_slot: int,
     ) -> CommandResponse:
         """Disable a user lock code."""
-        if (
-            lock_platform_entity is None
-            or lock_platform_entity.platform != Platform.LOCK
-        ):
-            raise ValueError(
-                "lock_platform_entity must be provided and it must be a lock platform entity"
-            )
-
+        ensure_platform_entity(lock_platform_entity, Platform.LOCK)
         command = LockDisableUserLockCodeCommand(
             ieee=lock_platform_entity.device_ieee,
             unique_id=lock_platform_entity.unique_id,
@@ -586,14 +465,7 @@ class NumberHelper:
         value: Union[int, float],
     ) -> CommandResponse:
         """Set a number."""
-        if (
-            number_platform_entity is None
-            or number_platform_entity.platform != Platform.NUMBER
-        ):
-            raise ValueError(
-                "number_platform_entity must be provided and it must be a number platform entity"
-            )
-
+        ensure_platform_entity(number_platform_entity, Platform.NUMBER)
         command = NumberSetValueCommand(
             ieee=number_platform_entity.device_ieee,
             unique_id=number_platform_entity.unique_id,
@@ -615,14 +487,7 @@ class SelectHelper:
         option: Union[str, int],
     ) -> CommandResponse:
         """Set a select."""
-        if (
-            select_platform_entity is None
-            or select_platform_entity.platform != Platform.SELECT
-        ):
-            raise ValueError(
-                "select_platform_entity must be provided and it must be a select platform entity"
-            )
-
+        ensure_platform_entity(select_platform_entity, Platform.SELECT)
         command = SelectSelectOptionCommand(
             ieee=select_platform_entity.device_ieee,
             unique_id=select_platform_entity.unique_id,
@@ -646,14 +511,7 @@ class ClimateHelper:
         ],
     ) -> CommandResponse:
         """Set a climate."""
-        if (
-            climate_platform_entity is None
-            or climate_platform_entity.platform != Platform.CLIMATE
-        ):
-            raise ValueError(
-                "climate_platform_entity must be provided and it must be a climate platform entity"
-            )
-
+        ensure_platform_entity(climate_platform_entity, Platform.CLIMATE)
         command = ClimateSetHvacModeCommand(
             ieee=climate_platform_entity.device_ieee,
             unique_id=climate_platform_entity.unique_id,
@@ -672,14 +530,7 @@ class ClimateHelper:
         target_temp_low: Optional[float] = None,
     ) -> CommandResponse:
         """Set a climate."""
-        if (
-            climate_platform_entity is None
-            or climate_platform_entity.platform != Platform.CLIMATE
-        ):
-            raise ValueError(
-                "climate_platform_entity must be provided and it must be a climate platform entity"
-            )
-
+        ensure_platform_entity(climate_platform_entity, Platform.CLIMATE)
         command = ClimateSetTemperatureCommand(
             ieee=climate_platform_entity.device_ieee,
             unique_id=climate_platform_entity.unique_id,
@@ -696,14 +547,7 @@ class ClimateHelper:
         fan_mode: str,
     ) -> CommandResponse:
         """Set a climate."""
-        if (
-            climate_platform_entity is None
-            or climate_platform_entity.platform != Platform.CLIMATE
-        ):
-            raise ValueError(
-                "climate_platform_entity must be provided and it must be a climate platform entity"
-            )
-
+        ensure_platform_entity(climate_platform_entity, Platform.CLIMATE)
         command = ClimateSetFanModeCommand(
             ieee=climate_platform_entity.device_ieee,
             unique_id=climate_platform_entity.unique_id,
@@ -717,14 +561,7 @@ class ClimateHelper:
         preset_mode: str,
     ) -> CommandResponse:
         """Set a climate."""
-        if (
-            climate_platform_entity is None
-            or climate_platform_entity.platform != Platform.CLIMATE
-        ):
-            raise ValueError(
-                "climate_platform_entity must be provided and it must be a climate platform entity"
-            )
-
+        ensure_platform_entity(climate_platform_entity, Platform.CLIMATE)
         command = ClimateSetPresetModeCommand(
             ieee=climate_platform_entity.device_ieee,
             unique_id=climate_platform_entity.unique_id,
@@ -744,15 +581,9 @@ class AlarmControlPanelHelper:
         self, alarm_control_panel_platform_entity: BasePlatformEntity, code: str
     ) -> CommandResponse:
         """Disarm an alarm control panel."""
-        if (
-            alarm_control_panel_platform_entity is None
-            or alarm_control_panel_platform_entity.platform
-            != Platform.ALARM_CONTROL_PANEL
-        ):
-            raise ValueError(
-                "alarm_control_panel_platform_entity must be provided and it must be an alarm control panel platform entity"
-            )
-
+        ensure_platform_entity(
+            alarm_control_panel_platform_entity, Platform.ALARM_CONTROL_PANEL
+        )
         command = AlarmControlPanelDisarmCommand(
             ieee=alarm_control_panel_platform_entity.device_ieee,
             unique_id=alarm_control_panel_platform_entity.unique_id,
@@ -764,15 +595,9 @@ class AlarmControlPanelHelper:
         self, alarm_control_panel_platform_entity: BasePlatformEntity, code: str
     ) -> CommandResponse:
         """Arm an alarm control panel in home mode."""
-        if (
-            alarm_control_panel_platform_entity is None
-            or alarm_control_panel_platform_entity.platform
-            != Platform.ALARM_CONTROL_PANEL
-        ):
-            raise ValueError(
-                "alarm_control_panel_platform_entity must be provided and it must be an alarm control panel platform entity"
-            )
-
+        ensure_platform_entity(
+            alarm_control_panel_platform_entity, Platform.ALARM_CONTROL_PANEL
+        )
         command = AlarmControlPanelArmHomeCommand(
             ieee=alarm_control_panel_platform_entity.device_ieee,
             unique_id=alarm_control_panel_platform_entity.unique_id,
@@ -784,15 +609,9 @@ class AlarmControlPanelHelper:
         self, alarm_control_panel_platform_entity: BasePlatformEntity, code: str
     ) -> CommandResponse:
         """Arm an alarm control panel in away mode."""
-        if (
-            alarm_control_panel_platform_entity is None
-            or alarm_control_panel_platform_entity.platform
-            != Platform.ALARM_CONTROL_PANEL
-        ):
-            raise ValueError(
-                "alarm_control_panel_platform_entity must be provided and it must be an alarm control panel platform entity"
-            )
-
+        ensure_platform_entity(
+            alarm_control_panel_platform_entity, Platform.ALARM_CONTROL_PANEL
+        )
         command = AlarmControlPanelArmAwayCommand(
             ieee=alarm_control_panel_platform_entity.device_ieee,
             unique_id=alarm_control_panel_platform_entity.unique_id,
@@ -804,15 +623,9 @@ class AlarmControlPanelHelper:
         self, alarm_control_panel_platform_entity: BasePlatformEntity, code: str
     ) -> CommandResponse:
         """Arm an alarm control panel in night mode."""
-        if (
-            alarm_control_panel_platform_entity is None
-            or alarm_control_panel_platform_entity.platform
-            != Platform.ALARM_CONTROL_PANEL
-        ):
-            raise ValueError(
-                "alarm_control_panel_platform_entity must be provided and it must be an alarm control panel platform entity"
-            )
-
+        ensure_platform_entity(
+            alarm_control_panel_platform_entity, Platform.ALARM_CONTROL_PANEL
+        )
         command = AlarmControlPanelArmNightCommand(
             ieee=alarm_control_panel_platform_entity.device_ieee,
             unique_id=alarm_control_panel_platform_entity.unique_id,
@@ -825,15 +638,9 @@ class AlarmControlPanelHelper:
         alarm_control_panel_platform_entity: BasePlatformEntity,
     ) -> CommandResponse:
         """Trigger an alarm control panel alarm."""
-        if (
-            alarm_control_panel_platform_entity is None
-            or alarm_control_panel_platform_entity.platform
-            != Platform.ALARM_CONTROL_PANEL
-        ):
-            raise ValueError(
-                "alarm_control_panel_platform_entity must be provided and it must be an alarm control panel platform entity"
-            )
-
+        ensure_platform_entity(
+            alarm_control_panel_platform_entity, Platform.ALARM_CONTROL_PANEL
+        )
         command = AlarmControlPanelTriggerCommand(
             ieee=alarm_control_panel_platform_entity.device_ieee,
             unique_id=alarm_control_panel_platform_entity.unique_id,

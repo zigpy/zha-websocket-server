@@ -50,8 +50,8 @@ async def main() -> None:
     groups = controller.groups
     for group in groups.values():
         _LOGGER.info("Group: %s", group)
-        for entity in group.group.entities:
-            _LOGGER.info("Entity: %s", entity)
+        for group_entity in group.group.entities.values():
+            _LOGGER.info("Entity: %s", group_entity)
 
     if test_lights:
         try:
