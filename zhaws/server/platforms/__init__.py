@@ -195,13 +195,13 @@ class PlatformEntity(BaseEntity):
 
     async def async_update(self) -> None:
         """Retrieve latest state."""
+        previous_state = self.get_state()
         tasks = [
             cluster_handler.async_update()
             for cluster_handler in self.cluster_handlers.values()
             if hasattr(cluster_handler, "async_update")
         ]
         if tasks:
-            previous_state = self.get_state()
             await asyncio.gather(*tasks)
             state = self.get_state()
             if state != previous_state:
