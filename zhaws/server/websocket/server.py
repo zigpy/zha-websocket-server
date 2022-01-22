@@ -31,7 +31,7 @@ class Server:
         """Initialize the server."""
         self._host: str = host
         self._port: int = port
-        self._server: websockets.Serve | None = None
+        self._ws_server: websockets.Serve | None = None
         self._stop_event: asyncio.Event = asyncio.Event()
         self._controller: Controller = Controller(self)
         self._client_manager: ClientManager = ClientManager(self)
@@ -43,23 +43,23 @@ class Server:
         discovery.GROUP_PROBE.initialize(self)
 
     async def __aenter__(self) -> Server:
-        assert self._server is None
+        assert self._ws_server is None
 
-        self._server = websockets.serve(
+        self._ws_server = websockets.serve(
             self._client_manager.add_client, self._host, self._port, logger=_LOGGER
         )
-        await self._server.__aenter__()
+        await self._ws_server.__aenter__()
 
         return self
 
     async def __aexit__(
         self, exc_type: Exception, exc_value: str, traceback: TracebackType
     ) -> None:
-        assert self._server is not None
+        assert self._ws_server is not None
 
         await self.stop_server()
-        await self._server.__aexit__(exc_type, exc_value, traceback)
-        self._server = None
+        await self._ws_server.__aexit__(exc_type, exc_value, traceback)
+        self._ws_server = None
 
     @property
     def controller(self) -> Controller:
