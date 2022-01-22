@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Dict, Final, Union
 from zigpy.exceptions import ZigbeeException
 from zigpy.zcl.clusters import hvac
 
-from zhaws.server.platforms import GroupEntity, PlatformEntity
+from zhaws.server.platforms import BaseEntity, GroupEntity, PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhaws.server.zigbee.cluster import (
     CLUSTER_HANDLER_EVENT,
@@ -96,7 +96,7 @@ class NotValidPresetModeError(ValueError):
     """Exception class when the preset_mode in not in the preset_modes list."""
 
 
-class BaseFan(PlatformEntity):
+class BaseFan(BaseEntity):
     """Base representation of a zhawss fan."""
 
     PLATFORM = Platform.FAN
@@ -165,7 +165,7 @@ class BaseFan(PlatformEntity):
 
 
 @STRICT_MATCH(cluster_handler_names=CLUSTER_HANDLER_FAN)
-class Fan(BaseFan):
+class Fan(PlatformEntity, BaseFan):
     """Representation of a zhawss fan."""
 
     def __init__(

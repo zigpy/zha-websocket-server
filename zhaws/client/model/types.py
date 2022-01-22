@@ -481,5 +481,5 @@ class Group(BaseModel):
 class GroupMemberReference(BaseModel):
     """Group member reference model."""
 
-    device_ieee: str
+    ieee: str
     endpoint_id: int

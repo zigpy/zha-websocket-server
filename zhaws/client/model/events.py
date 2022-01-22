@@ -7,7 +7,7 @@ from typing import Annotated, Any, Literal, Optional, Union
 
 from pydantic.fields import Field
 
-from zhaws.client.model.types import BaseDevice, Device, DeviceSignature
+from zhaws.client.model.types import BaseDevice, Device, DeviceSignature, Group
 from zhaws.model import BaseEvent, BaseModel
 
 
@@ -145,6 +145,34 @@ class DeviceRemovedEvent(ControllerEvent):
     device: Device
 
 
+class GroupRemovedEvent(ControllerEvent):
+    """Group removed event."""
+
+    event: Literal["group_removed"] = "group_removed"
+    group: Group
+
+
+class GroupAddedEvent(ControllerEvent):
+    """Group added event."""
+
+    event: Literal["group_added"] = "group_added"
+    group: Group
+
+
+class GroupMemberAddedEvent(ControllerEvent):
+    """Group member added event."""
+
+    event: Literal["group_member_added"] = "group_member_added"
+    group: Group
+
+
+class GroupMemberRemovedEvent(ControllerEvent):
+    """Group member removed event."""
+
+    event: Literal["group_member_removed"] = "group_member_removed"
+    group: Group
+
+
 Events = Annotated[
     Union[
         PlatformEntityEvent,
@@ -155,6 +183,10 @@ Events = Annotated[
         DeviceConfiguredEvent,
         DeviceLeftEvent,
         DeviceRemovedEvent,
+        GroupRemovedEvent,
+        GroupAddedEvent,
+        GroupMemberAddedEvent,
+        GroupMemberRemovedEvent,
     ],
     Field(discriminator="event"),  # noqa: F821
 ]

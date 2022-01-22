@@ -140,7 +140,7 @@ class Group(LogMixin):
 
     def register_group_entity(self, group_entity: GroupEntity) -> None:
         """Register a group entity."""
-        if group_entity.unique_id in self._group_entities:
+        if group_entity.unique_id not in self._group_entities:
             self._group_entities[group_entity.unique_id] = group_entity
             self._entity_unsubs[group_entity.unique_id] = group_entity.on_event(
                 STATE_CHANGED,

@@ -245,7 +245,7 @@ class GroupEntity(BaseEntity):
             "group_id": self.group.group_id,
         }
 
-    def update(self) -> None:
+    def update(self, _: Any | None = None) -> None:
         """Update the state of this group entity."""
 
     def send_event(self, signal: dict[str, Any]) -> None:
