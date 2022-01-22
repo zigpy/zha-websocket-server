@@ -1,9 +1,10 @@
 """Controller implementation for the zhaws.client."""
 
-import asyncio
-from asyncio.tasks import Task
+from __future__ import annotations
+
 import logging
-from typing import Any, Optional
+from types import TracebackType
+from typing import Any
 
 from aiohttp import ClientSession
 from async_timeout import timeout
@@ -48,12 +49,12 @@ _LOGGER = logging.getLogger(__name__)
 class Controller(EventBase):
     """Controller implementation."""
 
-    def __init__(self, ws_server_url: str, aiohttp_session: ClientSession):
+    def __init__(
+        self, ws_server_url: str, aiohttp_session: ClientSession | None = None
+    ):
         super().__init__()
         self._ws_server_url: str = ws_server_url
-        self._aiohttp_session: ClientSession = aiohttp_session
         self._client: Client = Client(ws_server_url, aiohttp_session)
-        self._listen_task: Optional[Task] = None
         self._devices: dict[str, Device] = {}
         self._groups: dict[int, Group] = {}
         self._client.on_event(
@@ -96,14 +97,23 @@ class Controller(EventBase):
         except Exception as err:
             _LOGGER.error("Unable to connect to the ZHA wss: %s", err)
             raise err
-        self._listen_task = asyncio.create_task(self._listen())
 
-    async def _listen(self) -> None:
-        """Listen for messages from the websocket server."""
-        try:
-            await self._client.listen()
-        except Exception as err:
-            _LOGGER.error("Unable to connect to the zhawss: %s", err)
+        await self._client.listen()
+
+    async def disconnect(self) -> None:
+        """Disconnect from the websocket server."""
+        await self._client.disconnect()
+
+    async def __aenter__(self) -> Controller:
+        """Connect to the websocket server."""
+        await self.connect()
+        return self
+
+    async def __aexit__(
+        self, exc_type: Exception, exc_value: str, traceback: TracebackType
+    ) -> None:
+        """Disconnect from the websocket server."""
+        await self.disconnect()
 
     async def send_command(self, command: Command) -> CommandResponse:
         """Send a command and get a response."""

@@ -32,8 +32,15 @@ class Client(EventBase):
         """Initialize the Client class."""
         super().__init__(*args, **kwargs)
         self.ws_server_url = ws_server_url
-        self.aiohttp_session = aiohttp_session
-        self._aiohttp_session_created: bool = False
+
+        # Create a session if none is provided
+        if aiohttp_session is None:
+            self.aiohttp_session = ClientSession()
+            self._aiohttp_session_created: bool = True
+        else:
+            self.aiohttp_session = aiohttp_session
+            self._aiohttp_session_created: bool = False
+
         # The WebSocket client
         self._client: Optional[ClientWebSocketResponse] = None
         self._loop = asyncio.get_running_loop()
@@ -124,6 +131,9 @@ class Client(EventBase):
             self._listen_task = None
 
         await self._client.close()
+
+        if self._aiohttp_session_created:
+            await self.aiohttp_session.close()
 
         _LOGGER.debug("Listen completed. Cleaning up")
 
@@ -224,11 +234,6 @@ class Client(EventBase):
 
     async def __aenter__(self) -> Client:
         """Connect to the websocket."""
-        if self.aiohttp_session is None:
-            session = ClientSession()
-            self.aiohttp_session = await session.__aenter__()
-            self._aiohttp_session_created = True
-
         await self.connect()
         return self
 
@@ -237,8 +242,3 @@ class Client(EventBase):
     ) -> None:
         """Disconnect from the websocket."""
         await self.disconnect()
-
-        if self._aiohttp_session_created:
-            await self.aiohttp_session.__aexit__(exc_type, exc_value, traceback)
-            self._aiohttp_session_created = False
-            self.aiohttp_session = None
