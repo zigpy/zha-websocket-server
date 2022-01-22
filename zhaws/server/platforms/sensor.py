@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING, Any, Final, Type, Union
 from zhaws.server.decorators import periodic
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
+from zhaws.server.util import cancel_task
+from zhaws.server.websocket import ServerEvents
 from zhaws.server.zigbee.cluster import (
     CLUSTER_HANDLER_EVENT,
     ClusterAttributeUpdatedEvent,
@@ -108,6 +110,12 @@ class Sensor(PlatformEntity):
         )
         if self.should_poll:
             self.poller_task = asyncio.create_task(self._refresh())
+            self._device.controller.server.on_event(
+                ServerEvents.SHUTDOWN,
+                functools.partial(
+                    cancel_task, self.poller_task, "sensor_state_poller", _LOGGER
+                ),
+            )
 
     def get_state(self) -> dict:
         """Return the state for this sensor."""

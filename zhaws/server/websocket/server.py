@@ -9,10 +9,12 @@ from typing import TYPE_CHECKING, Any
 import voluptuous
 import websockets
 
+from zhaws.event import EventBase
 from zhaws.server.const import COMMAND, APICommands
 from zhaws.server.platforms import discovery
 from zhaws.server.platforms.api import load_platform_entity_apis
 from zhaws.server.platforms.discovery import PLATFORMS
+from zhaws.server.websocket import ServerEvents
 from zhaws.server.websocket.api import decorators, register_api_command
 from zhaws.server.websocket.client import ClientManager
 from zhaws.server.zigbee.api import load_api as load_zigbee_controller_api
@@ -24,17 +26,19 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-class Server:
+class Server(EventBase):
     """ZHAWSS server implementation."""
 
     def __init__(self, *, host: str = "", port: int = 8001) -> None:
         """Initialize the server."""
+        super().__init__()
         self._host: str = host
         self._port: int = port
         self._ws_server: websockets.Serve | None = None
         self._controller: Controller = Controller(self)
         self._client_manager: ClientManager = ClientManager(self)
         self._stopped_event: asyncio.Event = asyncio.Event()
+        self._tracked_tasks: list[asyncio.Task] = []
         self.data: dict[Any, Any] = {}
         for platform in PLATFORMS:
             self.data.setdefault(platform, [])
@@ -67,7 +71,9 @@ class Server:
 
     async def wait_closed(self) -> None:
         """Waits until the server is not running."""
-        return await self._stopped_event.wait()
+        await self._stopped_event.wait()
+        _LOGGER.info("Server stopped. Completing remaining tasks...")
+        await asyncio.gather(*self._tracked_tasks, return_exceptions=True)
 
     async def stop_server(self) -> None:
         """Stop the websocket server."""
@@ -84,6 +90,7 @@ class Server:
         await self._ws_server.wait_closed()
         self._ws_server = None
 
+        self.emit(ServerEvents.SHUTDOWN)
         self._stopped_event.set()
 
     async def __aenter__(self) -> Server:

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import logging
 import time
 from typing import TYPE_CHECKING
 
@@ -10,6 +11,8 @@ from zhaws.server.decorators import periodic
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhaws.server.platforms.sensor import Battery
+from zhaws.server.util import cancel_task
+from zhaws.server.websocket import ServerEvents
 from zhaws.server.zigbee.cluster import (
     CLUSTER_HANDLER_EVENT,
     ClusterAttributeUpdatedEvent,
@@ -24,6 +27,8 @@ if TYPE_CHECKING:
 STRICT_MATCH = functools.partial(
     PLATFORM_ENTITIES.strict_match, Platform.DEVICE_TRACKER
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @STRICT_MATCH(cluster_handler_names=CLUSTER_HANDLER_POWER_CONFIGURATION)
@@ -52,6 +57,15 @@ class DeviceTracker(PlatformEntity):
             CLUSTER_HANDLER_EVENT, self._handle_event_protocol
         )
         self._cancel_refresh_handle = asyncio.create_task(self._refresh())
+        self._device.controller.server.on_event(
+            ServerEvents.SHUTDOWN,
+            functools.partial(
+                cancel_task,
+                self._cancel_refresh_handle,
+                "device_tracker_refresh",
+                _LOGGER,
+            ),
+        )
 
     async def async_update(self) -> None:
         """Handle polling."""

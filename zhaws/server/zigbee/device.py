@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from enum import Enum
+import functools
 import logging
 import time
 from typing import TYPE_CHECKING, Any, Callable, Final, Iterable, Union
@@ -30,7 +31,8 @@ from zhaws.server.const import (
 )
 from zhaws.server.decorators import periodic
 from zhaws.server.platforms import PlatformEntity
-from zhaws.server.util import LogMixin
+from zhaws.server.util import LogMixin, cancel_task
+from zhaws.server.websocket import ServerEvents
 from zhaws.server.zigbee.cluster import ZDOClusterHandler
 from zhaws.server.zigbee.endpoint import Endpoint
 
@@ -126,9 +128,7 @@ class Device(LogMixin):
         """Initialize the gateway."""
         self._controller: Controller = controller
         self._zigpy_device: ZigpyDevice = zigpy_device
-        #       self._zha_gateway = zha_gateway
         self._available: bool = False
-        #       self._available_signal = f"{self.name}_{self.ieee}_{SIGNAL_AVAILABLE}"
         self._checkins_missed_count: int = 0
         self.unsubs: list[Callable[[], Any]] = []
         self.quirk_applied: bool = isinstance(
@@ -171,6 +171,12 @@ class Device(LogMixin):
                 self._endpoints[ep_id] = Endpoint.new(endpoint, self)
 
         self._check_alive_task = asyncio.create_task(self._check_available())
+        self.controller.server.on_event(
+            ServerEvents.SHUTDOWN,
+            functools.partial(
+                cancel_task, self._check_alive_task, "device_check_alive", _LOGGER
+            ),
+        )
 
     @property
     def device(self) -> ZigpyDevice:

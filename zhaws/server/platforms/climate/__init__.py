@@ -13,6 +13,8 @@ from zhaws.backports.enum import StrEnum
 from zhaws.server.decorators import periodic
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
+from zhaws.server.util import cancel_task
+from zhaws.server.websocket import ServerEvents
 from zhaws.server.zigbee.cluster import (
     CLUSTER_HANDLER_EVENT,
     ClusterAttributeUpdatedEvent,
@@ -593,6 +595,12 @@ class SinopeTechnologiesThermostat(Thermostat):
             await self._async_update_time()
 
         self._update_time_task = asyncio.create_task(_update_time())
+        self._device.controller.server.on_event(
+            ServerEvents.SHUTDOWN,
+            functools.partial(
+                cancel_task, self._update_time_task, "sinope_time_updater", _LOGGER
+            ),
+        )
 
     @property
     def _rm_rs_action(self) -> Union[str, None]:

@@ -6,6 +6,7 @@ from collections import Counter
 import enum
 import functools
 import itertools
+import logging
 from typing import TYPE_CHECKING, Any, Final, Optional, Union
 
 from zigpy.zcl.clusters.general import Identify, LevelControl, OnOff
@@ -16,6 +17,8 @@ from zhaws.server.decorators import periodic
 from zhaws.server.platforms import BaseEntity, GroupEntity, PlatformEntity, helpers
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhaws.server.platforms.util import color as color_util
+from zhaws.server.util import cancel_task
+from zhaws.server.websocket import ServerEvents
 from zhaws.server.zigbee.cluster import (
     CLUSTER_HANDLER_EVENT,
     ClusterAttributeUpdatedEvent,
@@ -119,6 +122,8 @@ SUPPORT_GROUP_LIGHT = (
     | SUPPORT_COLOR
     | SUPPORT_TRANSITION
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class LightColorMode(enum.IntEnum):
@@ -464,6 +469,12 @@ class Light(PlatformEntity, BaseLight):
             self.maybe_send_state_changed_event()
 
         self._cancel_refresh_handle = asyncio.create_task(_refresh())
+        self._device.controller.server.on_event(
+            ServerEvents.SHUTDOWN,
+            functools.partial(
+                cancel_task, self._cancel_refresh_handle, "light_refresh", _LOGGER
+            ),
+        )
 
     def handle_cluster_handler_attribute_updated(
         self, event: ClusterAttributeUpdatedEvent
