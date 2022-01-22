@@ -95,6 +95,7 @@ class EventTypes(StrEnum):
     CONTROLLER_EVENT = "controller_event"
     PLATFORM_ENTITY_EVENT = "platform_entity_event"
     RAW_ZCL_EVENT = "raw_zcl_event"
+    DEVICE_EVENT = "device_event"
 
 
 class ControllerEvents(StrEnum):
