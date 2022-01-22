@@ -174,7 +174,10 @@ class Device(LogMixin):
         self.controller.server.on_event(
             ServerEvents.SHUTDOWN,
             functools.partial(
-                cancel_task, self._check_alive_task, "device_check_alive", _LOGGER
+                cancel_task,
+                self._check_alive_task,
+                f"device_check_alive_{self.ieee}",
+                _LOGGER,
             ),
         )
 

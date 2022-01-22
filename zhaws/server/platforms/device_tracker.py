@@ -62,7 +62,7 @@ class DeviceTracker(PlatformEntity):
             functools.partial(
                 cancel_task,
                 self._cancel_refresh_handle,
-                "device_tracker_refresh",
+                f"device_tracker_refresh_{self.unique_id}",
                 _LOGGER,
             ),
         )

@@ -113,7 +113,10 @@ class Sensor(PlatformEntity):
             self._device.controller.server.on_event(
                 ServerEvents.SHUTDOWN,
                 functools.partial(
-                    cancel_task, self.poller_task, "sensor_state_poller", _LOGGER
+                    cancel_task,
+                    self.poller_task,
+                    f"sensor_state_poller_{self.unique_id}_{self.__class__.__name__}",
+                    _LOGGER,
                 ),
             )
 

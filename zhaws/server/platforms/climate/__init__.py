@@ -598,7 +598,10 @@ class SinopeTechnologiesThermostat(Thermostat):
         self._device.controller.server.on_event(
             ServerEvents.SHUTDOWN,
             functools.partial(
-                cancel_task, self._update_time_task, "sinope_time_updater", _LOGGER
+                cancel_task,
+                self._update_time_task,
+                f"sinope_time_updater_{self.unique_id}",
+                _LOGGER,
             ),
         )
 

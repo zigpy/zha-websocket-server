@@ -472,7 +472,10 @@ class Light(PlatformEntity, BaseLight):
         self._device.controller.server.on_event(
             ServerEvents.SHUTDOWN,
             functools.partial(
-                cancel_task, self._cancel_refresh_handle, "light_refresh", _LOGGER
+                cancel_task,
+                self._cancel_refresh_handle,
+                f"light_refresh_{self.unique_id}",
+                _LOGGER,
             ),
         )
 
