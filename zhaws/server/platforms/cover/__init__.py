@@ -214,10 +214,8 @@ class Shade(PlatformEntity):
         self._level_cluster_handler: ClusterHandler = self.cluster_handlers[
             CLUSTER_HANDLER_LEVEL
         ]
-        self._is_open: Union[bool, None] = self._on_off_cluster_handler.cluster.get(
-            "on_off"
-        )
-        position = self._level_cluster_handler.cluster.get("current_level")
+        self._is_open: bool = bool(self._on_off_cluster_handler.on_off)
+        position = self._level_cluster_handler.current_level
         position = max(0, min(255, position))
         self._position: Union[int, None] = int(position * 100 / 255)
         self._on_off_cluster_handler.on_event(
@@ -237,8 +235,6 @@ class Shade(PlatformEntity):
     @property
     def is_closed(self) -> Union[bool, None]:
         """Return True if shade is closed."""
-        if self._is_open is None:
-            return None
         return not self._is_open
 
     def handle_cluster_handler_attribute_updated(

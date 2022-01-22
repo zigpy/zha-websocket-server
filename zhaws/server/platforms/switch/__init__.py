@@ -84,7 +84,7 @@ class Switch(PlatformEntity, BaseSwitch):
         self._on_off_cluster_handler: OnOffClusterHandler = cast(
             OnOffClusterHandler, self.cluster_handlers[CLUSTER_HANDLER_ON_OFF]
         )
-        self._state: bool = self._on_off_cluster_handler.cluster.get("on_off")
+        self._state: bool = bool(self._on_off_cluster_handler.on_off)
         self._on_off_cluster_handler.on_event(
             CLUSTER_HANDLER_EVENT, self._handle_event_protocol
         )

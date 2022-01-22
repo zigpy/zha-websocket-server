@@ -465,15 +465,6 @@ class Light(PlatformEntity, BaseLight):
 
         self._cancel_refresh_handle = asyncio.create_task(_refresh())
 
-        """TODO
-        self.async_accept_signal(
-            None,
-            SIGNAL_LIGHT_GROUP_STATE_CHANGED,
-            self._maybe_force_refresh,
-            signal_override=True,
-        )
-        """
-
     def handle_cluster_handler_attribute_updated(
         self, event: ClusterAttributeUpdatedEvent
     ) -> None:
@@ -535,14 +526,6 @@ class Light(PlatformEntity, BaseLight):
                 else:
                     self._effect = None
 
-    """TODO
-    async def _maybe_force_refresh(self, signal):
-        #Force update the state if the signal contains the entity id for this entity.
-        if self.entity_id in signal["entity_ids"]:
-            await self.async_get_state()
-            self.send_state_changed_event()
-    """
-
 
 @STRICT_MATCH(
     cluster_handler_names=CLUSTER_HANDLER_ON_OFF,
@@ -585,16 +568,6 @@ class LightGroup(GroupEntity, BaseLight):
         self._identify_cluster_handler: Optional[
             ClusterHandler
         ] = group.zigpy_group.endpoint[Identify.cluster_id]
-
-        # self._debounced_member_refresh = None
-        """
-        self._default_transition = async_get_zha_config_value(
-            zha_device.gateway.config_entry,
-            ZHA_OPTIONS,
-            CONF_DEFAULT_LIGHT_TRANSITION,
-            0,
-        )
-        """
 
     def update(self, _: Any = None) -> None:
         # Query all members and determine the light group state.

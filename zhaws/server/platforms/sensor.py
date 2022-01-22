@@ -344,16 +344,20 @@ class SmartEnergyMetering(Sensor):
 
     SENSOR_ATTR: Union[int, str] = "instantaneous_demand"
 
+    def __init__(
+        self,
+        unique_id: str,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
+    ):
+        """Initialize the sensor."""
+        super().__init__(unique_id, cluster_handlers, endpoint, device)
+        self._unit = self._cluster_handler.unit_of_measurement
+
     def formatter(self, value: int) -> Union[int, float]:
         """Pass through cluster handler formatter."""
         return self._cluster_handler.demand_formatter(value)
-
-    """TODO
-    @property
-    def native_unit_of_measurement(self) -> str:
-        #Return Unit of measurement.
-        return self.unit_of_measure_map.get(self._cluster_handler.unit_of_measurement)
-    """
 
     def get_state(self) -> dict[str, Any]:
         """Return state for this sensor."""

@@ -48,8 +48,7 @@ class BinarySensor(PlatformEntity):
         self._cluster_handler.on_event(
             CLUSTER_HANDLER_EVENT, self._handle_event_protocol
         )
-        value = self._cluster_handler.cluster.get("zone_status")
-        self._state: bool = value & 3 if value is not None else False
+        self._state: bool = bool(self._cluster_handler.cluster.get(self.SENSOR_ATTR))
 
     @property
     def is_on(self) -> bool:
@@ -135,6 +134,18 @@ class IASZone(BinarySensor):
     """ZHA IAS BinarySensor."""
 
     SENSOR_ATTR = "zone_status"
+
+    def __init__(
+        self,
+        unique_id: str,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
+    ):
+        """Initialize the binary sensor."""
+        super().__init__(unique_id, cluster_handlers, endpoint, device)
+        value = self._cluster_handler.cluster.get(self.SENSOR_ATTR)
+        self._state: bool = value & 3 if value is not None else False
 
     async def async_update(self) -> None:
         """Attempt to retrieve on off state from the binary sensor."""
