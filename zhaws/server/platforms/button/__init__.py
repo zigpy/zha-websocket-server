@@ -39,6 +39,9 @@ class Button(PlatformEntity):
     def get_args(self) -> list[Any]:
         """Return the arguments to use in the command."""
 
+    def get_state(self) -> Union[float, bool, int, str, dict, None]:
+        """Return the arguments to use in the command."""
+
     async def async_press(self) -> None:
         """Send out a update command."""
         command = getattr(self._cluster_handler, self._command_name)
@@ -60,7 +63,7 @@ class IdentifyButton(Button):
 
     @classmethod
     def create_platform_entity(
-        cls: Type,
+        cls: Type[IdentifyButton],
         unique_id: str,
         cluster_handlers: list[ClusterHandler],
         endpoint: Endpoint,
