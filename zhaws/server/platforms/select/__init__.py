@@ -60,10 +60,11 @@ class EnumSelect(PlatformEntity):
 
     async def async_select_option(self, option: Union[str, int], **kwargs: Any) -> None:
         """Change the selected option."""
-        self._cluster_handler.data_cache[self._attr_name] = self._enum[
-            option.replace(" ", "_")
-        ]
-        self.send_state_changed_event()
+        if isinstance(option, str):
+            self._cluster_handler.data_cache[self._attr_name] = self._enum[
+                option.replace(" ", "_")
+            ]
+            self.send_state_changed_event()
 
     def to_json(self) -> dict:
         """Return a JSON representation of the select."""

@@ -33,7 +33,7 @@ class BinarySensor(PlatformEntity):
     """BinarySensor platform entity."""
 
     SENSOR_ATTR: Union[str, None] = None
-    PLATFORM: str = Platform.BINARY_SENSOR
+    PLATFORM: Platform = Platform.BINARY_SENSOR
 
     def __init__(
         self,
