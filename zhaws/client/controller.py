@@ -28,7 +28,7 @@ from zhaws.client.helpers import (
     SirenHelper,
     SwitchHelper,
 )
-from zhaws.client.model.commands import Command, CommandResponse, GroupsResponse
+from zhaws.client.model.commands import Command, CommandResponse
 from zhaws.client.model.events import (
     DeviceConfiguredEvent,
     DeviceFullyInitializedEvent,
@@ -117,8 +117,8 @@ class Controller(EventBase):
 
     async def load_groups(self) -> None:
         """Load groups from the websocket server."""
-        response: GroupsResponse = await self.groups_helper.get_groups()
-        for id, group in response.groups.items():
+        response_groups = await self.groups_helper.get_groups()
+        for id, group in response_groups.items():
             self._groups[id] = Group(group, self, self._client)
 
     def handle_platform_entity_event(self, event: PlatformEntityEvent) -> None:

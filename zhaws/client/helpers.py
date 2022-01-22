@@ -696,19 +696,22 @@ class GroupHelper:
         """Initialize the group helper."""
         self._client: Client = client
 
-    async def get_groups(self) -> GroupsResponse:
+    async def get_groups(self) -> dict[int, Group]:
         """Get the groups."""
-        response = await self._client.async_send_command(
-            GetGroupsCommand().dict(exclude_none=True)
+        response = cast(
+            GroupsResponse,
+            await self._client.async_send_command(
+                GetGroupsCommand().dict(exclude_none=True)
+            ),
         )
-        return cast(GroupsResponse, response)
+        return response.groups
 
     async def create_group(
         self,
         name: str,
         unique_id: Optional[int] = None,
         members: Optional[list[BasePlatformEntity]] = None,
-    ) -> UpdateGroupResponse:
+    ) -> Group:
         """Create a new group."""
         request_data: dict[str, Any] = {
             "group_name": name,
@@ -721,25 +724,27 @@ class GroupHelper:
             ]
 
         command = CreateGroupCommand(**request_data)
-        response = await self._client.async_send_command(
-            command.dict(exclude_none=True)
+        response = cast(
+            UpdateGroupResponse,
+            await self._client.async_send_command(command.dict(exclude_none=True)),
         )
-        return cast(UpdateGroupResponse, response)
+        return response.group
 
-    async def remove_groups(self, groups: list[Group]) -> GroupsResponse:
+    async def remove_groups(self, groups: list[Group]) -> dict[int, Group]:
         """Remove groups."""
         request: dict[str, Any] = {
             "group_ids": [group.id for group in groups],
         }
         command = RemoveGroupsCommand(**request)
-        response = await self._client.async_send_command(
-            command.dict(exclude_none=True)
+        response = cast(
+            GroupsResponse,
+            await self._client.async_send_command(command.dict(exclude_none=True)),
         )
-        return cast(GroupsResponse, response)
+        return response.groups
 
     async def add_group_members(
         self, group: Group, members: list[BasePlatformEntity]
-    ) -> UpdateGroupResponse:
+    ) -> Group:
         """Add members to a group."""
         request_data: dict[str, Any] = {
             "group_id": group.id,
@@ -750,14 +755,15 @@ class GroupHelper:
         }
 
         command = AddGroupMembersCommand(**request_data)
-        response = await self._client.async_send_command(
-            command.dict(exclude_none=True)
+        response = cast(
+            UpdateGroupResponse,
+            await self._client.async_send_command(command.dict(exclude_none=True)),
         )
-        return cast(UpdateGroupResponse, response)
+        return response.group
 
     async def remove_group_members(
         self, group: Group, members: list[BasePlatformEntity]
-    ) -> UpdateGroupResponse:
+    ) -> Group:
         """Remove members from a group."""
         request_data: dict[str, Any] = {
             "group_id": group.id,
@@ -768,10 +774,11 @@ class GroupHelper:
         }
 
         command = RemoveGroupMembersCommand(**request_data)
-        response = await self._client.async_send_command(
-            command.dict(exclude_none=True)
+        response = cast(
+            UpdateGroupResponse,
+            await self._client.async_send_command(command.dict(exclude_none=True)),
         )
-        return cast(UpdateGroupResponse, response)
+        return response.group
 
 
 class DeviceHelper:
