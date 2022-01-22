@@ -163,7 +163,7 @@ class Client(EventBase):
         try:
             message = Message.parse_obj(msg).__root__
         except Exception as err:
-            _LOGGER.error("Error parsing message: %s", err, exc_info=err)
+            _LOGGER.error("Error parsing message: %s", msg, exc_info=err)
 
         if message.message_type == "result":
             future = self._result_futures.get(message.message_id)

@@ -12,10 +12,18 @@ class APICommands(StrEnum):
 
     # Zigbee API commands
     GET_DEVICES = "get_devices"
-    PERMIT_JOINING = "permit_joining"
     REMOVE_DEVICE = "remove_device"
+
+    PERMIT_JOINING = "permit_joining"
     START_NETWORK = "start_network"
     STOP_NETWORK = "stop_network"
+
+    # Group commands
+    GET_GROUPS = "get_groups"
+    CREATE_GROUP = "create_group"
+    REMOVE_GROUPS = "remove_groups"
+    ADD_GROUP_MEMBERS = "add_group_members"
+    REMOVE_GROUP_MEMBERS = "remove_group_members"
 
     # Server API commands
     STOP_SERVER = "stop_server"
@@ -96,6 +104,10 @@ class ControllerEvents(StrEnum):
     DEVICE_LEFT = "device_left"
     DEVICE_FULLY_INITIALIZED = "device_fully_initialized"
     DEVICE_CONFIGURED = "device_configured"
+    GROUP_MEMBER_ADDED = "group_member_added"
+    GROUP_MEMBER_REMOVED = "group_member_removed"
+    GROUP_ADDED = "group_added"
+    GROUP_REMOVED = "group_removed"
 
 
 class PlatformEntityEvents(StrEnum):
@@ -137,6 +149,7 @@ PAIRING_STATUS: Final[str] = "pairing_status"
 
 
 DEVICES: Final[str] = "devices"
+GROUPS: Final[str] = "groups"
 DURATION: Final[str] = "duration"
 ERROR_CODE: Final[str] = "error_code"
 ERROR_MESSAGE: Final[str] = "error_message"

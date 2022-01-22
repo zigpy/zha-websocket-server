@@ -36,6 +36,7 @@ class Server:
             self.data.setdefault(platform, [])
         self._register_api_commands()
         discovery.PROBE.initialize(self)
+        discovery.GROUP_PROBE.initialize(self)
 
     @property
     def controller(self) -> Controller:

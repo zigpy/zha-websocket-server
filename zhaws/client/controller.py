@@ -10,8 +10,29 @@ from async_timeout import timeout
 
 from zhaws.client.client import Client
 from zhaws.client.device import Device
-from zhaws.client.helpers import attach_platform_entity_helpers
-from zhaws.client.model.commands import Command, CommandResponse, GetDevicesResponse
+from zhaws.client.group import Group
+from zhaws.client.helpers import (
+    AlarmControlPanelHelper,
+    ButtonHelper,
+    ClientHelper,
+    ClimateHelper,
+    CoverHelper,
+    FanHelper,
+    GroupHelper,
+    LightHelper,
+    LockHelper,
+    NumberHelper,
+    PlatformEntityHelper,
+    SelectHelper,
+    SirenHelper,
+    SwitchHelper,
+)
+from zhaws.client.model.commands import (
+    Command,
+    CommandResponse,
+    GetDevicesResponse,
+    GroupsResponse,
+)
 from zhaws.client.model.events import (
     DeviceConfiguredEvent,
     DeviceFullyInitializedEvent,
@@ -38,16 +59,37 @@ class Controller(EventBase):
         self._client: Client = Client(ws_server_url, aiohttp_session)
         self._listen_task: Optional[Task] = None
         self._devices: dict[str, Device] = {}
+        self._groups: dict[int, Group] = {}
         self._client.on_event(
             "platform_entity_event", self.handle_platform_entity_event
         )
         self._client.on_event("controller_event", self._handle_event_protocol)
-        attach_platform_entity_helpers(self, self._client)
+        self.lights: LightHelper = LightHelper(self._client)
+        self.switches: SwitchHelper = SwitchHelper(self._client)
+        self.sirens: SirenHelper = SirenHelper(self._client)
+        self.buttons: ButtonHelper = ButtonHelper(self._client)
+        self.covers: CoverHelper = CoverHelper(self._client)
+        self.fans: FanHelper = FanHelper(self._client)
+        self.locks: LockHelper = LockHelper(self._client)
+        self.numbers: NumberHelper = NumberHelper(self._client)
+        self.selects: SelectHelper = SelectHelper(self._client)
+        self.thermostats: ClimateHelper = ClimateHelper(self._client)
+        self.alarm_control_panels: AlarmControlPanelHelper = AlarmControlPanelHelper(
+            self._client
+        )
+        self.entities: PlatformEntityHelper = PlatformEntityHelper(self._client)
+        self.clients: ClientHelper = ClientHelper(self._client)
+        self.groups_helper: GroupHelper = GroupHelper(self._client)
 
     @property
     def devices(self) -> dict[str, Device]:
         """Return the devices."""
         return self._devices
+
+    @property
+    def groups(self) -> dict[int, Group]:
+        """Return the groups."""
+        return self._groups
 
     async def connect(self) -> None:
         """Connect to the websocket server."""
@@ -78,14 +120,27 @@ class Controller(EventBase):
         for ieee, device in response.devices.items():
             self._devices[ieee] = Device(device, self, self._client)
 
+    async def load_groups(self) -> None:
+        """Load groups from the websocket server."""
+        response: GroupsResponse = await self.groups_helper.get_groups()
+        for id, group in response.groups.items():
+            self._groups[id] = Group(group, self, self._client)
+
     def handle_platform_entity_event(self, event: PlatformEntityEvent) -> None:
         """Handle a platform_entity_event from the websocket server."""
         _LOGGER.debug("platform_entity_event: %s", event)
-        device = self.devices.get(event.device.ieee)
-        if device is None:
-            _LOGGER.warning("Received event from unknown device: %s", event)
-            return
-        entity = device.device.entities.get(event.platform_entity.unique_id)
+        if event.device:
+            device = self.devices.get(event.device.ieee)
+            if device is None:
+                _LOGGER.warning("Received event from unknown device: %s", event)
+                return
+            entity: Any = device.device.entities.get(event.platform_entity.unique_id)
+        elif event.group:
+            group = self.groups.get(event.group.id)
+            if not group:
+                _LOGGER.warning("Received event from unknown group: %s", event)
+                return
+            entity = group.group.entities.get(event.platform_entity.unique_id)
         if entity is None:
             _LOGGER.warning("Received event for an unknown entity: %s", event)
             return

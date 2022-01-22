@@ -1,10 +1,12 @@
 """Device discovery functions for Zigbee Home Automation."""
 from __future__ import annotations
 
+from collections import Counter
 import logging
 from typing import TYPE_CHECKING, Any
 
 from zhaws.server.platforms import (  # noqa: F401 pylint: disable=unused-import,
+    GroupEntity,
     alarm_control_panel,
     binary_sensor,
     button,
@@ -32,6 +34,8 @@ from zhaws.server.platforms.registries import (
 if TYPE_CHECKING:
     from zhaws.server.websocket.server import Server
     from zhaws.server.zigbee.endpoint import Endpoint
+    from zhaws.server.zigbee.group import Group
+    from zhaws.server.zigbee.controller import Controller
 
 from zhaws.server.zigbee.cluster import (  # noqa: F401
     ClusterHandler,
@@ -72,11 +76,17 @@ PLATFORMS = (
     Platform.SWITCH,
 )
 
+GROUP_PLATFORMS = (
+    Platform.FAN,
+    Platform.LIGHT,
+    Platform.SWITCH,
+)
+
 
 class ProbeEndpoint:
     """All discovered cluster handlers and entities of an endpoint."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize instance."""
         self._device_configs: dict[str, Any] = {}
 
@@ -94,7 +104,7 @@ class ProbeEndpoint:
 
         platform = None  # remove this when the below is uncommented
         """TODO
-        component = self._device_configs.get(unique_id, {}).get(ha_const.CONF_TYPE)
+        platform = self._device_configs.get(unique_id, {}).get(ha_const.CONF_TYPE)
         """
         if platform is None:
             ep_profile_id = endpoint.zigpy_endpoint.profile_id
@@ -139,8 +149,8 @@ class ProbeEndpoint:
                     if isinstance(cluster_handler.cluster, cluster_class):
                         platform = match
                         break
-
-            self.probe_single_cluster(platform, cluster_handler, endpoint)
+            if platform is not None:
+                self.probe_single_cluster(platform, cluster_handler, endpoint)
 
         # until we can get rid off registries
         self.handle_on_off_output_cluster_exception(endpoint)
@@ -242,39 +252,28 @@ class ProbeEndpoint:
         """
 
 
-"""TODO
 class GroupProbe:
-    # Determine the appropriate component for a group.
+    """Determine the appropriate platform for a group"""
 
-    def __init__(self):
-        # Initialize instance.
-        self._hass = None
-        self._unsubs = []
+    def __init__(self) -> None:
+        """Initialize instance."""
+        self._server: Server | None = None
 
-    def initialize(self, hass: HomeAssistant) -> None:
-        # Initialize the group probe.
-        self._hass = hass
-        self._unsubs.append(
-            async_dispatcher_connect(
-                hass, zha_const.SIGNAL_GROUP_ENTITY_REMOVED, self._reprobe_group
-            )
-        )
-
-    def cleanup(self):
-        # Clean up on when zha shuts down.
-        for unsub in self._unsubs[:]:
-            unsub()
-            self._unsubs.remove(unsub)
+    def initialize(self, server: Server) -> None:
+        """Initialize the group probe."""
+        self._server = server
 
     def _reprobe_group(self, group_id: int) -> None:
-        # Reprobe a group for entities after its members change.
-        zha_gateway = self._hass.data[zha_const.DATA_ZHA][zha_const.DATA_ZHA_GATEWAY]
-        if (zha_group := zha_gateway.groups.get(group_id)) is None:
+        """Reprobe a group for entities after its members change."""
+        assert self._server is not None
+        controller: Controller = self._server.controller
+        if (group := controller.groups.get(group_id)) is None:
             return
-        self.discover_group_entities(zha_group)
+        self.discover_group_entities(group)
 
-    def discover_group_entities(self, group: zha_typing.ZhaGroupType) -> None:
-        # Process a group and create any entities that are needed.
+    def discover_group_entities(self, group: Group) -> None:
+        """Process a group and create any entities that are needed."""
+        _LOGGER.info("Probing group %s for entities", group.name)
         # only create a group entity if there are 2 or more members in a group
         if len(group.members) < 2:
             _LOGGER.debug(
@@ -284,67 +283,51 @@ class GroupProbe:
             )
             return
 
-        entity_domains = GroupProbe.determine_entity_domains(self._hass, group)
+        assert self._server is not None
+        entity_platforms = GroupProbe.determine_entity_platforms(self._server, group)
 
-        if not entity_domains:
+        if not entity_platforms:
+            _LOGGER.info("No entity platforms discovered for group %s", group.name)
             return
 
-        zha_gateway = self._hass.data[zha_const.DATA_ZHA][zha_const.DATA_ZHA_GATEWAY]
-        for domain in entity_domains:
-            entity_class = zha_regs.ZHA_ENTITIES.get_group_entity(domain)
+        for platform in entity_platforms:
+            entity_class = PLATFORM_ENTITIES.get_group_entity(platform)
             if entity_class is None:
                 continue
-            self._hass.data[zha_const.DATA_ZHA][domain].append(
-                (
-                    entity_class,
-                    (
-                        group.get_domain_entity_ids(domain),
-                        f"{domain}_zha_group_0x{group.group_id:04x}",
-                        group.group_id,
-                        zha_gateway.coordinator_zha_device,
-                    ),
-                )
-            )
-        async_dispatcher_send(self._hass, zha_const.SIGNAL_ADD_ENTITIES)
+            _LOGGER.info("Creating entity : %s for group %s", entity_class, group.name)
+            entity_class(group)
 
     @staticmethod
-    def determine_entity_domains(
-        hass: HomeAssistant, group: zha_typing.ZhaGroupType
-    ) -> list[str]:
-        # Determine the entity domains for this group.
-        entity_domains: list[str] = []
-        zha_gateway = hass.data[zha_const.DATA_ZHA][zha_const.DATA_ZHA_GATEWAY]
-        all_domain_occurrences = []
+    def determine_entity_platforms(server: Server, group: Group) -> list[Platform]:
+        """Determine the entity platforms for this group."""
+        entity_domains: list[Platform] = []
+        all_platform_occurrences = []
         for member in group.members:
             if member.device.is_coordinator:
                 continue
-            entities = async_entries_for_device(
-                zha_gateway.ha_entity_registry,
-                member.device.device_id,
-                include_disabled_entities=True,
-            )
-            all_domain_occurrences.extend(
+            entities = member.associated_entities
+            all_platform_occurrences.extend(
                 [
-                    entity.domain
+                    entity.PLATFORM
                     for entity in entities
-                    if entity.domain in zha_regs.GROUP_ENTITY_DOMAINS
+                    if entity.PLATFORM in GROUP_PLATFORMS
                 ]
             )
-        if not all_domain_occurrences:
+        if not all_platform_occurrences:
             return entity_domains
-        # get all domains we care about if there are more than 2 entities of this domain
-        counts = Counter(all_domain_occurrences)
-        entity_domains = [domain[0] for domain in counts.items() if domain[1] >= 2]
+        # get all platforms we care about if there are more than 2 entities of this platform
+        counts = Counter(all_platform_occurrences)
+        entity_platforms = [
+            platform[0] for platform in counts.items() if platform[1] >= 2
+        ]
         _LOGGER.debug(
-            "The entity domains are: %s for group: %s:0x%04x",
-            entity_domains,
+            "The entity platforms are: %s for group: %s:0x%04x",
+            entity_platforms,
             group.name,
             group.group_id,
         )
-        return entity_domains
+        return entity_platforms
 
-"""
+
 PROBE: ProbeEndpoint = ProbeEndpoint()
-""" TODO
-GROUP_PROBE = GroupProbe()
-"""
+GROUP_PROBE: GroupProbe = GroupProbe()

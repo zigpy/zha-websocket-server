@@ -2,14 +2,18 @@
 from __future__ import annotations
 
 import asyncio
+from collections import Counter
 import enum
 import functools
+import itertools
 from typing import TYPE_CHECKING, Any, Final, Optional, Union
 
+from zigpy.zcl.clusters.general import Identify, LevelControl, OnOff
+from zigpy.zcl.clusters.lighting import Color
 from zigpy.zcl.foundation import Status
 
 from zhaws.server.decorators import periodic
-from zhaws.server.platforms import PlatformEntity
+from zhaws.server.platforms import BaseEntity, GroupEntity, PlatformEntity, helpers
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhaws.server.platforms.util import color as color_util
 from zhaws.server.zigbee.cluster import (
@@ -28,8 +32,10 @@ if TYPE_CHECKING:
     from zhaws.server.zigbee.cluster import ClusterHandler
     from zhaws.server.zigbee.device import Device
     from zhaws.server.zigbee.endpoint import Endpoint
+    from zhaws.server.zigbee.group import Group
 
 STRICT_MATCH = functools.partial(PLATFORM_ENTITIES.strict_match, Platform.LIGHT)
+GROUP_MATCH = functools.partial(PLATFORM_ENTITIES.group_match, Platform.LIGHT)
 
 CAPABILITIES_COLOR_LOOP = 0x4
 CAPABILITIES_COLOR_XY = 0x08
@@ -84,6 +90,8 @@ EFFECT_COLORLOOP: Final[str] = "colorloop"
 EFFECT_RANDOM: Final[str] = "random"
 EFFECT_WHITE: Final[str] = "white"
 
+ATTR_SUPPORTED_FEATURES: Final[str] = "supported_features"
+
 # Bitfield of features supported by the light entity
 SUPPORT_BRIGHTNESS: Final[int] = 1  # Deprecated, replaced by color modes
 SUPPORT_COLOR_TEMP: Final[int] = 2  # Deprecated, replaced by color modes
@@ -103,6 +111,15 @@ FLASH_EFFECTS: Final[dict[str, int]] = {
     FLASH_LONG: EFFECT_BREATHE,
 }
 
+SUPPORT_GROUP_LIGHT = (
+    SUPPORT_BRIGHTNESS
+    | SUPPORT_COLOR_TEMP
+    | SUPPORT_EFFECT
+    | SUPPORT_FLASH
+    | SUPPORT_COLOR
+    | SUPPORT_TRANSITION
+)
+
 
 class LightColorMode(enum.IntEnum):
     """ZCL light color mode enum."""
@@ -112,7 +129,7 @@ class LightColorMode(enum.IntEnum):
     COLOR_TEMP = 0x02
 
 
-class BaseLight(PlatformEntity):
+class BaseLight(BaseEntity):
     """Operations common to all light entities."""
 
     PLATFORM = Platform.LIGHT
@@ -120,13 +137,11 @@ class BaseLight(PlatformEntity):
 
     def __init__(
         self,
-        unique_id: str,
-        cluster_handlers: list[ClusterHandler],
-        endpoint: Endpoint,
-        device: Device,
+        *args: Any,
+        **kwargs: Any,
     ):
         """Initialize the light."""
-        super().__init__(unique_id, cluster_handlers, endpoint, device)
+        super().__init__(*args, **kwargs)
         self._available: bool = False
         self._brightness: Union[int, None] = None
         self._off_brightness: Union[int, None] = None
@@ -245,6 +260,7 @@ class BaseLight(PlatformEntity):
                 level = min(254, brightness)
             else:
                 level = self._brightness or 254
+            assert self._level_cluster_handler is not None
             result = await self._level_cluster_handler.move_to_level_with_on_off(
                 level, duration
             )
@@ -267,6 +283,7 @@ class BaseLight(PlatformEntity):
             self._state = True
         if ATTR_COLOR_TEMP in kwargs and self.supported_features & SUPPORT_COLOR_TEMP:
             temperature = kwargs[ATTR_COLOR_TEMP]
+            assert self._color_cluster_handler is not None
             result = await self._color_cluster_handler.move_to_color_temp(
                 temperature, duration
             )
@@ -280,6 +297,7 @@ class BaseLight(PlatformEntity):
         if ATTR_HS_COLOR in kwargs and self.supported_features & SUPPORT_COLOR:
             hs_color = kwargs[ATTR_HS_COLOR]
             xy_color = color_util.color_hs_to_xy(*hs_color)
+            assert self._color_cluster_handler is not None
             result = await self._color_cluster_handler.move_to_color(
                 int(xy_color[0] * 65535), int(xy_color[1] * 65535), duration
             )
@@ -291,6 +309,7 @@ class BaseLight(PlatformEntity):
             self._color_temp = None
 
         if effect == EFFECT_COLORLOOP and self.supported_features & SUPPORT_EFFECT:
+            assert self._color_cluster_handler is not None
             result = await self._color_cluster_handler.color_loop_set(
                 UPDATE_COLORLOOP_ACTION
                 | UPDATE_COLORLOOP_DIRECTION
@@ -307,6 +326,7 @@ class BaseLight(PlatformEntity):
             and effect != EFFECT_COLORLOOP
             and self.supported_features & SUPPORT_EFFECT
         ):
+            assert self._color_cluster_handler is not None
             result = await self._color_cluster_handler.color_loop_set(
                 UPDATE_COLORLOOP_ACTION,
                 0x0,
@@ -318,6 +338,7 @@ class BaseLight(PlatformEntity):
             self._effect = None
 
         if flash is not None and self._supported_features & SUPPORT_FLASH:
+            assert self._identify_cluster_handler is not None
             result = await self._identify_cluster_handler.trigger_effect(
                 FLASH_EFFECTS[flash], EFFECT_DEFAULT_VARIANT
             )
@@ -335,6 +356,7 @@ class BaseLight(PlatformEntity):
         supports_level = self.supported_features & SUPPORT_BRIGHTNESS
 
         if duration and supports_level:
+            assert self._level_cluster_handler is not None
             result = await self._level_cluster_handler.move_to_level_with_on_off(
                 0, duration * 10
             )
@@ -356,7 +378,7 @@ class BaseLight(PlatformEntity):
     cluster_handler_names=CLUSTER_HANDLER_ON_OFF,
     aux_cluster_handlers={CLUSTER_HANDLER_COLOR, CLUSTER_HANDLER_LEVEL},
 )
-class Light(BaseLight):
+class Light(PlatformEntity, BaseLight):
     """Representation of a light for zhawss."""
 
     _REFRESH_INTERVAL = (2700, 4500)
@@ -542,3 +564,93 @@ class ForceOnLight(Light):
     """Representation of a light which does not respect move_to_level_with_on_off."""
 
     _FORCE_ON = True
+
+
+@GROUP_MATCH()
+class LightGroup(GroupEntity, BaseLight):
+    """Representation of a light group."""
+
+    def __init__(self, group: Group):
+        """Initialize a light group."""
+        super().__init__(group)
+        self._on_off_cluster_handler: ClusterHandler = group.zigpy_group.endpoint[
+            OnOff.cluster_id
+        ]
+        self._level_cluster_handler: Optional[
+            ClusterHandler
+        ] = group.zigpy_group.endpoint[LevelControl.cluster_id]
+        self._color_cluster_handler: Optional[
+            ClusterHandler
+        ] = group.zigpy_group.endpoint[Color.cluster_id]
+        self._identify_cluster_handler: Optional[
+            ClusterHandler
+        ] = group.zigpy_group.endpoint[Identify.cluster_id]
+
+        # self._debounced_member_refresh = None
+        """
+        self._default_transition = async_get_zha_config_value(
+            zha_device.gateway.config_entry,
+            ZHA_OPTIONS,
+            CONF_DEFAULT_LIGHT_TRANSITION,
+            0,
+        )
+        """
+
+    def update(self, _: Any = None) -> None:
+        # Query all members and determine the light group state.
+        self.debug("Updating light group entity state")
+        previous_state = self.get_state()
+        platform_entities = self._group.get_platform_entities(self.PLATFORM)
+        all_entities = [entity.to_json() for entity in platform_entities]
+        all_states = [entity["state"] for entity in all_entities]
+        self.debug(
+            "All platform entity states for group entity members: %s", all_states
+        )
+        on_states = [state for state in all_states if state["on"]]
+
+        self._state = len(on_states) > 0
+
+        self._available = any(entity.available for entity in platform_entities)
+
+        self._brightness = helpers.reduce_attribute(on_states, ATTR_BRIGHTNESS)
+
+        self._hs_color = helpers.reduce_attribute(
+            on_states, ATTR_HS_COLOR, reduce=helpers.mean_tuple
+        )
+
+        self._color_temp = helpers.reduce_attribute(on_states, ATTR_COLOR_TEMP)
+        self._min_mireds = helpers.reduce_attribute(
+            all_entities, ATTR_MIN_MIREDS, default=153, reduce=min
+        )
+        self._max_mireds = helpers.reduce_attribute(
+            all_entities, ATTR_MAX_MIREDS, default=500, reduce=max
+        )
+
+        self._effect_list = None
+        all_effect_lists = list(
+            helpers.find_state_attributes(all_entities, ATTR_EFFECT_LIST)
+        )
+        if all_effect_lists:
+            # Merge all effects from all effect_lists with a union merge.
+            self._effect_list = list(set().union(*all_effect_lists))
+
+        self._effect = None
+        all_effects = list(helpers.find_state_attributes(all_states, ATTR_EFFECT))
+        if all_effects:
+            # Report the most common effect.
+            effects_count = Counter(itertools.chain(all_effects))
+            self._effect = effects_count.most_common(1)[0][0]
+
+        self._supported_features = 0
+        for support in helpers.find_state_attributes(
+            all_entities, ATTR_SUPPORTED_FEATURES
+        ):
+            # Merge supported features by emulating support for every feature
+            # we find.
+            self._supported_features |= support
+        # Bitwise-and the supported features with the GroupedLight's features
+        # so that we don't break in the future when a new feature is added.
+        self._supported_features &= SUPPORT_GROUP_LIGHT
+
+        if self.get_state() != previous_state:
+            self.send_state_changed_event()

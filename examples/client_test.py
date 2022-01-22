@@ -10,7 +10,7 @@ from zhaws.client.model.commands import LightTurnOffCommand, LightTurnOnCommand
 _LOGGER = logging.getLogger(__name__)
 
 
-async def main():
+async def main() -> None:
     fmt = "%(asctime)s %(levelname)s (%(threadName)s) [%(name)s] %(message)s"
     colorfmt = f"%(log_color)s{fmt}%(reset)s"
     logging.basicConfig(level=logging.DEBUG)
@@ -29,21 +29,28 @@ async def main():
     )
 
     test_lights = False
-    test_switches = True
+    test_switches = False
     test_alarm_control_panel = False
     test_locks = False
     test_buttons = False
-    waiter = asyncio.Future()
+    waiter: asyncio.Future = asyncio.Future()
     controller = Controller("ws://localhost:8001/", aiohttp.ClientSession())
     await controller.connect()
     await controller.clients.listen()
     await controller.load_devices()
+    await controller.load_groups()
 
     devices = controller.devices
 
     for device in devices.values():
         _LOGGER.info("Device: %s", device)
         for entity in device.device.entities.values():
+            _LOGGER.info("Entity: %s", entity)
+
+    groups = controller.groups
+    for group in groups.values():
+        _LOGGER.info("Group: %s", group)
+        for entity in group.group.entities:
             _LOGGER.info("Entity: %s", entity)
 
     if test_lights:
@@ -150,6 +157,20 @@ async def main():
             await asyncio.sleep(3)
         except Exception as err:
             _LOGGER.error(err)
+
+    """TODO turn this into an example for how to create a group with the client
+    await controller.groups_helper.create_group(
+        "test-lumi-group",
+        members=[
+            devices["00:15:8d:00:02:82:d0:78"].device.entities[
+                "00:15:8d:00:02:82:d0:78-1"
+            ],
+            devices["00:15:8d:00:02:82:d3:0f"].device.entities[
+                "00:15:8d:00:02:82:d3:0f-1"
+            ],
+        ],
+    )
+    """
 
     await waiter
 

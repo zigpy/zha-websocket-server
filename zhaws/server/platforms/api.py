@@ -29,7 +29,8 @@ def platform_entity_command_schema(
     """Return the schema for a platform entity command."""
     full_schema = {
         vol.Required(COMMAND): str(command),
-        vol.Required(IEEE): str,
+        vol.Optional(IEEE): str,
+        vol.Optional("group_id"): int,
         vol.Required(ATTR_UNIQUE_ID): str,
     }
     if schema:
@@ -45,8 +46,14 @@ async def execute_platform_entity_command(
 ) -> None:
     """Get the platform entity and execute a command."""
     try:
-        device = server.controller.get_device(request_message[IEEE])
-        platform_entity = device.get_platform_entity(request_message[ATTR_UNIQUE_ID])
+        if IEEE in request_message:
+            device = server.controller.get_device(request_message[IEEE])
+            platform_entity: Any = device.get_platform_entity(
+                request_message[ATTR_UNIQUE_ID]
+            )
+        else:
+            group = server.controller.get_group(request_message["group_id"])
+            platform_entity = group.group_entities[request_message[ATTR_UNIQUE_ID]]
     except ValueError as err:
         _LOGGER.exception("Error executing command: %s", command, exc_info=err)
         client.send_result_error(
@@ -67,7 +74,10 @@ async def execute_platform_entity_command(
         )
 
     result = {}
-    result[IEEE] = request_message[IEEE]
+    if IEEE in request_message:
+        result[IEEE] = request_message[IEEE]
+    else:
+        result["group_id"] = request_message["group_id"]
     result[ATTR_UNIQUE_ID] = request_message[ATTR_UNIQUE_ID]
     client.send_result_success(request_message, result)
 

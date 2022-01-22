@@ -3,11 +3,11 @@
 Events are unprompted messages from the server -> client and they contain only the data that is necessary to handle the event.
 """
 
-from typing import Annotated, Any, Literal, Union
+from typing import Annotated, Any, Literal, Optional, Union
 
 from pydantic.fields import Field
 
-from zhaws.client.model.types import BaseDevice, Device, DeviceSignature
+from zhaws.client.model.types import BaseDevice, Device, DeviceSignature, Group
 from zhaws.model import BaseEvent, BaseModel
 
 
@@ -55,6 +55,12 @@ class MinimalClusterHandler(BaseModel):
     cluster: MinimalCluster
 
 
+class MinimalGroup(BaseModel):
+    """Minimal group model."""
+
+    id: int
+
+
 class PlatformEntityEvent(BaseEvent):
     """Platform entity event."""
 
@@ -62,8 +68,9 @@ class PlatformEntityEvent(BaseEvent):
     event_type: Literal["platform_entity_event"] = "platform_entity_event"
     event: Literal["platform_entity_state_changed"] = "platform_entity_state_changed"
     platform_entity: MinimalPlatformEntity
-    endpoint: MinimalEndpoint
-    device: MinimalDevice
+    endpoint: Optional[MinimalEndpoint]
+    device: Optional[MinimalDevice]
+    group: Optional[MinimalGroup]
     state: Any
 
 
@@ -138,6 +145,34 @@ class DeviceRemovedEvent(ControllerEvent):
     device: Device
 
 
+class GroupRemovedEvent(ControllerEvent):
+    """Group removed event."""
+
+    event: Literal["group_removed"] = "group_removed"
+    group: Group
+
+
+class GroupAddedEvent(ControllerEvent):
+    """Group added event."""
+
+    event: Literal["group_added"] = "group_added"
+    group: Group
+
+
+class GroupMemberAddedEvent(ControllerEvent):
+    """Group member added event."""
+
+    event: Literal["group_member_added"] = "group_member_added"
+    group: Group
+
+
+class GroupMemberRemovedEvent(ControllerEvent):
+    """Group member removed event."""
+
+    event: Literal["group_member_removed"] = "group_member_removed"
+    group: Group
+
+
 Events = Annotated[
     Union[
         PlatformEntityEvent,
@@ -148,6 +183,10 @@ Events = Annotated[
         DeviceConfiguredEvent,
         DeviceLeftEvent,
         DeviceRemovedEvent,
+        GroupRemovedEvent,
+        GroupAddedEvent,
+        GroupMemberAddedEvent,
+        GroupMemberRemovedEvent,
     ],
     Field(discriminator="event"),  # noqa: F821
 ]
