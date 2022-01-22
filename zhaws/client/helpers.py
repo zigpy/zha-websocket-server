@@ -29,6 +29,8 @@ from zhaws.client.model.commands import (
     FanSetPresetModeCommand,
     FanTurnOffCommand,
     FanTurnOnCommand,
+    GetDevicesCommand,
+    GetDevicesResponse,
     GetGroupsCommand,
     GroupsResponse,
     LightTurnOffCommand,
@@ -41,6 +43,7 @@ from zhaws.client.model.commands import (
     LockUnlockCommand,
     NumberSetValueCommand,
     PlatformEntityRefreshStateCommand,
+    ReconfigureDeviceCommand,
     RemoveGroupMembersCommand,
     RemoveGroupsCommand,
     SelectSelectOptionCommand,
@@ -50,7 +53,7 @@ from zhaws.client.model.commands import (
     SwitchTurnOnCommand,
     UpdateGroupResponse,
 )
-from zhaws.client.model.types import BasePlatformEntity, Group, GroupEntity
+from zhaws.client.model.types import BasePlatformEntity, Device, Group, GroupEntity
 from zhaws.server.platforms.registries import Platform
 
 
@@ -962,3 +965,27 @@ class GroupHelper:
             command.dict(exclude_none=True)
         )
         return cast(UpdateGroupResponse, response)
+
+
+class DeviceHelper:
+    """Helper to send device commands."""
+
+    def __init__(self, client: Client):
+        """Initialize the device helper."""
+        self._client: Client = client
+
+    async def get_devices(self) -> dict[str, Device]:
+        """Get the groups."""
+        response = cast(
+            GetDevicesResponse,
+            await self._client.async_send_command(
+                GetDevicesCommand().dict(exclude_none=True)
+            ),
+        )
+        return response.devices
+
+    async def reconfigure_device(self, device: Device) -> None:
+        """Reconfigure a device."""
+        await self._client.async_send_command(
+            ReconfigureDeviceCommand(ieee=device.ieee).dict(exclude_none=True)
+        )

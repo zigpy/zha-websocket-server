@@ -15,6 +15,19 @@ class Command(BaseModel):
     command: str
 
 
+class GetDevicesCommand(Command):
+    """Command to get devices."""
+
+    command: Literal["get_devices"] = "get_devices"
+
+
+class ReconfigureDeviceCommand(Command):
+    """Command to get reconfigure a device."""
+
+    command: Literal["reconfigure_device"] = "reconfigure_device"
+    ieee: str
+
+
 class GetGroupsCommand(Command):
     """Command to get groups."""
 
@@ -367,6 +380,7 @@ class DefaultResponse(CommandResponse):
         "client_listen",
         "client_listen_raw_zcl",
         "client_disconnect",
+        "reconfigure_device",
     ]
 
 

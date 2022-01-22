@@ -10,10 +10,12 @@ from zhaws.backports.enum import StrEnum
 class APICommands(StrEnum):
     """WS API commands."""
 
-    # Zigbee API commands
+    # Device commands
     GET_DEVICES = "get_devices"
     REMOVE_DEVICE = "remove_device"
+    RECONFIGURE_DEVICE = "reconfigure_device"
 
+    # Zigbee API commands
     PERMIT_JOINING = "permit_joining"
     START_NETWORK = "start_network"
     STOP_NETWORK = "stop_network"

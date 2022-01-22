@@ -93,6 +93,23 @@ async def get_devices(server: Server, client: Client, message: dict[str, Any]) -
 
 @decorators.websocket_command(
     {
+        vol.Required(COMMAND): str(APICommands.RECONFIGURE_DEVICE),
+        vol.Required(IEEE): EUI64.convert,
+    }
+)
+@decorators.async_response
+async def reconfigure_device(
+    server: Server, client: Client, message: dict[str, Any]
+) -> None:
+    """Reconfigure a zigbee device."""
+    device = server.controller.devices.get(message[IEEE])
+    if device:
+        await device.async_configure()
+    client.send_result_success(message)
+
+
+@decorators.websocket_command(
+    {
         vol.Required(COMMAND): str(APICommands.GET_GROUPS),
     }
 )
