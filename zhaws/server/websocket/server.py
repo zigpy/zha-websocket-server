@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from types import TracebackType
 from typing import TYPE_CHECKING, Any
 
 import voluptuous
@@ -26,9 +27,12 @@ _LOGGER = logging.getLogger(__name__)
 class Server:
     """ZHAWSS server implementation."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, host: str = "", port: int = 8001) -> None:
         """Initialize the server."""
-        self._waiter: asyncio.Future = asyncio.Future()
+        self._host: str = host
+        self._port: int = port
+        self._server: websockets.Serve | None = None
+        self._stop_event: asyncio.Event = asyncio.Event()
         self._controller: Controller = Controller(self)
         self._client_manager: ClientManager = ClientManager(self)
         self.data: dict[Any, Any] = {}
@@ -37,6 +41,25 @@ class Server:
         self._register_api_commands()
         discovery.PROBE.initialize(self)
         discovery.GROUP_PROBE.initialize(self)
+
+    async def __aenter__(self) -> Server:
+        assert self._server is None
+
+        self._server = websockets.serve(
+            self._client_manager.add_client, self._host, self._port, logger=_LOGGER
+        )
+        await self._server.__aenter__()
+
+        return self
+
+    async def __aexit__(
+        self, exc_type: Exception, exc_value: str, traceback: TracebackType
+    ) -> None:
+        assert self._server is not None
+
+        await self.stop_server()
+        await self._server.__aexit__(exc_type, exc_value, traceback)
+        self._server = None
 
     @property
     def controller(self) -> Controller:
@@ -49,17 +72,17 @@ class Server:
         return self._client_manager
 
     async def start_server(self) -> None:
-        """Stop the websocket server."""
-        async with websockets.serve(  # type: ignore
-            self._client_manager.add_client, "", 8001, logger=_LOGGER
-        ):
-            await self._waiter
+        """Start the websocket server."""
+        self._stop_event.clear()
+
+        async with self:
+            await self._stop_event
 
     async def stop_server(self) -> None:
         """Stop the websocket server."""
         if self._controller.is_running:
             await self._controller.stop_network()
-        self._waiter.set_result(True)
+        self._stop_event.set()
 
     def _register_api_commands(self) -> None:
         """Load server API commands."""

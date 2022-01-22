@@ -103,24 +103,23 @@ class Client:
         zigbee_error_code: str,
     ) -> None:
         """Send zigbee error result prompted by a client zigbee request."""
-        message = {
-            SUCCESS: False,
-            MESSAGE_ID: request_message[MESSAGE_ID],
-            MESSAGE_TYPE: MessageTypes.RESULT,
-            COMMAND: request_message[COMMAND],
-            ERROR_CODE: "zigbee_error",
-            ERROR_MESSAGE: error_message,
-            ZIGBEE_ERROR_CODE: zigbee_error_code,
-        }
-        self._send_data(message)
+        self.send_result_error(
+            request_message={
+                **request_message,
+                ZIGBEE_ERROR_CODE: zigbee_error_code,
+            },
+            error_code="zigbee_error",
+            error_message=error_message,
+        )
 
     def _send_data(self, data: dict[str, Any]) -> None:
         """Send data to this client."""
         try:
             message = json.dumps(data)
+        except TypeError as exc:
+            _LOGGER.error("Couldn't serialize data: %s", data, exc_info=exc)
+        else:
             asyncio.create_task(self._websocket.send(message))
-        except (TypeError) as exception:
-            _LOGGER.error("Couldn't serialize data: %s", data, exc_info=exception)
 
     async def _handle_incoming_message(self, message: Union[str, bytes]) -> None:
         """Handle an incoming message."""
@@ -230,32 +229,41 @@ class ClientManager:
         await client.listen()
 
     def remove_client(self, client: Client) -> None:
-        """Adds a new client to the client manager."""
+        """Removes a client from the client manager."""
+        client.disconnect()
         self._clients.remove(client)
 
     def broadcast(self, message: dict[str, Any]) -> None:
         """Broadcast a message to all connected clients."""
         event_type = message[EVENT_TYPE]
+        clients_to_remove = []
+
         for client in self._clients:
-            if client.is_connected:
-                if client.receive_events:
-                    if (
-                        event_type == EventTypes.RAW_ZCL_EVENT
-                        and not client.receive_raw_zcl_events
-                    ):
-                        _LOGGER.info(
-                            "Not broadcasting message: %s to client: %s",
-                            message,
-                            client._websocket.id,
-                        )
-                        continue
-                    _LOGGER.info(
-                        "Broadcasting message: %s to client: %s",
-                        message,
-                        client._websocket.id,
-                    )
-                    """TODO use the receive flags on the client to determine if the client should receive the message"""
-                    client.send_event(message)
-            else:
-                client.disconnect()
-                self._clients.remove(client)
+            if not client.is_connected:
+                clients_to_remove.append(client)
+                continue
+
+            if not client.receive_events:
+                continue
+
+            if (
+                event_type == EventTypes.RAW_ZCL_EVENT
+                and not client.receive_raw_zcl_events
+            ):
+                _LOGGER.info(
+                    "Not broadcasting message: %s to client: %s",
+                    message,
+                    client._websocket.id,
+                )
+                continue
+
+            _LOGGER.info(
+                "Broadcasting message: %s to client: %s",
+                message,
+                client._websocket.id,
+            )
+            """TODO use the receive flags on the client to determine if the client should receive the message"""
+            client.send_event(message)
+
+        for client in clients_to_remove:
+            self.remove_client(client)
