@@ -2,12 +2,28 @@
 
 Events are unprompted messages from the server -> client and they contain only the data that is necessary to handle the event.
 """
+from __future__ import annotations
 
 from typing import Annotated, Any, Literal, Optional, Union
 
 from pydantic.fields import Field
 
-from zhaws.client.model.types import BaseDevice, Device, DeviceSignature, Group
+from zhaws.client.model.types import (
+    BaseDevice,
+    BatteryState,
+    CoverState,
+    Device,
+    DeviceSignature,
+    DeviceTrackerState,
+    ElectricalMeasurementState,
+    FanState,
+    Group,
+    LightState,
+    LockState,
+    ShadeState,
+    SmareEnergyMeteringState,
+    SwitchState,
+)
 from zhaws.model import BaseEvent, BaseModel
 
 
@@ -71,7 +87,22 @@ class PlatformEntityEvent(BaseEvent):
     endpoint: Optional[MinimalEndpoint]
     device: Optional[MinimalDevice]
     group: Optional[MinimalGroup]
-    state: Any
+    state: Union[
+        DeviceTrackerState,
+        CoverState,
+        ShadeState,
+        FanState,
+        LockState,
+        BatteryState,
+        ElectricalMeasurementState,
+        LightState,
+        SwitchState,
+        SmareEnergyMeteringState,
+        int,
+        float,
+        str,
+        bool,
+    ]
 
 
 class ZCLAttributeUpdatedEvent(BaseEvent):

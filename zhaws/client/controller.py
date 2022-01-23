@@ -139,6 +139,7 @@ class Controller(EventBase):
         if entity is None:
             _LOGGER.warning("Received event for an unknown entity: %s", event)
             return
+        entity.state = event.state  # update our state locally and emit an event
         entity.emit(event.event, event)
 
     def handle_device_joined(self, event: DeviceJoinedEvent) -> None:
@@ -167,6 +168,7 @@ class Controller(EventBase):
         """Handle device joined and basic information discovered."""
         device = event.device
         _LOGGER.info("Device %s - %s initialized", device.ieee, device.nwk)
+        # TODO devise a way to update existing devices so we don't lose event subscriptions
         self._devices[device.ieee] = Device(device, self, self._client)
         self.emit("device_fully_initialized", event)
 
