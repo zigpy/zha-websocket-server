@@ -163,6 +163,24 @@ class Client:
         async for message in self._websocket:
             asyncio.create_task(self._handle_incoming_message(message))
 
+    def will_accept_message(self, message: dict[str, Any]) -> bool:
+        """Checks if the client has registered to accept this type of message."""
+        if not self.receive_events:
+            return False
+
+        if (
+            message[EVENT_TYPE] == EventTypes.RAW_ZCL_EVENT
+            and not self.receive_raw_zcl_events
+        ):
+            _LOGGER.info(
+                "Client %s not accepting raw ZCL events: %s",
+                self._websocket.id,
+                message,
+            )
+            return False
+
+        return True
+
 
 @decorators.websocket_command(
     {
@@ -235,26 +253,15 @@ class ClientManager:
 
     def broadcast(self, message: dict[str, Any]) -> None:
         """Broadcast a message to all connected clients."""
-        event_type = message[EVENT_TYPE]
         clients_to_remove = []
 
         for client in self._clients:
             if not client.is_connected:
+                # XXX: We cannot remove elements from `_clients` while iterating over it
                 clients_to_remove.append(client)
                 continue
 
-            if not client.receive_events:
-                continue
-
-            if (
-                event_type == EventTypes.RAW_ZCL_EVENT
-                and not client.receive_raw_zcl_events
-            ):
-                _LOGGER.info(
-                    "Not broadcasting message: %s to client: %s",
-                    message,
-                    client._websocket.id,
-                )
+            if not client.will_accept_message(message):
                 continue
 
             _LOGGER.info(
