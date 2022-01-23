@@ -1,7 +1,6 @@
 """ZHAWSS websocket server."""
 from __future__ import annotations
 
-import asyncio
 import logging
 from types import TracebackType
 from typing import TYPE_CHECKING, Any
@@ -32,7 +31,6 @@ class Server:
         self._host: str = host
         self._port: int = port
         self._ws_server: websockets.Serve | None = None
-        self._stop_event: asyncio.Event = asyncio.Event()
         self._controller: Controller = Controller(self)
         self._client_manager: ClientManager = ClientManager(self)
         self.data: dict[Any, Any] = {}
@@ -41,25 +39,6 @@ class Server:
         self._register_api_commands()
         discovery.PROBE.initialize(self)
         discovery.GROUP_PROBE.initialize(self)
-
-    async def __aenter__(self) -> Server:
-        assert self._ws_server is None
-
-        self._ws_server = websockets.serve(
-            self._client_manager.add_client, self._host, self._port, logger=_LOGGER
-        )
-        await self._ws_server.__aenter__()
-
-        return self
-
-    async def __aexit__(
-        self, exc_type: Exception, exc_value: str, traceback: TracebackType
-    ) -> None:
-        assert self._ws_server is not None
-
-        await self.stop_server()
-        await self._ws_server.__aexit__(exc_type, exc_value, traceback)
-        self._ws_server = None
 
     @property
     def controller(self) -> Controller:
@@ -73,16 +52,31 @@ class Server:
 
     async def start_server(self) -> None:
         """Start the websocket server."""
-        self._stop_event.clear()
-
-        async with self:
-            await self._stop_event
+        assert self._ws_server is None
+        self._ws_server = await websockets.serve(
+            self._client_manager.add_client, self._host, self._port, logger=_LOGGER
+        )
 
     async def stop_server(self) -> None:
         """Stop the websocket server."""
+        assert self._ws_server is not None
+
         if self._controller.is_running:
             await self._controller.stop_network()
-        self._stop_event.set()
+
+        self._ws_server.close()
+        await self._ws_server.wait_closed()
+
+        self._ws_server = None
+
+    async def __aenter__(self) -> Server:
+        await self.start_server()
+        return self
+
+    async def __aexit__(
+        self, exc_type: Exception, exc_value: str, traceback: TracebackType
+    ) -> None:
+        await self.stop_server()
 
     def _register_api_commands(self) -> None:
         """Load server API commands."""

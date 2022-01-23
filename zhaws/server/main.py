@@ -3,14 +3,23 @@
 import asyncio
 import logging
 
-from colorlog import ColoredFormatter
-import uvloop
+from zhaws.server.websocket.server import Server
 
 _LOGGER = logging.getLogger(__name__)
 
 
+async def main() -> None:
+    async with Server(host="0.0.0.0", port=8001):
+        await asyncio.Future()  # wait forever
+
+
 if __name__ == "__main__":
+    import uvloop
+
     uvloop.install()
+
+    from colorlog import ColoredFormatter
+
     fmt = "%(asctime)s %(levelname)s (%(threadName)s) [%(name)s] %(message)s"
     colorfmt = f"%(log_color)s{fmt}%(reset)s"
     logging.basicConfig(level=logging.DEBUG)
@@ -28,9 +37,4 @@ if __name__ == "__main__":
         )
     )
 
-    async def main() -> None:
-        from zhaws.server.websocket.server import Server
-
-        await Server().start_server()  # noqa
-
-    asyncio.get_event_loop().run_until_complete(main())
+    asyncio.run(main())
