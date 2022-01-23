@@ -36,10 +36,10 @@ class Client(EventBase):
         # Create a session if none is provided
         if aiohttp_session is None:
             self.aiohttp_session = ClientSession()
-            self._aiohttp_session_created: bool = True
+            self._close_aiohttp_session: bool = True
         else:
             self.aiohttp_session = aiohttp_session
-            self._aiohttp_session_created: bool = False
+            self._close_aiohttp_session: bool = False
 
         # The WebSocket client
         self._client: Optional[ClientWebSocketResponse] = None
@@ -132,7 +132,7 @@ class Client(EventBase):
 
         await self._client.close()
 
-        if self._aiohttp_session_created:
+        if self._close_aiohttp_session:
             await self.aiohttp_session.close()
 
         _LOGGER.debug("Listen completed. Cleaning up")
