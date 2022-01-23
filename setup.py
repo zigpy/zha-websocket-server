@@ -5,7 +5,7 @@ import pathlib
 from setuptools import find_packages, setup
 
 setup(
-    name="zhawss",
+    name="zhaws",
     version="2021.12.0",
     description="Library implementing a Zigbee websocket server",
     long_description=(pathlib.Path(__file__).parent / "README.md").read_text(),
