@@ -41,6 +41,11 @@ class Server:
         discovery.GROUP_PROBE.initialize(self)
 
     @property
+    def is_serving(self) -> bool:
+        """Returns whether or not the websocket server is serving."""
+        return self._ws_server is not None and self._ws_server.is_serving
+
+    @property
     def controller(self) -> Controller:
         """Return the zigbee application controller."""
         return self._controller
