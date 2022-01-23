@@ -65,7 +65,7 @@ class Client(EventBase):
         # uses double precision floats for numbers (including in `JSON.parse`), setting
         # a hard limit of `Number.MAX_SAFE_INTEGER == 2^53 - 1`.  We can be more
         # conservative and just restrict it to the maximum value of a 32-bit signed int.
-        self._message_id = (self._message_id + 1) & 0x80000000
+        self._message_id = (self._message_id + 1) % 0x80000000
         return self._message_id
 
     async def async_send_command(

@@ -38,3 +38,12 @@ async def test_server_client_connect_disconnect():
 
     assert not server.is_serving
     assert server._ws_server is None
+
+
+async def test_client_message_id_uniqueness(connected_client_and_server):
+    """Tests that client message IDs are unique."""
+    client, server = connected_client_and_server
+
+    ids = [client.new_message_id() for _ in range(1000)]
+
+    assert len(ids) == len(set(ids))
