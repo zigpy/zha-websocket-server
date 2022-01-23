@@ -67,7 +67,7 @@ class Lock(PlatformEntity):
         if not isinstance(result, list) or result[0] is not Status.SUCCESS:
             self.error("Error with lock_door: %s", result)
             return
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     async def async_unlock(self, **kwargs: Any) -> None:
         """Unlock the lock."""
@@ -75,7 +75,7 @@ class Lock(PlatformEntity):
         if not isinstance(result, list) or result[0] is not Status.SUCCESS:
             self.error("Error with unlock_door: %s", result)
             return
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     async def async_update(self) -> None:
         """Attempt to retrieve state from the lock."""
@@ -87,7 +87,7 @@ class Lock(PlatformEntity):
     ) -> None:
         """Handle state update from cluster handler."""
         self._state = VALUE_TO_STATE.get(event.value, self._state)
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     async def async_get_state(self, from_cache: bool = True) -> None:
         """Attempt to retrieve state from the lock."""

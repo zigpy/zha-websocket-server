@@ -58,6 +58,6 @@ class EventBase:
         _LOGGER.debug("handling event protocol for event: %s", event)
         handler = getattr(self, f"handle_{event.event.replace(' ', '_')}", None)
         if handler is None:
-            _LOGGER.debug("Received unknown event: %s", event)
+            _LOGGER.warning("Received unknown event: %s", event)
             return
         handler(event)

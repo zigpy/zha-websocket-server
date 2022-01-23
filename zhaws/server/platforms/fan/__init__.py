@@ -153,7 +153,7 @@ class BaseFan(BaseEntity):
         self, event: ClusterAttributeUpdatedEvent
     ) -> None:
         """Handle state update from cluster handler."""
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     def to_json(self) -> dict:
         """Return a JSON representation of the binary sensor."""
@@ -205,7 +205,7 @@ class Fan(PlatformEntity, BaseFan):
 
     def async_set_state(self, attr_id: int, attr_name: str, value: Any) -> None:
         """Handle state update from cluster handler."""
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     async def _async_set_fan_mode(self, fan_mode: int) -> None:
         """Set the fan mode for the fan."""
@@ -257,7 +257,6 @@ class FanGroup(GroupEntity, BaseFan):
     def update(self, _: Any = None) -> None:
         """Attempt to retrieve on off state from the fan."""
         self.debug("Updating fan group entity state")
-        previous_state = self.get_state()
         platform_entities = self._group.get_platform_entities(self.PLATFORM)
         all_entities = [entity.to_json() for entity in platform_entities]
         all_states = [entity["state"] for entity in all_entities]
@@ -283,5 +282,4 @@ class FanGroup(GroupEntity, BaseFan):
             self._percentage = None
             self._preset_mode = None
 
-        if previous_state != self.get_state():
-            self.send_state_changed_event()
+        self.maybe_send_state_changed_event()

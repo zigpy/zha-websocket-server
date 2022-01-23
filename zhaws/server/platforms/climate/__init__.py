@@ -455,7 +455,7 @@ class Thermostat(PlatformEntity):
                 self._preset = Preset.NONE
 
         self.debug("Attribute '%s' = %s update", event.name, event.value)
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
         """Set fan mode."""
@@ -483,7 +483,7 @@ class Thermostat(PlatformEntity):
         if await self._thermostat_cluster_handler.async_set_operation_mode(
             HVAC_MODE_2_SYSTEM[hvac_mode]
         ):
-            self.send_state_changed_event()
+            self.maybe_send_state_changed_event()
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set new preset mode."""
@@ -508,7 +508,7 @@ class Thermostat(PlatformEntity):
             self.debug("Couldn't turn on '%s' preset", preset_mode)
             return
         self._preset = preset_mode
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperature."""
@@ -553,7 +553,7 @@ class Thermostat(PlatformEntity):
             return
 
         if success:
-            self.send_state_changed_event()
+            self.maybe_send_state_changed_event()
 
     async def async_preset_handler(self, preset: str, enable: bool = False) -> bool:
         """Set the preset mode via handler."""

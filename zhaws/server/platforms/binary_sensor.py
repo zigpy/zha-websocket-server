@@ -48,8 +48,7 @@ class BinarySensor(PlatformEntity):
         self._cluster_handler.on_event(
             CLUSTER_HANDLER_EVENT, self._handle_event_protocol
         )
-        value = self._cluster_handler.cluster.get("zone_status")
-        self._state: bool = value & 3 if value is not None else False
+        self._state: bool = bool(self._cluster_handler.cluster.get(self.SENSOR_ATTR))
 
     @property
     def is_on(self) -> bool:
@@ -66,18 +65,16 @@ class BinarySensor(PlatformEntity):
         if self.SENSOR_ATTR is None or self.SENSOR_ATTR != event.name:
             return
         self._state = bool(event.value)
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     async def async_update(self) -> None:
         """Attempt to retrieve on off state from the binary sensor."""
         await super().async_update()
-        previous_state = self._state
         attribute = getattr(self._cluster_handler, "value_attribute", "on_off")
         attr_value = await self._cluster_handler.get_attribute_value(attribute)
         if attr_value is not None:
             self._state = attr_value
-            if previous_state != self._state:
-                self.send_state_changed_event()
+            self.maybe_send_state_changed_event()
 
     def to_json(self) -> dict:
         """Return a JSON representation of the binary sensor."""
@@ -138,15 +135,25 @@ class IASZone(BinarySensor):
 
     SENSOR_ATTR = "zone_status"
 
+    def __init__(
+        self,
+        unique_id: str,
+        cluster_handlers: list[ClusterHandler],
+        endpoint: Endpoint,
+        device: Device,
+    ):
+        """Initialize the binary sensor."""
+        super().__init__(unique_id, cluster_handlers, endpoint, device)
+        value = self._cluster_handler.cluster.get(self.SENSOR_ATTR)
+        self._state: bool = value & 3 if value is not None else False
+
     async def async_update(self) -> None:
         """Attempt to retrieve on off state from the binary sensor."""
         await super().async_update()
-        previous_state = self._state
         value = await self._cluster_handler.get_attribute_value("zone_status")
         if value is not None:
             self._state = value & 3
-            if previous_state != self._state:
-                self.send_state_changed_event()
+            self.maybe_send_state_changed_event()
 
     def to_json(self) -> dict:
         """Return a JSON representation of the binary sensor."""

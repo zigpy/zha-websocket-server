@@ -64,7 +64,7 @@ class EnumSelect(PlatformEntity):
             self._cluster_handler.data_cache[self._attr_name] = self._enum[
                 option.replace(" ", "_")
             ]
-            self.send_state_changed_event()
+            self.maybe_send_state_changed_event()
 
     def to_json(self) -> dict:
         """Return a JSON representation of the select."""

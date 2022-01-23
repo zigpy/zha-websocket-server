@@ -54,7 +54,7 @@ class BaseSwitch(BaseEntity):
         if not isinstance(result, list) or result[1] is not Status.SUCCESS:
             return
         self._state = True
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the entity off."""
@@ -62,7 +62,7 @@ class BaseSwitch(BaseEntity):
         if not isinstance(result, list) or result[1] is not Status.SUCCESS:
             return
         self._state = False
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     def get_state(self) -> Union[str, dict, None]:
         return {
@@ -84,7 +84,7 @@ class Switch(PlatformEntity, BaseSwitch):
         self._on_off_cluster_handler: OnOffClusterHandler = cast(
             OnOffClusterHandler, self.cluster_handlers[CLUSTER_HANDLER_ON_OFF]
         )
-        self._state: bool = self._on_off_cluster_handler.cluster.get("on_off")
+        self._state: bool = bool(self._on_off_cluster_handler.on_off)
         self._on_off_cluster_handler.on_event(
             CLUSTER_HANDLER_EVENT, self._handle_event_protocol
         )
@@ -94,18 +94,16 @@ class Switch(PlatformEntity, BaseSwitch):
     ) -> None:
         """Handle state update from cluster handler."""
         self._state = bool(event.value)
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     async def async_update(self) -> None:
         """Attempt to retrieve on off state from the switch."""
         await super().async_update()
         if self._on_off_cluster_handler:
-            prev_state = self._state
             state = await self._on_off_cluster_handler.get_attribute_value("on_off")
             if state is not None:
                 self._state = state
-                if prev_state != self._state:
-                    self.send_state_changed_event()
+                self.maybe_send_state_changed_event()
 
 
 @GROUP_MATCH()
@@ -120,7 +118,6 @@ class SwitchGroup(GroupEntity, BaseSwitch):
     def update(self, _: Any | None = None) -> None:
         """Query all members and determine the light group state."""
         self.debug("Updating switch group entity state")
-        previous_state = self.get_state()
         platform_entities = self._group.get_platform_entities(self.PLATFORM)
         all_entities = [entity.to_json() for entity in platform_entities]
         all_states = [entity["state"] for entity in all_entities]
@@ -132,5 +129,4 @@ class SwitchGroup(GroupEntity, BaseSwitch):
         self._state = len(on_states) > 0
         self._available = any(entity.available for entity in platform_entities)
 
-        if previous_state != self.get_state():
-            self.send_state_changed_event()
+        self.maybe_send_state_changed_event()

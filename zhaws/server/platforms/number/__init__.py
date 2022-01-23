@@ -83,13 +83,13 @@ class Number(PlatformEntity):
         self, event: ClusterAttributeUpdatedEvent
     ) -> None:
         """Handle value update from cluster handler."""
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     async def async_set_value(self, value: Any) -> None:
         """Update the current value from service."""
         num_value = float(value)
         if await self._analog_output_cluster_handler.async_set_present_value(num_value):
-            self.send_state_changed_event()
+            self.maybe_send_state_changed_event()
 
     async def async_update(self) -> None:
         """Attempt to retrieve the state of the entity."""

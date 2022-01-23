@@ -200,7 +200,7 @@ class BaseLight(BaseEntity):
         """
         value = max(0, min(254, event.level))
         self._brightness = value
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     @property
     def hs_color(self) -> Optional[tuple[float, float]]:
@@ -346,7 +346,7 @@ class BaseLight(BaseEntity):
 
         self._off_brightness = None
         self.debug("turned on: %s", t_log)
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     async def async_turn_off(
         self, transition: int | None = None, **kwargs: Any
@@ -371,7 +371,7 @@ class BaseLight(BaseEntity):
             # store current brightness so that the next turn_on uses it.
             self._off_brightness = self._brightness
 
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
 
 @STRICT_MATCH(
@@ -461,18 +461,9 @@ class Light(PlatformEntity, BaseLight):
         async def _refresh() -> None:
             """Call async_get_state at an interval."""
             await self.async_update()
-            self.send_state_changed_event()
+            self.maybe_send_state_changed_event()
 
         self._cancel_refresh_handle = asyncio.create_task(_refresh())
-
-        """TODO
-        self.async_accept_signal(
-            None,
-            SIGNAL_LIGHT_GROUP_STATE_CHANGED,
-            self._maybe_force_refresh,
-            signal_override=True,
-        )
-        """
 
     def handle_cluster_handler_attribute_updated(
         self, event: ClusterAttributeUpdatedEvent
@@ -481,7 +472,7 @@ class Light(PlatformEntity, BaseLight):
         self._state = bool(event.value)
         if event.value:
             self._off_brightness = None
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     async def async_update(self) -> None:
         """Attempt to retrieve the state from the light."""
@@ -535,14 +526,6 @@ class Light(PlatformEntity, BaseLight):
                 else:
                     self._effect = None
 
-    """TODO
-    async def _maybe_force_refresh(self, signal):
-        #Force update the state if the signal contains the entity id for this entity.
-        if self.entity_id in signal["entity_ids"]:
-            await self.async_get_state()
-            self.send_state_changed_event()
-    """
-
 
 @STRICT_MATCH(
     cluster_handler_names=CLUSTER_HANDLER_ON_OFF,
@@ -586,20 +569,9 @@ class LightGroup(GroupEntity, BaseLight):
             ClusterHandler
         ] = group.zigpy_group.endpoint[Identify.cluster_id]
 
-        # self._debounced_member_refresh = None
-        """
-        self._default_transition = async_get_zha_config_value(
-            zha_device.gateway.config_entry,
-            ZHA_OPTIONS,
-            CONF_DEFAULT_LIGHT_TRANSITION,
-            0,
-        )
-        """
-
     def update(self, _: Any = None) -> None:
         # Query all members and determine the light group state.
         self.debug("Updating light group entity state")
-        previous_state = self.get_state()
         platform_entities = self._group.get_platform_entities(self.PLATFORM)
         all_entities = [entity.to_json() for entity in platform_entities]
         all_states = [entity["state"] for entity in all_entities]
@@ -652,5 +624,4 @@ class LightGroup(GroupEntity, BaseLight):
         # so that we don't break in the future when a new feature is added.
         self._supported_features &= SUPPORT_GROUP_LIGHT
 
-        if self.get_state() != previous_state:
-            self.send_state_changed_event()
+        self.maybe_send_state_changed_event()

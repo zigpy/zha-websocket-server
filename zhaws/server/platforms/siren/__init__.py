@@ -149,7 +149,7 @@ class Siren(PlatformEntity):
         self._off_listener = asyncio.get_running_loop().call_later(
             siren_duration, self.async_set_off
         )
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off siren."""
@@ -157,7 +157,7 @@ class Siren(PlatformEntity):
             mode=WARNING_DEVICE_MODE_STOP, strobe=WARNING_DEVICE_STROBE_NO
         )
         self._attr_is_on = False
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     def async_set_off(self) -> None:
         """Set is_on to False and write HA state."""
@@ -165,7 +165,7 @@ class Siren(PlatformEntity):
         if self._off_listener:
             self._off_listener.cancel()
             self._off_listener = None
-        self.send_state_changed_event()
+        self.maybe_send_state_changed_event()
 
     def to_json(self) -> dict:
         json = super().to_json()
