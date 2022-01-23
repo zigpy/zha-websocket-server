@@ -46,7 +46,7 @@ _LOGGER = logging.getLogger(__name__)
         vol.Required(CONF_DEVICE): vol.Schema(
             {
                 vol.Required(CONF_DEVICE_PATH): str,
-                vol.Required(CONF_FLOWCONTROL): str,
+                vol.Optional(CONF_FLOWCONTROL): str,
                 vol.Required(CONF_BAUDRATE): decorators.POSITIVE_INT,
             }
         ),

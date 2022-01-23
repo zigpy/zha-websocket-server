@@ -55,7 +55,7 @@ class Controller:
 
     def __init__(self, server: Server):
         """Initialize the controller."""
-        self._application_controller: ControllerApplication = None
+        self._application_controller: ControllerApplication | None = None
         self._server: Server = server
         self.radio_description: Optional[str] = None
         self._devices: dict[EUI64, Device] = {}
@@ -64,10 +64,7 @@ class Controller:
     @property
     def is_running(self) -> bool:
         """Return true if the controller is running."""
-        return (
-            self._application_controller is not None
-            and self._application_controller.is_controller_running
-        )
+        return self._application_controller is not None
 
     @property
     def server(self) -> Server:
@@ -106,12 +103,13 @@ class Controller:
             self._application_controller = await app_controller_cls.new(  # type: ignore
                 controller_config, auto_form=True, start_radio=True
             )
-        except (asyncio.TimeoutError, SerialException, OSError) as exception:
+        except (asyncio.TimeoutError, SerialException, OSError) as exc:
             _LOGGER.error(
                 "Couldn't start %s coordinator",
                 self.radio_description,
-                exc_info=exception,
+                exc_info=exc,
             )
+            raise
         self.load_devices()
         self.load_groups()
         self.application_controller.add_listener(self)
@@ -146,7 +144,11 @@ class Controller:
 
     async def stop_network(self) -> None:
         """Stop the Zigbee network."""
+        if self._application_controller is None:
+            return
+
         await self._application_controller.pre_shutdown()
+        self._application_controller = None
 
     def get_device(self, ieee: Union[EUI64, str]) -> Device:
         """Get a device by ieee address."""

@@ -7,4 +7,4 @@ cd "$(dirname "$0")/.."
 
 source venv/bin/activate
 
-python -m websockets ws://localhost:8001/
+python -m zhaws.client ws://localhost:8001/

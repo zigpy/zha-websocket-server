@@ -1,10 +1,12 @@
 """Client implementation for the zhaws.client."""
+from __future__ import annotations
+
 import asyncio
+import contextlib
 import logging
 import pprint
 from types import TracebackType
 from typing import Any, Optional
-import uuid
 
 from aiohttp import ClientSession, ClientWebSocketResponse, client_exceptions
 from aiohttp.http_websocket import WSMsgType
@@ -23,19 +25,29 @@ class Client(EventBase):
     def __init__(
         self,
         ws_server_url: str,
-        aiohttp_session: ClientSession,
+        aiohttp_session: ClientSession | None = None,
         *args: Any,
         **kwargs: Any,
     ) -> None:
         """Initialize the Client class."""
         super().__init__(*args, **kwargs)
         self.ws_server_url = ws_server_url
-        self.aiohttp_session = aiohttp_session
+
+        # Create a session if none is provided
+        if aiohttp_session is None:
+            self.aiohttp_session = ClientSession()
+            self._close_aiohttp_session: bool = True
+        else:
+            self.aiohttp_session = aiohttp_session
+            self._close_aiohttp_session: bool = False
+
         # The WebSocket client
         self._client: Optional[ClientWebSocketResponse] = None
         self._loop = asyncio.get_running_loop()
         self._result_futures: dict[int, asyncio.Future] = {}
-        self._shutdown_complete_event: Optional[asyncio.Event] = None
+        self._listen_task: asyncio.Task | None = None
+
+        self._message_id = 0
 
     def __repr__(self) -> str:
         """Return the representation."""
@@ -47,23 +59,33 @@ class Client(EventBase):
         """Return if we're currently connected."""
         return self._client is not None and not self._client.closed
 
+    def new_message_id(self) -> int:
+        """Creates a new message ID."""
+        # XXX: JSON doesn't define limits for integers but JavaScript itself internally
+        # uses double precision floats for numbers (including in `JSON.parse`), setting
+        # a hard limit of `Number.MAX_SAFE_INTEGER == 2^53 - 1`.  We can be more
+        # conservative and just restrict it to the maximum value of a 32-bit signed int.
+        self._message_id = (self._message_id + 1) % 0x80000000
+        return self._message_id
+
     async def async_send_command(
         self,
         message: dict[str, Any],
     ) -> CommandResponse:
         """Send a command and get a response."""
-        future: "asyncio.Future[CommandResponse]" = self._loop.create_future()
-        message_id = message["message_id"] = uuid.uuid4().int
+        future: asyncio.Future[CommandResponse] = self._loop.create_future()
+        message_id = message["message_id"] = self.new_message_id()
         self._result_futures[message_id] = future
-        await self._send_json_message(message)
+
         try:
+            await self._send_json_message(message)
             return await future
         finally:
             self._result_futures.pop(message_id)
 
     async def async_send_command_no_wait(self, message: dict[str, Any]) -> None:
         """Send a command without waiting for the response."""
-        message["message_id"] = uuid.uuid4().int
+        message["message_id"] = self.new_message_id()
         await self._send_json_message(message)
 
     async def connect(self) -> None:
@@ -77,12 +99,14 @@ class Client(EventBase):
                 compress=15,
                 max_msg_size=0,
             )
-        except (
-            client_exceptions.WSServerHandshakeError,
-            client_exceptions.ClientError,
-        ) as err:
+        except client_exceptions.ClientError as err:
             _LOGGER.error("Error connecting to server: %s", err)
             raise err
+
+    async def listen_loop(self) -> None:
+        while not self._client.closed:
+            data = await self._receive_json_or_raise()
+            self._handle_incoming_message(data)
 
     async def listen(self) -> None:
         """Start listening to the websocket."""
@@ -91,41 +115,32 @@ class Client(EventBase):
 
         assert self._client
 
-        try:
-            while not self._client.closed:
-                data = await self._receive_json_or_raise()
-
-                self._handle_incoming_message(data)
-        except Exception:
-            pass
-
-        finally:
-            _LOGGER.debug("Listen completed. Cleaning up")
-
-            for future in self._result_futures.values():
-                future.cancel()
-            self._result_futures.clear()
-
-            if not self._client.closed:
-                await self._client.close()
-
-            if self._shutdown_complete_event:
-                self._shutdown_complete_event.set()
+        assert self._listen_task is None
+        self._listen_task = asyncio.create_task(self.listen_loop())
 
     async def disconnect(self) -> None:
         """Disconnect the client."""
         _LOGGER.debug("Closing client connection")
 
-        if not self.connected:
-            return
+        if self._listen_task is not None:
+            self._listen_task.cancel()
 
-        assert self._client
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._listen_task
 
-        self._shutdown_complete_event = asyncio.Event()
+            self._listen_task = None
+
         await self._client.close()
-        await self._shutdown_complete_event.wait()
 
-        self._shutdown_complete_event = None
+        if self._close_aiohttp_session:
+            await self.aiohttp_session.close()
+
+        _LOGGER.debug("Listen completed. Cleaning up")
+
+        for future in self._result_futures.values():
+            future.cancel()
+
+        self._result_futures.clear()
 
     async def _receive_json_or_raise(self) -> dict:
         """Receive json or raise."""
@@ -196,6 +211,7 @@ class Client(EventBase):
                 msg,
             )
             return
+
         try:
             self.emit(message.event_type, message)
         except Exception as err:
@@ -207,16 +223,16 @@ class Client(EventBase):
         Raises NotConnected if client not connected.
         """
         if not self.connected:
-            raise Exception
+            raise Exception()
 
-        _LOGGER.warn("Publishing message:\n%s\n", pprint.pformat(message))
+        _LOGGER.warning("Publishing message:\n%s\n", pprint.pformat(message))
 
         assert self._client
         assert "message_id" in message
 
         await self._client.send_json(message)
 
-    async def __aenter__(self) -> "Client":
+    async def __aenter__(self) -> Client:
         """Connect to the websocket."""
         await self.connect()
         return self
