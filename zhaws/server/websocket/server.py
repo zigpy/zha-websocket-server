@@ -64,6 +64,9 @@ class Server:
 
     async def stop_server(self) -> None:
         """Stop the websocket server."""
+        if self._ws_server is None:
+            return
+
         assert self._ws_server is not None
 
         if self._controller.is_running:
@@ -71,7 +74,6 @@ class Server:
 
         self._ws_server.close()
         await self._ws_server.wait_closed()
-
         self._ws_server = None
 
     async def __aenter__(self) -> Server:
