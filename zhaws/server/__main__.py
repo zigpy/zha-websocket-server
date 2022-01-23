@@ -1,5 +1,6 @@
 """Websocket application to run a zigpy Zigbee network."""
 
+import argparse
 import asyncio
 import logging
 
@@ -8,12 +9,18 @@ from zhaws.server.websocket.server import Server
 _LOGGER = logging.getLogger(__name__)
 
 
-async def main() -> None:
-    async with Server(host="0.0.0.0", port=8001):
+async def main(host: str, port: int) -> None:
+    async with Server(host=host, port=port):
         await asyncio.Future()  # wait forever
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Start the ZHAWS server")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="Bind host")
+    parser.add_argument("--port", type=int, default=8001, help="Bind port")
+
+    args = parser.parse_args()
+
     import uvloop
 
     uvloop.install()
@@ -37,4 +44,4 @@ if __name__ == "__main__":
         )
     )
 
-    asyncio.run(main())
+    asyncio.run(main(args.host, args.port))
