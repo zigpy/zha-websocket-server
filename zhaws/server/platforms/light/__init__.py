@@ -161,14 +161,14 @@ class BaseLight(BaseEntity):
 
     def get_state(self) -> dict[str, Any]:
         """Return the state of the light."""
-        state: dict[str, Any] = {}
-        state["on"] = self.is_on
-        state["brightness"] = self.brightness
-        state["hs_color"] = self.hs_color
-        state["color_temp"] = self.color_temp
-        state["effect"] = self.effect
-        state["off_brightness"] = self._off_brightness
-        return state
+        response = super().get_state()
+        response["on"] = self.is_on
+        response["brightness"] = self.brightness
+        response["hs_color"] = self.hs_color
+        response["color_temp"] = self.color_temp
+        response["effect"] = self.effect
+        response["off_brightness"] = self._off_brightness
+        return response
 
     @property
     def is_on(self) -> bool:

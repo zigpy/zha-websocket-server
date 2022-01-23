@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Final, Union
+from typing import TYPE_CHECKING, Any, Final, Union
 
 from zigpy.zcl.foundation import Status
 
@@ -178,13 +178,17 @@ class Cover(PlatformEntity):
 
     def get_state(self) -> dict:
         """Get the state of the cover."""
-        return {
-            ATTR_CURRENT_POSITION: self.current_cover_position,
-            "state": self._state,
-            "is_opening": self.is_opening,
-            "is_closing": self.is_closing,
-            "is_closed": self.is_closed,
-        }
+        response = super().get_state()
+        response.update(
+            {
+                ATTR_CURRENT_POSITION: self.current_cover_position,
+                "state": self._state,
+                "is_opening": self.is_opening,
+                "is_closing": self.is_closing,
+                "is_closed": self.is_closed,
+            }
+        )
+        return response
 
 
 @MULTI_MATCH(
@@ -290,12 +294,16 @@ class Shade(PlatformEntity):
             self.debug("couldn't stop cover: %s", res)
             return
 
-    def get_state(self) -> Union[str, Dict, None]:
+    def get_state(self) -> dict:
         """Get the state of the cover."""
-        return {
-            ATTR_CURRENT_POSITION: self._position,
-            "is_closed": self.is_closed,
-        }
+        response = super().get_state()
+        response.update(
+            {
+                ATTR_CURRENT_POSITION: self._position,
+                "is_closed": self.is_closed,
+            }
+        )
+        return response
 
 
 @MULTI_MATCH(

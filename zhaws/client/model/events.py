@@ -11,12 +11,14 @@ from pydantic.fields import Field
 from zhaws.client.model.types import (
     BaseDevice,
     BatteryState,
+    BooleanState,
     CoverState,
     Device,
     DeviceSignature,
     DeviceTrackerState,
     ElectricalMeasurementState,
     FanState,
+    GenericState,
     Group,
     LightState,
     LockState,
@@ -87,21 +89,22 @@ class PlatformEntityEvent(BaseEvent):
     endpoint: Optional[MinimalEndpoint]
     device: Optional[MinimalDevice]
     group: Optional[MinimalGroup]
-    state: Union[
-        DeviceTrackerState,
-        CoverState,
-        ShadeState,
-        FanState,
-        LockState,
-        BatteryState,
-        ElectricalMeasurementState,
-        LightState,
-        SwitchState,
-        SmareEnergyMeteringState,
-        int,
-        float,
-        str,
-        bool,
+    state: Annotated[
+        Union[
+            DeviceTrackerState,
+            CoverState,
+            ShadeState,
+            FanState,
+            LockState,
+            BatteryState,
+            ElectricalMeasurementState,
+            LightState,
+            SwitchState,
+            SmareEnergyMeteringState,
+            GenericState,
+            BooleanState,
+        ],
+        Field(discriminator="class_name"),  # noqa: F821
     ]
 
 

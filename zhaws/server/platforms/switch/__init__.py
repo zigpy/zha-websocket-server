@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Any, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from zigpy.zcl.clusters.general import OnOff
 from zigpy.zcl.foundation import Status
@@ -64,10 +64,11 @@ class BaseSwitch(BaseEntity):
         self._state = False
         self.maybe_send_state_changed_event()
 
-    def get_state(self) -> Union[str, dict, None]:
-        return {
-            "state": self.is_on,
-        }
+    def get_state(self) -> dict:
+        """Return the state of the switch."""
+        response = super().get_state()
+        response["state"] = self.is_on
+        return response
 
 
 @STRICT_MATCH(cluster_handler_names=CLUSTER_HANDLER_ON_OFF)

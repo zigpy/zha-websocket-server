@@ -4,7 +4,7 @@ from __future__ import annotations
 from abc import abstractmethod
 import functools
 import math
-from typing import TYPE_CHECKING, Any, Dict, Final, Union
+from typing import TYPE_CHECKING, Any, Final, Union
 
 from zigpy.exceptions import ZigbeeException
 from zigpy.zcl.clusters import hvac
@@ -212,11 +212,16 @@ class Fan(PlatformEntity, BaseFan):
         await self._fan_cluster_handler.async_set_speed(fan_mode)
         self.async_set_state(0, "fan_mode", fan_mode)
 
-    def get_state(self) -> Union[str, Dict, None]:
-        return {
-            "preset_mode": self.preset_mode,
-            "percentage": self.percentage,
-        }
+    def get_state(self) -> dict:
+        """Return the state of the fan."""
+        response = super().get_state()
+        response.update(
+            {
+                "preset_mode": self.preset_mode,
+                "percentage": self.percentage,
+            }
+        )
+        return response
 
 
 @GROUP_MATCH()
@@ -240,11 +245,16 @@ class FanGroup(GroupEntity, BaseFan):
         """Return the current preset mode."""
         return self._preset_mode
 
-    def get_state(self) -> Union[str, Dict, None]:
-        return {
-            "preset_mode": self.preset_mode,
-            "percentage": self.percentage,
-        }
+    def get_state(self) -> dict:
+        """Return the state of the fan."""
+        response = super().get_state()
+        response.update(
+            {
+                "preset_mode": self.preset_mode,
+                "percentage": self.percentage,
+            }
+        )
+        return response
 
     async def _async_set_fan_mode(self, fan_mode: int) -> None:
         """Set the fan mode for the group."""

@@ -55,8 +55,11 @@ class BinarySensor(PlatformEntity):
         """Return True if the binary sensor is on."""
         return self._state
 
-    def get_state(self) -> bool:
-        return self.is_on
+    def get_state(self) -> dict:
+        """Return the state of the binary sensor."""
+        response = super().get_state()
+        response["state"] = self.is_on
+        return response
 
     def handle_cluster_handler_attribute_updated(
         self, event: ClusterAttributeUpdatedEvent

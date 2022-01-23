@@ -94,7 +94,12 @@ class DeviceTracker(PlatformEntity):
         return self._battery_level
 
     def get_state(self) -> dict:
-        return {
-            "connected": self._connected,
-            "battery_level": self._battery_level,
-        }
+        """Return the state of the device."""
+        response = super().get_state()
+        response.update(
+            {
+                "connected": self._connected,
+                "battery_level": self._battery_level,
+            }
+        )
+        return response

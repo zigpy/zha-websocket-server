@@ -109,13 +109,15 @@ class Sensor(PlatformEntity):
         if self.should_poll:
             self.poller_task = asyncio.create_task(self._refresh())
 
-    def get_state(self) -> Any:
+    def get_state(self) -> dict:
         """Return the state for this sensor."""
-        assert self.SENSOR_ATTR is not None
-        raw_state = self._cluster_handler.cluster.get(self.SENSOR_ATTR)
-        if raw_state is None:
-            return None
-        return self.formatter(raw_state)
+        response = super().get_state()
+        if self.SENSOR_ATTR is not None:
+            raw_state = self._cluster_handler.cluster.get(self.SENSOR_ATTR)
+            if raw_state is not None:
+                raw_state = self.formatter(raw_state)
+            response["state"] = raw_state
+        return response
 
     def formatter(self, value: int) -> Union[int, float]:
         """Numeric pass-through formatter."""
@@ -199,17 +201,17 @@ class Battery(Sensor):
 
     def get_state(self) -> dict[str, Any]:
         """Return the state for battery sensors."""
-        state = {"state": super().get_state()}
+        response = super().get_state()
         battery_size = self._cluster_handler.cluster.get("battery_size")
         if battery_size is not None:
-            state["battery_size"] = BATTERY_SIZES.get(battery_size, "Unknown")
+            response["battery_size"] = BATTERY_SIZES.get(battery_size, "Unknown")
         battery_quantity = self._cluster_handler.cluster.get("battery_quantity")
         if battery_quantity is not None:
-            state["battery_quantity"] = battery_quantity
+            response["battery_quantity"] = battery_quantity
         battery_voltage = self._cluster_handler.cluster.get("battery_voltage")
         if battery_voltage is not None:
-            state["battery_voltage"] = round(battery_voltage / 10, 2)
-        return state
+            response["battery_voltage"] = round(battery_voltage / 10, 2)
+        return response
 
 
 @MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_ELECTRICAL_MEASUREMENT)
@@ -226,15 +228,15 @@ class ElectricalMeasurement(Sensor):
 
     def get_state(self) -> dict[str, Any]:
         """Return the state for this sensor."""
-        state = {"state": super().get_state()}
+        response = super().get_state()
         if self._cluster_handler.measurement_type is not None:
-            state["measurement_type"] = self._cluster_handler.measurement_type
+            response["measurement_type"] = self._cluster_handler.measurement_type
 
         max_attr_name = f"{self.SENSOR_ATTR}_max"
         if (max_v := self._cluster_handler.cluster.get(max_attr_name)) is not None:
-            state[max_attr_name] = str(self.formatter(max_v))
+            response[max_attr_name] = str(self.formatter(max_v))
 
-        return state
+        return response
 
     def formatter(self, value: int) -> Union[int, float]:
         """Return 'normalized' value."""
@@ -361,12 +363,12 @@ class SmartEnergyMetering(Sensor):
 
     def get_state(self) -> dict[str, Any]:
         """Return state for this sensor."""
-        state = {"state": super().get_state()}
+        response = super().get_state()
         if self._cluster_handler.device_type is not None:
-            state["device_type"] = self._cluster_handler.device_type
+            response["device_type"] = self._cluster_handler.device_type
         if (status := self._cluster_handler.metering_status) is not None:
-            state["status"] = str(status)[len(status.__class__.__name__) + 1 :]
-        return state
+            response["status"] = str(status)[len(status.__class__.__name__) + 1 :]
+        return response
 
 
 @MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_SMARTENERGY_METERING)
@@ -527,14 +529,16 @@ class ThermostatHVACAction(Sensor, id_suffix="hvac_action"):
             return CURRENT_HVAC_IDLE
         return CURRENT_HVAC_OFF
 
-    def get_state(self) -> Union[str, None]:
+    def get_state(self) -> dict:
         """Return the current HVAC action."""
+        response = super().get_state()
         if (
             self._cluster_handler.pi_heating_demand is None
             and self._cluster_handler.pi_cooling_demand is None
         ):
-            return self._rm_rs_action
-        return self._pi_demand_action
+            response["state"] = self._rm_rs_action
+        response["state"] = self._pi_demand_action
+        return response
 
 
 @MULTI_MATCH(
@@ -591,9 +595,11 @@ class RSSISensor(Sensor, id_suffix="rssi"):
             return None
         return cls(unique_id, cluster_handlers, endpoint, device, **kwargs)
 
-    def get_state(self) -> int:
+    def get_state(self) -> dict:
         """Return the state of the sensor."""
-        return getattr(self.device.device, self.unique_id_suffix)  # type: ignore #TODO fix type hint
+        response = super().get_state()
+        response["state"] = getattr(self.device.device, self.unique_id_suffix)  # type: ignore #TODO fix type hint
+        return response
 
     @property
     def should_poll(self) -> bool:

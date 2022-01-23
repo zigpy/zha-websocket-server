@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Any, Dict, Final, Union, cast
+from typing import TYPE_CHECKING, Any, Final, cast
 
 from zigpy.zcl.clusters.security import IasAce
 
@@ -152,8 +152,11 @@ class ZHAAlarmControlPanel(PlatformEntity):
             self._cluster_handler.armed_state, AlarmState.UNKNOWN
         )
 
-    def get_state(self) -> Union[str, Dict, None]:
-        return self.state
+    def get_state(self) -> dict:
+        """Get the state of the alarm control panel."""
+        response = super().get_state()
+        response["state"] = self.state
+        return response
 
     def to_json(self) -> dict:
         """Return a JSON representation of the alarm control panel."""
