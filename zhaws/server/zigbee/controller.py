@@ -144,6 +144,9 @@ class Controller:
 
     async def stop_network(self) -> None:
         """Stop the Zigbee network."""
+        if self._application_controller is None:
+            return
+
         await self._application_controller.pre_shutdown()
         self._application_controller = None
 

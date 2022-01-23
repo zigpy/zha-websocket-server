@@ -45,5 +45,15 @@ async def test_client_message_id_uniqueness(connected_client_and_server):
     client, server = connected_client_and_server
 
     ids = [client.new_message_id() for _ in range(1000)]
-
     assert len(ids) == len(set(ids))
+
+
+async def test_client_stop_server(connected_client_and_server):
+    """Tests that the client can stop the server"""
+    client, server = connected_client_and_server
+
+    assert server.is_serving
+    await client.async_send_command_no_wait({"command": "stop_server", "message_id": 1})
+    await client.disconnect()
+    await server.wait_closed()
+    assert not server.is_serving

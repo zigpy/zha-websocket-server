@@ -10,8 +10,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def main(host: str, port: int) -> None:
-    async with Server(host=host, port=port):
-        await asyncio.Future()  # wait forever
+    async with Server(host=host, port=port) as server:
+        await server.wait_closed()
 
 
 if __name__ == "__main__":
