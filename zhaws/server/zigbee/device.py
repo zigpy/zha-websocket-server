@@ -5,7 +5,7 @@ import asyncio
 from enum import Enum
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Callable, Final, Iterable, Literal
+from typing import TYPE_CHECKING, Any, Callable, Final, Iterable, Union
 
 from zigpy import types
 from zigpy.device import Device as ZigpyDevice
@@ -17,7 +17,17 @@ from zigpy.zcl import Cluster
 from zigpy.zcl.clusters.general import Groups
 import zigpy.zdo.types as zdo_types
 
-from zhaws.server.const import DEVICE, IEEE, NWK
+from zhaws.backports.enum import StrEnum
+from zhaws.server.const import (
+    DEVICE,
+    EVENT,
+    EVENT_TYPE,
+    IEEE,
+    MESSAGE_TYPE,
+    NWK,
+    EventTypes,
+    MessageTypes,
+)
 from zhaws.server.decorators import periodic
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.util import LogMixin
@@ -87,7 +97,7 @@ if TYPE_CHECKING:
 
     from zhaws.server.zigbee.controller import Controller
 
-    CLUSTER_TYPE = Literal[TypeAlias[CLUSTER_TYPE_IN], TypeAlias[CLUSTER_TYPE_OUT]]
+    CLUSTER_TYPE = Union[TypeAlias[CLUSTER_TYPE_IN], TypeAlias[CLUSTER_TYPE_OUT]]
 
 
 class DeviceStatus(Enum):
@@ -95,6 +105,13 @@ class DeviceStatus(Enum):
 
     CREATED = 1
     INITIALIZED = 2
+
+
+class DeviceEvents(StrEnum):
+    """Events that devices can broadcast."""
+
+    DEVICE_OFFLINE = "device_offline"
+    DEVICE_ONLINE = "device_online"
 
 
 class Device(LogMixin):
@@ -294,11 +311,6 @@ class Device(LogMixin):
         return triggers
 
     @property
-    def available_signal(self) -> str:
-        """Signal to use to subscribe to device availability changes."""
-        return self._available_signal
-
-    @property
     def available(self) -> bool:
         """Return True if device is available."""
         return self._available
@@ -366,7 +378,7 @@ class Device(LogMixin):
         if (
             self._checkins_missed_count >= _CHECKIN_GRACE_PERIODS
             or self.manufacturer == "LUMI"
-            or not self._channels.pools
+            or not self._endpoints
         ):
             self.update_available(False)
             return
@@ -376,10 +388,11 @@ class Device(LogMixin):
             "Attempting to checkin with device - missed checkins: %s",
             self._checkins_missed_count,
         )
-        try:
-            pool = self._channels.pools[0]
-            basic_ch = pool.all_channels[f"{pool.id}:0x0000"]
-        except KeyError:
+        for id, endpoint in self._endpoints.items():
+            if f"{id}:0x0000" in endpoint.all_cluster_handlers:
+                basic_ch = endpoint.all_cluster_handlers[f"{id}:0x0000"]
+                break
+        if not basic_ch:
             self.debug("does not have a mandatory basic cluster")
             self.update_available(False)
             return
@@ -395,24 +408,24 @@ class Device(LogMixin):
             # reinit channels then signal entities
             asyncio.create_task(self._async_became_available())
             return
-        """ TODO
+
         if availability_changed and not available:
-            self._channels.zha_send_event(
-                {
-                    "device_event_type": "device_offline",
-                },
-            )
-        """
-        """ TODO
-        async_dispatcher_send(self.hass, f"{self._available_signal}_entity")
-        """
+            message: dict[str, Any] = {
+                MESSAGE_TYPE: MessageTypes.EVENT,
+                EVENT_TYPE: EventTypes.DEVICE_EVENT,
+                EVENT: DeviceEvents.DEVICE_OFFLINE,
+            }
+            self.send_event(message)
 
     async def _async_became_available(self) -> None:
         """Update device availability and signal entities."""
         await self.async_initialize(False)
-        """ TODO
-        async_dispatcher_send(self.hass, f"{self._available_signal}_entity")
-        """
+        message: dict[str, Any] = {
+            MESSAGE_TYPE: MessageTypes.EVENT,
+            EVENT_TYPE: EventTypes.DEVICE_EVENT,
+            EVENT: DeviceEvents.DEVICE_ONLINE,
+        }
+        self.send_event(message)
 
     @property
     def device_info(self) -> dict[str, Any]:
@@ -660,8 +673,8 @@ class Device(LogMixin):
         endpoint_id: int,
         cluster_id: int,
         command: int,
-        command_type,
-        *args,
+        command_type: str,
+        *args: Any,
         cluster_type: CLUSTER_TYPE = CLUSTER_TYPE_IN,
         manufacturer: int | None = None,
     ) -> Any | None:
@@ -761,7 +774,10 @@ class Device(LogMixin):
         )
 
     async def _async_group_binding_operation(
-        self, group_id: int, operation, cluster_bindings: Iterable
+        self,
+        group_id: int,
+        operation: zdo_types.ZDOCmd.Bind_req | zdo_types.ZDOCmd.Unbind_req,
+        cluster_bindings: Iterable,
     ) -> None:
         """Create or remove a direct zigbee binding between a device and a group."""
 

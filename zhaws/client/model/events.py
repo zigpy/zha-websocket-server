@@ -145,6 +145,22 @@ class DeviceRemovedEvent(ControllerEvent):
     device: Device
 
 
+class DeviceOfflineEvent(BaseEvent):
+    """Device offline event."""
+
+    event: Literal["device_offline"] = "device_offline"
+    event_type: Literal["device_event"] = "device_event"
+    device: MinimalDevice
+
+
+class DeviceOnlineEvent(BaseEvent):
+    """Device online event."""
+
+    event: Literal["device_online"] = "device_online"
+    event_type: Literal["device_event"] = "device_event"
+    device: MinimalDevice
+
+
 class GroupRemovedEvent(ControllerEvent):
     """Group removed event."""
 
@@ -187,6 +203,8 @@ Events = Annotated[
         GroupAddedEvent,
         GroupMemberAddedEvent,
         GroupMemberRemovedEvent,
+        DeviceOfflineEvent,
+        DeviceOnlineEvent,
     ],
     Field(discriminator="event"),  # noqa: F821
 ]
