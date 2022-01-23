@@ -1,10 +1,11 @@
 """Models that represent commands and command responses."""
 
-from typing import Annotated, Literal, Optional, Tuple, Union
+from typing import Annotated, Any, Literal, Optional, Tuple, Type, Union
 
 from pydantic import conint
 from pydantic.fields import Field
 
+from zhaws.client.model.events import MinimalCluster, MinimalDevice
 from zhaws.client.model.types import Device, Group, GroupMemberReference
 from zhaws.model import BaseModel
 
@@ -15,6 +16,20 @@ class Command(BaseModel):
     command: str
 
 
+class PermitJoiningCommand(Command):
+    """Command to permit joining."""
+
+    command: Literal["permit_joining"] = "permit_joining"
+    duration: Type[int] = conint(ge=1, le=254)
+    device: Optional[Device]
+
+
+class UpdateNetworkTopologyCommand(Command):
+    """Command to update the network topology."""
+
+    command: Literal["update_network_topology"] = "update_network_topology"
+
+
 class GetDevicesCommand(Command):
     """Command to get devices."""
 
@@ -22,10 +37,35 @@ class GetDevicesCommand(Command):
 
 
 class ReconfigureDeviceCommand(Command):
-    """Command to get reconfigure a device."""
+    """Command to reconfigure a device."""
 
     command: Literal["reconfigure_device"] = "reconfigure_device"
     ieee: str
+
+
+class ReadClusterAttributesCommand(Command):
+    """Command to get the values of the specified attributes."""
+
+    command: Literal["read_cluster_attributes"] = "read_cluster_attributes"
+    ieee: str
+    endpoint_id: int
+    cluster_id: int
+    cluster_type: Literal["in", "out"]
+    attributes: list[str]
+    manufacturer_code: Optional[int]
+
+
+class WriteClusterAttributeCommand(Command):
+    """Command to set the value for a cluster attribute."""
+
+    command: Literal["write_cluster_attribute"] = "write_cluster_attribute"
+    ieee: str
+    endpoint_id: int
+    cluster_id: int
+    cluster_type: Literal["in", "out"]
+    attribute: str
+    value: Any
+    manufacturer_code: Optional[int]
 
 
 class GetGroupsCommand(Command):
@@ -381,6 +421,7 @@ class DefaultResponse(CommandResponse):
         "client_listen_raw_zcl",
         "client_disconnect",
         "reconfigure_device",
+        "UpdateNetworkTopologyCommand",
     ]
 
 
@@ -396,6 +437,34 @@ class GetDevicesResponse(CommandResponse):
 
     command: Literal["get_devices"] = "get_devices"
     devices: dict[str, Device]
+
+
+class ReadClusterAttributesResponse(CommandResponse):
+    """Read cluster attributes response."""
+
+    command: Literal["read_cluster_attributes"] = "read_cluster_attributes"
+    device: MinimalDevice
+    cluster: MinimalCluster
+    manufacturer_code: Optional[int]
+    succeeded: dict[str, Any]
+    failed: dict[str, Any]
+
+
+class AttributeStatus(BaseModel):
+    """Attribute status."""
+
+    attribute: str
+    status: str
+
+
+class WriteClusterAttributeResponse(CommandResponse):
+    """Write cluster attribute response."""
+
+    command: Literal["write_cluster_attribute"] = "write_cluster_attribute"
+    device: MinimalDevice
+    cluster: MinimalCluster
+    manufacturer_code: Optional[int]
+    response: AttributeStatus
 
 
 class GroupsResponse(CommandResponse):
@@ -419,6 +488,8 @@ CommandResponses = Annotated[
         GroupsResponse,
         PermitJoiningResponse,
         UpdateGroupResponse,
+        ReadClusterAttributesResponse,
+        WriteClusterAttributeResponse,
     ],
     Field(discriminator="command"),  # noqa: F821
 ]

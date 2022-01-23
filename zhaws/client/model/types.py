@@ -428,7 +428,7 @@ class BaseDevice(BaseModel):
     rssi: Union[int, None]
     last_seen: str
     available: bool
-    device_type: str
+    device_type: Literal["Coordinator", "Router", "EndDevice"]
     signature: DeviceSignature
 
 

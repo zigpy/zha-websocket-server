@@ -14,11 +14,14 @@ class APICommands(StrEnum):
     GET_DEVICES = "get_devices"
     REMOVE_DEVICE = "remove_device"
     RECONFIGURE_DEVICE = "reconfigure_device"
+    READ_CLUSTER_ATTRIBUTES = "read_cluster_attributes"
+    WRITE_CLUSTER_ATTRIBUTE = "write_cluster_attribute"
 
     # Zigbee API commands
     PERMIT_JOINING = "permit_joining"
     START_NETWORK = "start_network"
     STOP_NETWORK = "stop_network"
+    UPDATE_NETWORK_TOPOLOGY = "update_network_topology"
 
     # Group commands
     GET_GROUPS = "get_groups"

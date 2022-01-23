@@ -23,6 +23,7 @@ from zhaws.client.helpers import (
     GroupHelper,
     LightHelper,
     LockHelper,
+    NetworkHelper,
     NumberHelper,
     PlatformEntityHelper,
     SelectHelper,
@@ -78,6 +79,7 @@ class Controller(EventBase):
         self.clients: ClientHelper = ClientHelper(self._client)
         self.groups_helper: GroupHelper = GroupHelper(self._client)
         self.devices_helper: DeviceHelper = DeviceHelper(self._client)
+        self.network: NetworkHelper = NetworkHelper(self._client)
 
     @property
     def devices(self) -> dict[str, Device]:

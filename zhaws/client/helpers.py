@@ -42,7 +42,11 @@ from zhaws.client.model.commands import (
     LockSetUserLockCodeCommand,
     LockUnlockCommand,
     NumberSetValueCommand,
+    PermitJoiningCommand,
+    PermitJoiningResponse,
     PlatformEntityRefreshStateCommand,
+    ReadClusterAttributesCommand,
+    ReadClusterAttributesResponse,
     ReconfigureDeviceCommand,
     RemoveGroupMembersCommand,
     RemoveGroupsCommand,
@@ -52,6 +56,9 @@ from zhaws.client.model.commands import (
     SwitchTurnOffCommand,
     SwitchTurnOnCommand,
     UpdateGroupResponse,
+    UpdateNetworkTopologyCommand,
+    WriteClusterAttributeCommand,
+    WriteClusterAttributeResponse,
 )
 from zhaws.client.model.types import (
     BaseEntity,
@@ -802,4 +809,89 @@ class DeviceHelper:
         """Reconfigure a device."""
         await self._client.async_send_command(
             ReconfigureDeviceCommand(ieee=device.ieee).dict(exclude_none=True)
+        )
+
+    async def read_cluster_attributes(
+        self,
+        device: Device,
+        cluster_id: int,
+        cluster_type: str,
+        endpoint_id: int,
+        attributes: list[str],
+        manufacturer_code: Optional[int] = None,
+    ) -> ReadClusterAttributesResponse:
+        """Read cluster attributes."""
+        response = cast(
+            ReadClusterAttributesResponse,
+            await self._client.async_send_command(
+                ReadClusterAttributesCommand(
+                    ieee=device.ieee,
+                    endpoint_id=endpoint_id,
+                    cluster_id=cluster_id,
+                    cluster_type=cluster_type,
+                    attributes=attributes,
+                    manufacturer_code=manufacturer_code,
+                ).dict(exclude_none=True)
+            ),
+        )
+        return response
+
+    async def write_cluster_attribute(
+        self,
+        device: Device,
+        cluster_id: int,
+        cluster_type: str,
+        endpoint_id: int,
+        attribute: str,
+        value: Any,
+        manufacturer_code: Optional[int] = None,
+    ) -> WriteClusterAttributeResponse:
+        """Set the value for a cluster attribute."""
+        response = cast(
+            WriteClusterAttributeResponse,
+            await self._client.async_send_command(
+                WriteClusterAttributeCommand(
+                    ieee=device.ieee,
+                    endpoint_id=endpoint_id,
+                    cluster_id=cluster_id,
+                    cluster_type=cluster_type,
+                    attribute=attribute,
+                    value=value,
+                    manufacturer_code=manufacturer_code,
+                ).dict(exclude_none=True)
+            ),
+        )
+        return response
+
+
+class NetworkHelper:
+    """Helper for network commands."""
+
+    def __init__(self, client: Client):
+        """Initialize the device helper."""
+        self._client: Client = client
+
+    async def permit_joining(
+        self, duration: int = 255, device: Optional[Device] = None
+    ) -> bool:
+        """Permit joining for a specified duration."""
+        # TODO add permit with code support
+        request_data: dict[str, Any] = {
+            "duration": duration,
+        }
+        if device is not None:
+            if device.device_type == "EndDevice":
+                raise ValueError("Device is not a coordinator or router")
+            request_data["ieee"] = device.ieee
+        command = PermitJoiningCommand(**request_data)
+        response = cast(
+            PermitJoiningResponse,
+            await self._client.async_send_command(command.dict(exclude_none=True)),
+        )
+        return response.success
+
+    async def update_topology(self) -> None:
+        """Update the network topology."""
+        await self._client.async_send_command(
+            UpdateNetworkTopologyCommand().dict(exclude_none=True)
         )

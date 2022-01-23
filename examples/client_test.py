@@ -4,7 +4,11 @@ import logging
 from colorlog import ColoredFormatter
 
 from zhaws.client.controller import Controller
-from zhaws.client.model.commands import LightTurnOffCommand, LightTurnOnCommand
+from zhaws.client.model.commands import (
+    LightTurnOffCommand,
+    LightTurnOnCommand,
+    ReadClusterAttributesResponse,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -15,6 +19,7 @@ async def main() -> None:
     test_alarm_control_panel = False
     test_locks = False
     test_buttons = False
+    test_attributes = True
 
     async with Controller("ws://localhost:8001/") as controller:
         await controller.clients.listen()
@@ -152,6 +157,21 @@ async def main() -> None:
             ],
         )
         """
+        if test_attributes:
+            device = devices["00:15:8d:00:02:82:d0:78"]
+            response: ReadClusterAttributesResponse = (
+                await controller.devices_helper.read_cluster_attributes(
+                    device.device, 0, "in", 1, ["date_code"]
+                )
+            )
+            _LOGGER.warning("Read cluster attributes response: %s", response.dict())
+
+            write_response = await controller.devices_helper.write_cluster_attribute(
+                device.device, 0, "in", 1, "location_desc", "test location"
+            )
+            _LOGGER.warning(
+                "Write cluster attribute response: %s", write_response.dict()
+            )
 
         await asyncio.Future()
 
