@@ -19,10 +19,26 @@ async def main() -> None:
     test_alarm_control_panel = False
     test_locks = False
     test_buttons = False
-    test_attributes = True
+    test_attributes = False
+    test_stop_network = True
 
     async with Controller("ws://localhost:8001/") as controller:
         await controller.clients.listen()
+
+        await controller.network.start_network(
+            {
+                "radio_type": "ezsp",
+                "device": {
+                    "path": "/dev/cu.GoControl_zigbee\u0011",
+                    "flow_control": "software",
+                    "baudrate": 57600,
+                },
+                "database_path": "./zigbee.db",
+                "enable_quirks": True,
+                "message_id": 1,
+            }
+        )
+
         await controller.load_devices()
         await controller.load_groups()
 
@@ -172,6 +188,10 @@ async def main() -> None:
             _LOGGER.warning(
                 "Write cluster attribute response: %s", write_response.dict()
             )
+
+        if test_stop_network:
+            await controller.network.stop_network()
+            await controller.server_helper.stop_server()
 
         await asyncio.Future()
 

@@ -53,6 +53,9 @@ from zhaws.client.model.commands import (
     SelectSelectOptionCommand,
     SirenTurnOffCommand,
     SirenTurnOnCommand,
+    StartNetworkCommand,
+    StopNetworkCommand,
+    StopServerCommand,
     SwitchTurnOffCommand,
     SwitchTurnOnCommand,
     UpdateGroupResponse,
@@ -895,3 +898,35 @@ class NetworkHelper:
         await self._client.async_send_command(
             UpdateNetworkTopologyCommand().dict(exclude_none=True)
         )
+
+    async def start_network(self, configuration: dict) -> bool:
+        """Start the Zigbee network."""
+        command = StartNetworkCommand(
+            **configuration
+        )  # TODO do this correctly once fully modeled
+        response = await self._client.async_send_command(
+            command.dict(exclude_none=True)
+        )
+        return response.success
+
+    async def stop_network(self) -> bool:
+        """Stop the Zigbee network."""
+        response = await self._client.async_send_command(
+            StopNetworkCommand().dict(exclude_none=True)
+        )
+        return response.success
+
+
+class ServerHelper:
+    """Helper for server commands."""
+
+    def __init__(self, client: Client):
+        """Initialize the helper."""
+        self._client: Client = client
+
+    async def stop_server(self) -> bool:
+        """Stop the websocket server."""
+        response = await self._client.async_send_command(
+            StopServerCommand().dict(exclude_none=True)
+        )
+        return response.success

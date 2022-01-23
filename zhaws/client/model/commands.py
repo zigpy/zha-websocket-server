@@ -24,6 +24,37 @@ class PermitJoiningCommand(Command):
     device: Optional[Device]
 
 
+class StopNetworkCommand(Command):
+    """Command to stop the zigbee network."""
+
+    command: Literal["stop_network"] = "stop_network"
+
+
+class ZigbeeCoordinatorDeviceConfiguration(BaseModel):
+    """Configuration of the zigbee coordinator."""
+
+    path: str
+    flow_control: str
+    baudrate: int
+
+
+class StartNetworkCommand(Command):
+    """Command to start the zigbee network."""
+
+    # TODO model this out correctly
+    command: Literal["start_network"] = "start_network"
+    radio_type: str
+    device: ZigbeeCoordinatorDeviceConfiguration
+    database_path: str
+    enable_quirks: bool
+
+
+class StopServerCommand(Command):
+    """Command to stop the websocket server."""
+
+    command: Literal["stop_server"] = "stop_server"
+
+
 class UpdateNetworkTopologyCommand(Command):
     """Command to update the network topology."""
 
