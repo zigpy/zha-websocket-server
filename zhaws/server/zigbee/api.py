@@ -326,7 +326,7 @@ async def write_cluster_attribute(
             "manufacturer_code": manufacturer,
             "response": {
                 "attribute": attribute,
-                "status": response[0][0].status.name,
+                "status": response[0][0].status.name,  # type: ignore
             },  # TODO there has to be a better way to do this
         },
     )
