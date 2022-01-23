@@ -173,5 +173,8 @@ class Siren(PlatformEntity):
         json["supported_features"] = self._attr_supported_features
         return json
 
-    def get_state(self) -> bool:
-        return self._attr_is_on
+    def get_state(self) -> dict:
+        """Get the state of the siren."""
+        response = super().get_state()
+        response["state"] = self._attr_is_on
+        return response

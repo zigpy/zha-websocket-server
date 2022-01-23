@@ -49,9 +49,11 @@ class BaseEntity(LogMixin, EventBase):
     def get_identifiers(self) -> dict[str, str | int]:
         """Return a dict with the information necessary to identify this entity."""
 
-    @abc.abstractmethod
-    def get_state(self) -> Union[float, bool, int, str, dict, None]:
+    def get_state(self) -> dict:
         """Return the arguments to use in the command."""
+        return {
+            "class_name": self.__class__.__name__,
+        }
 
     async def async_update(self) -> None:
         """Retrieve latest state."""

@@ -111,5 +111,8 @@ class Number(PlatformEntity):
         json["name"] = self.name
         return json
 
-    def get_state(self) -> float:
-        return self.value
+    def get_state(self) -> dict:
+        """Return the state of the entity."""
+        response = super().get_state()
+        response["state"] = self.value
+        return response

@@ -39,7 +39,7 @@ class Button(PlatformEntity):
     def get_args(self) -> list[Any]:
         """Return the arguments to use in the command."""
 
-    def get_state(self) -> Union[float, bool, int, str, dict, None]:
+    def get_state(self) -> dict:
         """Return the arguments to use in the command."""
 
     async def async_press(self) -> None:

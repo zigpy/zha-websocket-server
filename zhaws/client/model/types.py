@@ -45,16 +45,63 @@ class Endpoint(BaseModel):
     id: int
 
 
+class GenericState(BaseModel):
+    """Default state model."""
+
+    class_name: Literal[
+        "ZHAAlarmControlPanel",
+        "Number",
+        "DefaultToneSelectEntity",
+        "DefaultSirenLevelSelectEntity",
+        "DefaultStrobeLevelSelectEntity",
+        "DefaultStrobeSelectEntity",
+        "AnalogInput",
+        "Humidity",
+        "SoilMoisture",
+        "LeafWetness",
+        "Illuminance",
+        "Pressure",
+        "Temperature",
+        "CarbonDioxideConcentration",
+        "CarbonMonoxideConcentration",
+        "VOCLevel",
+        "PPBVOCLevel",
+        "FormaldehydeConcentration",
+        "ThermostatHVACAction",
+        "SinopeHVACAction",
+        "RSSISensor",
+        "LQISensor",
+    ]
+    state: Union[str, bool, int, float, None]
+
+
 class DeviceTrackerState(BaseModel):
     """Device tracker state model."""
 
+    class_name: Literal["DeviceTracker"] = "DeviceTracker"
     connected: bool
     battery_level: Optional[float]
+
+
+class BooleanState(BaseModel):
+    """Boolean value state model."""
+
+    class_name: Literal[
+        "Accelerometer",
+        "Occupancy",
+        "Opening",
+        "BinaryInput",
+        "Motion",
+        "IASZone",
+        "Siren",
+    ]
+    state: bool
 
 
 class CoverState(BaseModel):
     """Cover state model."""
 
+    class_name: Literal["Cover"] = "Cover"
     current_position: int
     state: Optional[str]
     is_opening: bool
@@ -65,6 +112,7 @@ class CoverState(BaseModel):
 class ShadeState(BaseModel):
     """Cover state model."""
 
+    class_name: Literal["Shade", "KeenVent"]
     current_position: int
     is_closed: bool
 
@@ -72,6 +120,7 @@ class ShadeState(BaseModel):
 class FanState(BaseModel):
     """Fan state model."""
 
+    class_name: Literal["Fan", "FanGroup"]
     preset_mode: str
     percentage: int
 
@@ -79,12 +128,14 @@ class FanState(BaseModel):
 class LockState(BaseModel):
     """Lock state model."""
 
+    class_name: Literal["Lock"] = "Lock"
     is_locked: bool
 
 
 class BatteryState(BaseModel):
     """Battery state model."""
 
+    class_name: Literal["Battery"] = "Battery"
     state: Optional[Union[str, float, int]]
     battery_size: Optional[str]
     battery_quantity: Optional[str]
@@ -94,6 +145,12 @@ class BatteryState(BaseModel):
 class ElectricalMeasurementState(BaseModel):
     """Electrical measurement state model."""
 
+    class_name: Literal[
+        "ElectricalMeasurement",
+        "ElectricalMeasurementApparentPower",
+        "ElectricalMeasurementRMSCurrent",
+        "ElectricalMeasurementRMSVoltage",
+    ]
     state: Optional[Union[str, float, int]]
     measurement_type: Optional[str]
 
@@ -101,6 +158,7 @@ class ElectricalMeasurementState(BaseModel):
 class LightState(BaseModel):
     """Light state model."""
 
+    class_name: Literal["Light", "HueLight", "ForceOnLight", "LightGroup"]
     on: bool
     brightness: Optional[int]
     hs_color: Optional[tuple[float, float]]
@@ -112,12 +170,14 @@ class LightState(BaseModel):
 class SwitchState(BaseModel):
     """Switch state model."""
 
+    class_name: Literal["Switch", "SwitchGroup"]
     state: bool
 
 
 class SmareEnergyMeteringState(BaseModel):
     """Smare energy metering state model."""
 
+    class_name: Literal["SmartEnergyMetering", "SmartEnergySummation"]
     state: Optional[Union[str, float, int]]
     device_type: Optional[str]
     status: Optional[str]
@@ -174,7 +234,7 @@ class BinarySensorEntity(BasePlatformEntity):
         "Accelerometer", "Occupancy", "Opening", "BinaryInput", "Motion", "IASZone"
     ]
     sensor_attribute: str
-    state: bool
+    state: BooleanState
 
 
 class BaseSensorEntity(BasePlatformEntity):
@@ -208,7 +268,7 @@ class SensorEntity(BaseSensorEntity):
         "RSSISensor",
         "LQISensor",
     ]
-    state: Optional[Union[str, float, int]]
+    state: GenericState
 
 
 class BatteryEntity(BaseSensorEntity):
@@ -244,7 +304,7 @@ class AlarmControlPanelEntity(BasePlatformEntity):
     supported_features: int
     code_required_arm_actions: bool
     max_invalid_tries: int
-    state: str
+    state: GenericState
 
 
 class ButtonEntity(BasePlatformEntity):
@@ -285,7 +345,7 @@ class NumberEntity(BasePlatformEntity):
     min_value: float
     max_value: float
     name: str
-    state: float
+    state: GenericState
 
 
 class SelectEntity(BasePlatformEntity):
@@ -299,7 +359,7 @@ class SelectEntity(BasePlatformEntity):
     ]
     enum: str
     options: list[str]
-    state: Optional[str]
+    state: GenericState
 
 
 class SirenEntity(BasePlatformEntity):
@@ -308,7 +368,7 @@ class SirenEntity(BasePlatformEntity):
     class_name: Literal["Siren"]
     available_tones: Optional[Union[list[Union[int, str]], dict[int, str]]]
     supported_features: int
-    state: bool
+    state: BooleanState
 
 
 class SwitchEntity(BasePlatformEntity):

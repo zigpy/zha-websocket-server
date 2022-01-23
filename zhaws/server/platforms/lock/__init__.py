@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Any, Final, Union
+from typing import TYPE_CHECKING, Any, Final
 
 from zigpy.zcl.foundation import Status
 
@@ -124,7 +124,8 @@ class Lock(PlatformEntity):
             await self._doorlock_cluster_handler.async_clear_user_code(code_slot)
             self.debug("User code at slot %s cleared", code_slot)
 
-    def get_state(self) -> Union[str, dict, None]:
-        return {
-            "is_locked": self.is_locked,
-        }
+    def get_state(self) -> dict:
+        """Get the state of the lock."""
+        response = super().get_state()
+        response["is_locked"] = self.is_locked
+        return response

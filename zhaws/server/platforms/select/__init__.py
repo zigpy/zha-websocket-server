@@ -73,8 +73,11 @@ class EnumSelect(PlatformEntity):
         json["options"] = self._attr_options
         return json
 
-    def get_state(self) -> str | None:
-        return self.current_option
+    def get_state(self) -> dict:
+        """Return the state of the select."""
+        response = super().get_state()
+        response["state"] = self.current_option
+        return response
 
 
 @MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_IAS_WD)
