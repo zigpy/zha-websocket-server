@@ -106,12 +106,13 @@ class Controller:
             self._application_controller = await app_controller_cls.new(  # type: ignore
                 controller_config, auto_form=True, start_radio=True
             )
-        except (asyncio.TimeoutError, SerialException, OSError) as exception:
+        except (asyncio.TimeoutError, SerialException, OSError) as exc:
             _LOGGER.error(
                 "Couldn't start %s coordinator",
                 self.radio_description,
-                exc_info=exception,
+                exc_info=exc,
             )
+            raise
         self.load_devices()
         self.load_groups()
         self.application_controller.add_listener(self)
