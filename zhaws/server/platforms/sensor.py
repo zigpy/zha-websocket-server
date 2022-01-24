@@ -610,3 +610,8 @@ class RSSISensor(Sensor, id_suffix="rssi"):
 @MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_BASIC)
 class LQISensor(RSSISensor, id_suffix="lqi"):
     """LQI sensor for a device."""
+
+
+@MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_BASIC)
+class LastSeenSensor(RSSISensor, id_suffix="last_seen"):
+    """Last seen sensor for a device."""
