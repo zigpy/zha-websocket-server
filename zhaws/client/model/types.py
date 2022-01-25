@@ -71,6 +71,7 @@ class GenericState(BaseModel):
         "SinopeHVACAction",
         "RSSISensor",
         "LQISensor",
+        "LastSeenSensor",
     ]
     state: Union[str, bool, int, float, None]
 
@@ -267,6 +268,7 @@ class SensorEntity(BaseSensorEntity):
         "SinopeHVACAction",
         "RSSISensor",
         "LQISensor",
+        "LastSeenSensor",
     ]
     state: GenericState
 
