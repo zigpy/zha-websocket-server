@@ -23,7 +23,7 @@ setup(
         "uvloop",
         "zigpy==0.43.0",
         "bellows==0.29.0",
-        "zha-quirks==0.0.65",
+        "zha-quirks==0.0.66",
         "zigpy-deconz==0.14.0",
         "zigpy-xbee==0.14.0",
         "zigpy-zigate==0.7.3",
