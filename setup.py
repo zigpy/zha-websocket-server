@@ -26,7 +26,7 @@ setup(
         "zha-quirks==0.0.66",
         "zigpy-deconz==0.14.0",
         "zigpy-xbee==0.14.0",
-        "zigpy-zigate==0.7.3",
+        "zigpy-zigate==0.7.4",
         "zigpy-znp==0.7.0",
     ],
     package_data={"": ["appdb_schemas/schema_v*.sql"]},
