@@ -370,7 +370,7 @@ jobs:
           coverage report --fail-under=50
           coverage xml
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v2.1.0
       - name: Upload coverage to Coveralls
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
