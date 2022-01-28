@@ -14,4 +14,4 @@ fi
 pip install pre-commit
 pre-commit install
 
-python3 -m pip install -e .
+python3 -m pip install -e .[server]
