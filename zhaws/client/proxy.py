@@ -46,20 +46,20 @@ class BaseProxyObject(EventBase):
 class GroupProxy(BaseProxyObject):
     """Group proxy for the zhaws.client."""
 
-    def __init__(self, group: GroupModel, controller: Controller, client: Client):
+    def __init__(self, group_model: GroupModel, controller: Controller, client: Client):
         """Initialize the GroupProxy class."""
         super().__init__(controller, client)
-        self._proxied_object: GroupModel = group
+        self._proxied_object: GroupModel = group_model
 
     @property
-    def group(self) -> GroupModel:
-        """Return the group."""
+    def group_model(self) -> GroupModel:
+        """Return the group model."""
         return self._proxied_object
 
-    @group.setter
-    def group(self, group: GroupModel) -> None:
-        """Set the group."""
-        self._proxied_object = group
+    @group_model.setter
+    def group_model(self, group_model: GroupModel) -> None:
+        """Set the group model."""
+        self._proxied_object = group_model
 
     def __repr__(self) -> str:
         return self._proxied_object.__repr__()
@@ -68,20 +68,22 @@ class GroupProxy(BaseProxyObject):
 class DeviceProxy(BaseProxyObject):
     """Device proxy for the zhaws.client."""
 
-    def __init__(self, device: DeviceModel, controller: Controller, client: Client):
+    def __init__(
+        self, device_model: DeviceModel, controller: Controller, client: Client
+    ):
         """Initialize the DeviceProxy class."""
         super().__init__(controller, client)
-        self._proxied_object: DeviceModel = device
+        self._proxied_object: DeviceModel = device_model
 
     @property
-    def device(self) -> DeviceModel:
-        """Return the device."""
+    def device_model(self) -> DeviceModel:
+        """Return the device model."""
         return self._proxied_object
 
-    @device.setter
-    def device(self, device: DeviceModel) -> None:
-        """Set the device."""
-        self._proxied_object = device
+    @device_model.setter
+    def device_model(self, device_model: DeviceModel) -> None:
+        """Set the device model."""
+        self._proxied_object = device_model
 
     def __repr__(self) -> str:
         return self._proxied_object.__repr__()

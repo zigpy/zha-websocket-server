@@ -181,12 +181,14 @@ class Controller(EventBase):
         self, event: DeviceFullyInitializedEvent
     ) -> None:
         """Handle device joined and basic information discovered."""
-        device = event.device
-        _LOGGER.info("Device %s - %s initialized", device.ieee, device.nwk)
-        if device.ieee in self.devices:
-            self.devices[device.ieee].device = device
+        device_model = event.device
+        _LOGGER.info("Device %s - %s initialized", device_model.ieee, device_model.nwk)
+        if device_model.ieee in self.devices:
+            self.devices[device_model.ieee].device_model = device_model
         else:
-            self._devices[device.ieee] = DeviceProxy(device, self, self._client)
+            self._devices[device_model.ieee] = DeviceProxy(
+                device_model, self, self._client
+            )
         self.emit("device_fully_initialized", event)
 
     def handle_device_left(self, event: DeviceLeftEvent) -> None:
