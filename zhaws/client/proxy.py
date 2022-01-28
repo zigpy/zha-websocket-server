@@ -16,12 +16,7 @@ if TYPE_CHECKING:
 class BaseProxyObject(EventBase):
     """BaseProxyObject for the zhaws.client."""
 
-    def __init__(
-        self,
-        controller: Controller,
-        client: Client,
-        proxied_object: GroupModel | DeviceModel,
-    ):
+    def __init__(self, controller: Controller, client: Client):
         """Initialize the BaseProxyObject class."""
         super().__init__()
         self._controller: Controller = controller
@@ -53,7 +48,7 @@ class GroupProxy(BaseProxyObject):
 
     def __init__(self, group: GroupModel, controller: Controller, client: Client):
         """Initialize the GroupProxy class."""
-        super().__init__(controller, client, group)
+        super().__init__(controller, client)
         self._proxied_object: GroupModel = group
 
     @property
@@ -75,7 +70,7 @@ class DeviceProxy(BaseProxyObject):
 
     def __init__(self, device: DeviceModel, controller: Controller, client: Client):
         """Initialize the DeviceProxy class."""
-        super().__init__(controller, client, device)
+        super().__init__(controller, client)
         self._proxied_object: DeviceModel = device
 
     @property
