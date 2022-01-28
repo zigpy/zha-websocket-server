@@ -38,6 +38,10 @@ from zhaws.client.model.events import (
     DeviceJoinedEvent,
     DeviceLeftEvent,
     DeviceRemovedEvent,
+    GroupAddedEvent,
+    GroupMemberAddedEvent,
+    GroupMemberRemovedEvent,
+    GroupRemovedEvent,
     PlatformEntityEvent,
     RawDeviceInitializedEvent,
 )
@@ -200,18 +204,18 @@ class Controller(EventBase):
         self._devices.pop(device.ieee, None)
         self.emit("device_removed", event)
 
-    def handle_group_member_removed(self, event: Any) -> None:
+    def handle_group_member_removed(self, event: GroupMemberRemovedEvent) -> None:
         """Handle group member removed event."""
         self.emit("group_member_removed", event)
 
-    def handle_group_member_added(self, event: Any) -> None:
+    def handle_group_member_added(self, event: GroupMemberAddedEvent) -> None:
         """Handle group member added event."""
         self.emit("group_member_added", event)
 
-    def handle_group_added(self, event: Any) -> None:
+    def handle_group_added(self, event: GroupAddedEvent) -> None:
         """Handle group added event."""
         self.emit("group_added", event)
 
-    def handle_group_removed(self, event: Any) -> None:
+    def handle_group_removed(self, event: GroupRemovedEvent) -> None:
         """Handle group removed event."""
         self.emit("group_removed", event)
