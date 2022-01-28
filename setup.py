@@ -29,5 +29,6 @@ setup(
         "zigpy-zigate==0.7.4",
         "zigpy-znp==0.7.0",
     ],
+    extras_require={"server": ["uvloop"]},
     package_data={"": ["appdb_schemas/schema_v*.sql"]},
 )
