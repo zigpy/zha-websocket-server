@@ -207,16 +207,24 @@ class Controller(EventBase):
 
     def handle_group_member_removed(self, event: GroupMemberRemovedEvent) -> None:
         """Handle group member removed event."""
+        if event.group.id in self.groups:
+            self.groups[event.group.id].group_model = event.group
         self.emit("group_member_removed", event)
 
     def handle_group_member_added(self, event: GroupMemberAddedEvent) -> None:
         """Handle group member added event."""
+        if event.group.id in self.groups:
+            self.groups[event.group.id].group_model = event.group
         self.emit("group_member_added", event)
 
     def handle_group_added(self, event: GroupAddedEvent) -> None:
         """Handle group added event."""
+        if event.group.id in self.groups:
+            self.groups[event.group.id].group_model = event.group
         self.emit("group_added", event)
 
     def handle_group_removed(self, event: GroupRemovedEvent) -> None:
         """Handle group removed event."""
+        if event.group.id in self.groups:
+            self.groups[event.group.id].group_model = event.group
         self.emit("group_removed", event)
