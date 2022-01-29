@@ -3,10 +3,9 @@ from __future__ import annotations
 
 import asyncio
 from enum import Enum
-import functools
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Callable, Final, Iterable, Union
+from typing import TYPE_CHECKING, Any, Final, Iterable, Union
 
 from zigpy import types
 from zigpy.device import Device as ZigpyDevice
@@ -31,8 +30,7 @@ from zhaws.server.const import (
 )
 from zhaws.server.decorators import periodic
 from zhaws.server.platforms import PlatformEntity
-from zhaws.server.util import LogMixin, cancel_task
-from zhaws.server.websocket import ServerEvents
+from zhaws.server.util import LogMixin
 from zhaws.server.zigbee.cluster import ZDOClusterHandler
 from zhaws.server.zigbee.endpoint import Endpoint
 
@@ -130,7 +128,7 @@ class Device(LogMixin):
         self._zigpy_device: ZigpyDevice = zigpy_device
         self._available: bool = False
         self._checkins_missed_count: int = 0
-        self.unsubs: list[Callable[[], Any]] = []
+        self._tracked_tasks: list[asyncio.Task] = []
         self.quirk_applied: bool = isinstance(
             self._zigpy_device, zigpy.quirks.CustomDevice
         )
@@ -170,15 +168,10 @@ class Device(LogMixin):
             if ep_id != 0:
                 self._endpoints[ep_id] = Endpoint.new(endpoint, self)
 
-        self._check_alive_task = asyncio.create_task(self._check_available())
-        self.controller.server.on_event(
-            ServerEvents.SHUTDOWN,
-            functools.partial(
-                cancel_task,
-                self._check_alive_task,
-                f"device_check_alive_{self.ieee}",
-                _LOGGER,
-            ),
+        self._tracked_tasks.append(
+            asyncio.create_task(
+                self._check_available(), name=f"device_check_alive_{self.ieee}"
+            )
         )
 
     @property
@@ -517,10 +510,14 @@ class Device(LogMixin):
         self.status = DeviceStatus.INITIALIZED
         self.debug("completed initialization")
 
-    def async_cleanup_handles(self) -> None:
-        """Unsubscribe the dispatchers and timers."""
-        for unsubscribe in self.unsubs:
-            unsubscribe()
+    def on_remove(self) -> None:
+        """Cancel tasks this device owns."""
+        for task in self._tracked_tasks:
+            if not task.done():
+                self.info("Cancelling task: %s", task)
+                task.cancel()
+            for platform_entity in self._platform_entities.values():
+                platform_entity.on_remove()
 
     def async_update_last_seen(self, last_seen: float) -> None:
         """Set last seen on the zigpy device."""

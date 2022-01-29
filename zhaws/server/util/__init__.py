@@ -1,5 +1,4 @@
 """Utility classes for zhawss."""
-import asyncio
 import logging
 from typing import Any
 
@@ -26,10 +25,3 @@ class LogMixin:
     def error(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """Error level log."""
         return self.log(logging.ERROR, msg, *args, **kwargs)
-
-
-def cancel_task(task: asyncio.Task, name: str, logger: logging.Logger) -> None:
-    """Cancel a task."""
-    if not task.done():
-        logger.info("Cancelling task: %s on shutdown", name)
-        task.cancel()

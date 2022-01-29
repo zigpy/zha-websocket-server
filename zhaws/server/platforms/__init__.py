@@ -35,6 +35,7 @@ class BaseEntity(LogMixin, EventBase):
         super().__init__()
         self._unique_id: str = unique_id
         self._previous_state: Any = None
+        self._tracked_tasks: list[asyncio.Task] = []
 
     @property
     def unique_id(self) -> str:
@@ -57,6 +58,13 @@ class BaseEntity(LogMixin, EventBase):
 
     async def async_update(self) -> None:
         """Retrieve latest state."""
+
+    def on_remove(self) -> None:
+        """Cancel tasks this entity owns."""
+        for task in self._tracked_tasks:
+            if not task.done():
+                self.info("Cancelling task: %s", task)
+                task.cancel()
 
     def maybe_send_state_changed_event(self) -> None:
         """Send the state of this platform entity."""

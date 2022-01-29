@@ -11,8 +11,6 @@ from zhaws.server.decorators import periodic
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhaws.server.platforms.sensor import Battery
-from zhaws.server.util import cancel_task
-from zhaws.server.websocket import ServerEvents
 from zhaws.server.zigbee.cluster import (
     CLUSTER_HANDLER_EVENT,
     ClusterAttributeUpdatedEvent,
@@ -56,15 +54,10 @@ class DeviceTracker(PlatformEntity):
         self._battery_cluster_handler.on_event(
             CLUSTER_HANDLER_EVENT, self._handle_event_protocol
         )
-        self._cancel_refresh_handle = asyncio.create_task(self._refresh())
-        self._device.controller.server.on_event(
-            ServerEvents.SHUTDOWN,
-            functools.partial(
-                cancel_task,
-                self._cancel_refresh_handle,
-                f"device_tracker_refresh_{self.unique_id}",
-                _LOGGER,
-            ),
+        self._tracked_tasks.append(
+            asyncio.create_task(
+                self._refresh(), name=f"device_tracker_refresh_{self.unique_id}"
+            )
         )
 
     async def async_update(self) -> None:

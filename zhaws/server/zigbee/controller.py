@@ -151,6 +151,10 @@ class Controller:
 
         await self._application_controller.pre_shutdown()
         self._application_controller = None
+        for device in self._devices.values():
+            device.on_remove()
+        self._devices.clear()
+        self._groups.clear()
 
     def get_device(self, ieee: Union[EUI64, str]) -> Device:
         """Get a device by ieee address."""
@@ -230,6 +234,7 @@ class Controller:
         """Handle device being removed from the network."""
         device = self._devices.pop(device.ieee, None)
         if device is not None:
+            device.on_remove()
             message: dict[str, Any] = {DEVICE: device.zha_device_info}
             message[MESSAGE_TYPE] = MessageTypes.EVENT
             message[EVENT_TYPE] = EventTypes.CONTROLLER_EVENT

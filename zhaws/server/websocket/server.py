@@ -9,12 +9,10 @@ from typing import TYPE_CHECKING, Any
 import voluptuous
 import websockets
 
-from zhaws.event import EventBase
 from zhaws.server.const import COMMAND, APICommands
 from zhaws.server.platforms import discovery
 from zhaws.server.platforms.api import load_platform_entity_apis
 from zhaws.server.platforms.discovery import PLATFORMS
-from zhaws.server.websocket import ServerEvents
 from zhaws.server.websocket.api import decorators, register_api_command
 from zhaws.server.websocket.client import ClientManager
 from zhaws.server.zigbee.api import load_api as load_zigbee_controller_api
@@ -26,12 +24,11 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-class Server(EventBase):
+class Server:
     """ZHAWSS server implementation."""
 
     def __init__(self, *, host: str = "", port: int = 8001) -> None:
         """Initialize the server."""
-        super().__init__()
         self._host: str = host
         self._port: int = port
         self._ws_server: websockets.Serve | None = None
@@ -90,7 +87,6 @@ class Server(EventBase):
         await self._ws_server.wait_closed()
         self._ws_server = None
 
-        self.emit(ServerEvents.SHUTDOWN)
         self._stopped_event.set()
 
     async def __aenter__(self) -> Server:

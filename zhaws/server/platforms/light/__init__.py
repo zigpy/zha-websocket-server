@@ -17,8 +17,6 @@ from zhaws.server.decorators import periodic
 from zhaws.server.platforms import BaseEntity, GroupEntity, PlatformEntity, helpers
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
 from zhaws.server.platforms.util import color as color_util
-from zhaws.server.util import cancel_task
-from zhaws.server.websocket import ServerEvents
 from zhaws.server.zigbee.cluster import (
     CLUSTER_HANDLER_EVENT,
     ClusterAttributeUpdatedEvent,
@@ -407,7 +405,6 @@ class Light(PlatformEntity, BaseLight):
         if self._color_cluster_handler:
             self._min_mireds: Union[int, None] = self._color_cluster_handler.min_mireds
             self._max_mireds: Union[int, None] = self._color_cluster_handler.max_mireds
-        self._cancel_refresh_handle = None
         effect_list = []
 
         if self._level_cluster_handler:
@@ -468,15 +465,8 @@ class Light(PlatformEntity, BaseLight):
             await self.async_update()
             self.maybe_send_state_changed_event()
 
-        self._cancel_refresh_handle = asyncio.create_task(_refresh())
-        self._device.controller.server.on_event(
-            ServerEvents.SHUTDOWN,
-            functools.partial(
-                cancel_task,
-                self._cancel_refresh_handle,
-                f"light_refresh_{self.unique_id}",
-                _LOGGER,
-            ),
+        self._tracked_tasks.append(
+            asyncio.create_task(_refresh(), name=f"light_refresh_{self.unique_id}")
         )
 
     def handle_cluster_handler_attribute_updated(
