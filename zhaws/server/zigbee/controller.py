@@ -232,6 +232,7 @@ class Controller:
 
     def device_removed(self, device: ZigpyDeviceType) -> None:
         """Handle device being removed from the network."""
+        _LOGGER.info("Removing device %s - %s", device.ieee, f"0x{device.nwk:04x}")
         device = self._devices.pop(device.ieee, None)
         if device is not None:
             device.on_remove()
@@ -275,6 +276,7 @@ class Controller:
     async def async_device_initialized(self, device: ZigpyDeviceType) -> None:
         """Handle device joined and basic information discovered (async)."""
         zha_device = self.get_or_create_device(device)
+        is_rejoin = zha_device.status is DeviceStatus.INITIALIZED
         # This is an active device so set a last seen if it is none
         if zha_device.last_seen is None:
             zha_device.async_update_last_seen(time.time())
@@ -282,10 +284,10 @@ class Controller:
             "device - %s:%s entering async_device_initialized - is_new_join: %s",
             f"0x{device.nwk:04x}",
             device.ieee,
-            zha_device.status is not DeviceStatus.INITIALIZED,
+            not is_rejoin,
         )
 
-        if zha_device.status is DeviceStatus.INITIALIZED:
+        if is_rejoin:
             # ZHA already has an initialized device so either the device was assigned a
             # new nwk or device was physically reset and added again without being removed
             _LOGGER.debug(
@@ -303,6 +305,7 @@ class Controller:
             await self._async_device_joined(zha_device)
 
         message: dict[str, Any] = {DEVICE: zha_device.zha_device_info}
+        message["new_join"] = not is_rejoin
         message[PAIRING_STATUS] = DevicePairingStatus.INITIALIZED
         message[MESSAGE_TYPE] = MessageTypes.EVENT
         message[EVENT_TYPE] = EventTypes.CONTROLLER_EVENT

@@ -155,6 +155,7 @@ class DeviceFullyInitializedEvent(DevicePairingEvent):
 
     event: Literal["device_fully_initialized"] = "device_fully_initialized"
     device: Device
+    new_join: bool
 
 
 class DeviceConfiguredEvent(DevicePairingEvent):
