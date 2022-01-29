@@ -152,7 +152,7 @@ class Controller:
         await self._application_controller.pre_shutdown()
         self._application_controller = None
         for device in self._devices.values():
-            device.on_remove()
+            await device.on_remove()
         self._devices.clear()
         self._groups.clear()
 
@@ -241,6 +241,7 @@ class Controller:
             message[EVENT_TYPE] = EventTypes.CONTROLLER_EVENT
             message[EVENT] = ControllerEvents.DEVICE_REMOVED
             self.server.client_manager.broadcast(message)
+            asyncio.create_task(device.on_remove())
 
     def group_member_removed(self, zigpy_group: ZigpyGroup, endpoint: Endpoint) -> None:
         """Handle zigpy group member removed event."""
