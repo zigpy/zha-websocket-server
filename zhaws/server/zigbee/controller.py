@@ -79,6 +79,7 @@ class Controller:
     @property
     def coordinator_device(self) -> Device:
         """Get the coordinator device."""
+        assert self._application_controller is not None
         return self._devices[self._application_controller.ieee]
 
     @property
@@ -117,6 +118,7 @@ class Controller:
 
     def load_devices(self) -> None:
         """Load devices."""
+        assert self._application_controller is not None
         self._devices = {
             zigpy_device.ieee: Device(zigpy_device, self)
             for zigpy_device in self._application_controller.devices.values()

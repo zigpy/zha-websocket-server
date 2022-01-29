@@ -39,7 +39,7 @@ class Client(EventBase):
             self._close_aiohttp_session: bool = True
         else:
             self.aiohttp_session = aiohttp_session
-            self._close_aiohttp_session: bool = False
+            self._close_aiohttp_session = False
 
         # The WebSocket client
         self._client: Optional[ClientWebSocketResponse] = None
@@ -104,6 +104,7 @@ class Client(EventBase):
             raise err
 
     async def listen_loop(self) -> None:
+        assert self._client is not None
         while not self._client.closed:
             data = await self._receive_json_or_raise()
             self._handle_incoming_message(data)
@@ -130,6 +131,7 @@ class Client(EventBase):
 
             self._listen_task = None
 
+        assert self._client is not None
         await self._client.close()
 
         if self._close_aiohttp_session:

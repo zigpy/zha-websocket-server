@@ -46,13 +46,13 @@ async def main() -> None:
 
         for device in devices.values():
             _LOGGER.info("Device: %s", device)
-            for entity in device.device.entities.values():
+            for entity in device.device_model.entities.values():
                 _LOGGER.info("Entity: %s", entity)
 
         groups = controller.groups
         for group in groups.values():
             _LOGGER.info("Group: %s", group)
-            for group_entity in group.group.entities.values():
+            for group_entity in group.group_model.entities.values():
                 _LOGGER.info("Entity: %s", group_entity)
 
         if test_lights:
@@ -81,7 +81,7 @@ async def main() -> None:
 
                 light_platform_entity = devices[
                     "b0:ce:18:14:03:09:c6:15"
-                ].device.entities["b0:ce:18:14:03:09:c6:15-1"]
+                ].device_model.entities["b0:ce:18:14:03:09:c6:15-1"]
 
                 await controller.lights.turn_off(light_platform_entity)
 
@@ -97,7 +97,7 @@ async def main() -> None:
             try:
                 switch_platform_entity = devices[
                     "00:15:8d:00:02:82:d0:78"
-                ].device.entities["00:15:8d:00:02:82:d0:78-1"]
+                ].device_model.entities["00:15:8d:00:02:82:d0:78-1"]
 
                 _LOGGER.warning("Switch: %s", switch_platform_entity)
 
@@ -120,7 +120,7 @@ async def main() -> None:
             try:
                 alarm_control_panel_platform_entity = devices[
                     "00:0d:6f:00:05:65:83:f2"
-                ].device.entities["00:0d:6f:00:05:65:83:f2-1"]
+                ].device_model.entities["00:0d:6f:00:05:65:83:f2-1"]
 
                 await controller.alarm_control_panels.trigger(
                     alarm_control_panel_platform_entity
@@ -135,7 +135,7 @@ async def main() -> None:
             try:
                 lock_platform_entity = devices[
                     "68:0a:e2:ff:fe:6a:22:af"
-                ].device.entities["68:0a:e2:ff:fe:6a:22:af-1-257"]
+                ].device_model.entities["68:0a:e2:ff:fe:6a:22:af-1-257"]
 
                 await controller.locks.lock(lock_platform_entity)
 
@@ -152,7 +152,7 @@ async def main() -> None:
             try:
                 button_platform_entity = devices[
                     "04:cf:8c:df:3c:7f:c5:a7"
-                ].device.entities["04:cf:8c:df:3c:7f:c5:a7-1-3"]
+                ].device_model.entities["04:cf:8c:df:3c:7f:c5:a7-1-3"]
 
                 await controller.buttons.press(button_platform_entity)
 
@@ -177,13 +177,13 @@ async def main() -> None:
             device = devices["00:15:8d:00:02:82:d0:78"]
             response: ReadClusterAttributesResponse = (
                 await controller.devices_helper.read_cluster_attributes(
-                    device.device, 0, "in", 1, ["date_code"]
+                    device.device_model, 0, "in", 1, ["date_code"]
                 )
             )
             _LOGGER.warning("Read cluster attributes response: %s", response.dict())
 
             write_response = await controller.devices_helper.write_cluster_attribute(
-                device.device, 0, "in", 1, "location_desc", "test location"
+                device.device_model, 0, "in", 1, "location_desc", "test location"
             )
             _LOGGER.warning(
                 "Write cluster attribute response: %s", write_response.dict()
