@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import abc
 import asyncio
+from contextlib import suppress
 import logging
 from typing import TYPE_CHECKING, Any, Type, Union
 
@@ -59,12 +60,14 @@ class BaseEntity(LogMixin, EventBase):
     async def async_update(self) -> None:
         """Retrieve latest state."""
 
-    def on_remove(self) -> None:
+    async def on_remove(self) -> None:
         """Cancel tasks this entity owns."""
         for task in self._tracked_tasks:
             if not task.done():
-                self.info("Cancelling task: %s", task)
+                self.debug("Cancelling task: %s", task)
                 task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await task
 
     def maybe_send_state_changed_event(self) -> None:
         """Send the state of this platform entity."""

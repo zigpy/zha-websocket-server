@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import suppress
 from enum import Enum
 import logging
 import time
@@ -168,11 +169,12 @@ class Device(LogMixin):
             if ep_id != 0:
                 self._endpoints[ep_id] = Endpoint.new(endpoint, self)
 
-        self._tracked_tasks.append(
-            asyncio.create_task(
-                self._check_available(), name=f"device_check_alive_{self.ieee}"
+        if not self.is_coordinator:
+            self._tracked_tasks.append(
+                asyncio.create_task(
+                    self._check_available(), name=f"device_check_alive_{self.ieee}"
+                )
             )
-        )
 
     @property
     def device(self) -> ZigpyDevice:
@@ -326,7 +328,11 @@ class Device(LogMixin):
     def zigbee_signature(self) -> dict[str, Any]:
         # Get zigbee signature for this device.
         return {
-            ATTR_NODE_DESCRIPTOR: self._zigpy_device.node_desc.as_dict(),
+            ATTR_NODE_DESCRIPTOR: (
+                self._zigpy_device.node_desc.as_dict()
+                if self._zigpy_device.node_desc is not None
+                else None
+            ),
             ATTR_ENDPOINTS: {
                 signature[0]: signature[1]
                 for signature in [
@@ -510,14 +516,16 @@ class Device(LogMixin):
         self.status = DeviceStatus.INITIALIZED
         self.debug("completed initialization")
 
-    def on_remove(self) -> None:
+    async def on_remove(self) -> None:
         """Cancel tasks this device owns."""
         for task in self._tracked_tasks:
             if not task.done():
-                self.info("Cancelling task: %s", task)
+                self.debug("Cancelling task: %s", task)
                 task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await task
             for platform_entity in self._platform_entities.values():
-                platform_entity.on_remove()
+                await platform_entity.on_remove()
 
     def async_update_last_seen(self, last_seen: float) -> None:
         """Set last seen on the zigpy device."""
