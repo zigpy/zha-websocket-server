@@ -152,7 +152,7 @@ class Controller:
             return
 
         for task in self._device_init_tasks.values():
-            _LOGGER.info("Cancelling task: %s", task)
+            _LOGGER.debug("Cancelling task: %s", task)
             task.cancel()
             with suppress(asyncio.CancelledError):
                 await task

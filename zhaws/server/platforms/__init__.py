@@ -64,7 +64,7 @@ class BaseEntity(LogMixin, EventBase):
         """Cancel tasks this entity owns."""
         for task in self._tracked_tasks:
             if not task.done():
-                self.info("Cancelling task: %s", task)
+                self.debug("Cancelling task: %s", task)
                 task.cancel()
                 with suppress(asyncio.CancelledError):
                     await task
