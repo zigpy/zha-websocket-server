@@ -44,6 +44,7 @@ from zhaws.client.model.events import (
 )
 from zhaws.client.proxy import DeviceProxy, GroupProxy
 from zhaws.event import EventBase
+from zhaws.server.const import ControllerEvents, EventTypes
 
 CONNECT_TIMEOUT = 10
 
@@ -85,9 +86,9 @@ class Controller(EventBase):
 
         # subscribe to event types we care about
         self._client.on_event(
-            "platform_entity_event", self.handle_platform_entity_event
+            EventTypes.PLATFORM_ENTITY_EVENT, self.handle_platform_entity_event
         )
-        self._client.on_event("controller_event", self._handle_event_protocol)
+        self._client.on_event(EventTypes.CONTROLLER_EVENT, self._handle_event_protocol)
 
     @property
     def devices(self) -> dict[str, DeviceProxy]:
@@ -164,18 +165,18 @@ class Controller(EventBase):
         address
         """
         _LOGGER.info("Device %s - %s joined", event.ieee, event.nwk)
-        self.emit("device_joined", event)
+        self.emit(ControllerEvents.DEVICE_JOINED, event)
 
     def handle_raw_device_initialized(self, event: RawDeviceInitializedEvent) -> None:
         """Handle a device initialization without quirks loaded."""
         _LOGGER.info("Device %s - %s raw device initialized", event.ieee, event.nwk)
-        self.emit("raw_device_initialized", event)
+        self.emit(ControllerEvents.RAW_DEVICE_INITIALIZED, event)
 
     def handle_device_configured(self, event: DeviceConfiguredEvent) -> None:
         """Handle device configured event."""
         device = event.device
         _LOGGER.info("Device %s - %s configured", device.ieee, device.nwk)
-        self.emit("device_configured", event)
+        self.emit(ControllerEvents.DEVICE_CONFIGURED, event)
 
     def handle_device_fully_initialized(
         self, event: DeviceFullyInitializedEvent
@@ -189,12 +190,12 @@ class Controller(EventBase):
             self._devices[device_model.ieee] = DeviceProxy(
                 device_model, self, self._client
             )
-        self.emit("device_fully_initialized", event)
+        self.emit(ControllerEvents.DEVICE_FULLY_INITIALIZED, event)
 
     def handle_device_left(self, event: DeviceLeftEvent) -> None:
         """Handle device leaving the network."""
         _LOGGER.info("Device %s - %s left", event.ieee, event.nwk)
-        self.emit("device_left", event)
+        self.emit(ControllerEvents.DEVICE_LEFT, event)
 
     def handle_device_removed(self, event: DeviceRemovedEvent) -> None:
         """Handle device being removed from the network."""
@@ -203,28 +204,28 @@ class Controller(EventBase):
             "Device %s - %s has been removed from the network", device.ieee, device.nwk
         )
         self._devices.pop(device.ieee, None)
-        self.emit("device_removed", event)
+        self.emit(ControllerEvents.DEVICE_REMOVED, event)
 
     def handle_group_member_removed(self, event: GroupMemberRemovedEvent) -> None:
         """Handle group member removed event."""
         if event.group.id in self.groups:
             self.groups[event.group.id].group_model = event.group
-        self.emit("group_member_removed", event)
+        self.emit(ControllerEvents.GROUP_MEMBER_REMOVED, event)
 
     def handle_group_member_added(self, event: GroupMemberAddedEvent) -> None:
         """Handle group member added event."""
         if event.group.id in self.groups:
             self.groups[event.group.id].group_model = event.group
-        self.emit("group_member_added", event)
+        self.emit(ControllerEvents.GROUP_MEMBER_ADDED, event)
 
     def handle_group_added(self, event: GroupAddedEvent) -> None:
         """Handle group added event."""
         if event.group.id in self.groups:
             self.groups[event.group.id].group_model = event.group
-        self.emit("group_added", event)
+        self.emit(ControllerEvents.GROUP_ADDED, event)
 
     def handle_group_removed(self, event: GroupRemovedEvent) -> None:
         """Handle group removed event."""
         if event.group.id in self.groups:
             self.groups[event.group.id].group_model = event.group
-        self.emit("group_removed", event)
+        self.emit(ControllerEvents.GROUP_REMOVED, event)
