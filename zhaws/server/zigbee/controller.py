@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import suppress
 import logging
 import time
 from typing import TYPE_CHECKING, Optional, Union
@@ -60,6 +61,7 @@ class Controller:
         self.radio_description: Optional[str] = None
         self._devices: dict[EUI64, Device] = {}
         self._groups: dict[int, Group] = {}
+        self._device_init_tasks: dict[EUI64, asyncio.Task] = {}
 
     @property
     def is_running(self) -> bool:
@@ -149,10 +151,18 @@ class Controller:
         if self._application_controller is None:
             return
 
-        await self._application_controller.pre_shutdown()
-        self._application_controller = None
+        for task in self._device_init_tasks.values():
+            _LOGGER.info("Cancelling task: %s", task)
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+
         for device in self._devices.values():
             await device.on_remove()
+
+        await self._application_controller.pre_shutdown()
+        self._application_controller = None
+        await asyncio.sleep(1)  # give bellows thread callback a chance to run
         self._devices.clear()
         self._groups.clear()
 
@@ -215,7 +225,10 @@ class Controller:
     def device_initialized(self, device: ZigpyDeviceType) -> None:
         """Handle device joined and basic information discovered."""
         _LOGGER.info("Device %s - %s initialized", device.ieee, f"0x{device.nwk:04x}")
-        asyncio.create_task(self.async_device_initialized(device))
+        self._device_init_tasks[device.ieee] = asyncio.create_task(
+            self.async_device_initialized(device),
+            name=f"device_initialized_task_{str(device.ieee)}:0x{device.nwk:04x}",
+        )
 
     def device_left(self, device: ZigpyDeviceType) -> None:
         """Handle device leaving the network."""
@@ -317,6 +330,8 @@ class Controller:
                 EVENT: ControllerEvents.DEVICE_FULLY_INITIALIZED,
             }
         )
+        if device.ieee in self._device_init_tasks:
+            self._device_init_tasks.pop(device.ieee)
 
     def get_or_create_device(self, zigpy_device: ZigpyDeviceType) -> Device:
         """Get or create a device."""
