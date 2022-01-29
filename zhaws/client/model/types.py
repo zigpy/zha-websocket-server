@@ -235,6 +235,7 @@ class BinarySensorEntity(BasePlatformEntity):
         "Accelerometer", "Occupancy", "Opening", "BinaryInput", "Motion", "IASZone"
     ]
     sensor_attribute: str
+    zone_type: Optional[int]
     state: BooleanState
 
 
@@ -245,7 +246,7 @@ class BaseSensorEntity(BasePlatformEntity):
     decimals: int
     divisor: int
     multiplier: Union[int, float]
-    unit: Optional[str]
+    unit: Optional[int]
 
 
 class SensorEntity(BaseSensorEntity):
