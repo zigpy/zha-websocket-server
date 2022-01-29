@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import abc
 import asyncio
+import contextlib
 import logging
 from typing import TYPE_CHECKING, Any, Type, Union
 
@@ -65,7 +66,10 @@ class BaseEntity(LogMixin, EventBase):
             if not task.done():
                 self.info("Cancelling task: %s", task)
                 task.cancel()
-                await task
+
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
+                self.info("Done cancelling task: %s", task)
 
     def maybe_send_state_changed_event(self) -> None:
         """Send the state of this platform entity."""

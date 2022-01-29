@@ -235,7 +235,6 @@ class Controller:
         _LOGGER.info("Removing device %s - %s", device.ieee, f"0x{device.nwk:04x}")
         device = self._devices.pop(device.ieee, None)
         if device is not None:
-            device.on_remove()
             message: dict[str, Any] = {DEVICE: device.zha_device_info}
             message[MESSAGE_TYPE] = MessageTypes.EVENT
             message[EVENT_TYPE] = EventTypes.CONTROLLER_EVENT

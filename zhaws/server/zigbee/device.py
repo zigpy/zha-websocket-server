@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from enum import Enum
 import logging
 import time
@@ -326,7 +327,11 @@ class Device(LogMixin):
     def zigbee_signature(self) -> dict[str, Any]:
         # Get zigbee signature for this device.
         return {
-            ATTR_NODE_DESCRIPTOR: self._zigpy_device.node_desc.as_dict(),
+            ATTR_NODE_DESCRIPTOR: (
+                self._zigpy_device.node_desc.as_dict()
+                if self._zigpy_device.node_desc is not None
+                else None
+            ),
             ATTR_ENDPOINTS: {
                 signature[0]: signature[1]
                 for signature in [
@@ -516,9 +521,15 @@ class Device(LogMixin):
             if not task.done():
                 self.info("Cancelling task: %s", task)
                 task.cancel()
-                await task
+                self.info("Waiting for task: %s", task)
+
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
+                self.info("Done waiting for task: %s", task)
             for platform_entity in self._platform_entities.values():
+                self.info("Removing platform entity: %s", platform_entity)
                 await platform_entity.on_remove()
+                self.info("Done removing platform entity: %s", platform_entity)
 
     def async_update_last_seen(self, last_seen: float) -> None:
         """Set last seen on the zigpy device."""

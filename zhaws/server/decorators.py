@@ -20,14 +20,25 @@ def periodic(refresh_interval: Tuple) -> Callable:
             )
             while True:
                 try:
-                    _LOGGER.info("executing periodic task %s", method_info)
+                    _LOGGER.info(
+                        "[%s] executing periodic task %s",
+                        asyncio.current_task(),
+                        method_info,
+                    )
                     await func(*args, **kwargs)
                 except asyncio.CancelledError:
-                    _LOGGER.info("Periodic task %s cancelled", method_info)
+                    _LOGGER.info(
+                        "[%s] Periodic task %s cancelled",
+                        asyncio.current_task(),
+                        method_info,
+                    )
                     break
                 except Exception:
                     _LOGGER.warning(
-                        "Failed to poll using function %s", method_info, exc_info=True
+                        "[%s] Failed to poll using function %s",
+                        asyncio.current_task(),
+                        method_info,
+                        exc_info=True,
                     )
                 await asyncio.sleep(sleep_time)
 
