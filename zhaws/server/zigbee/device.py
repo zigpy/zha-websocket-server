@@ -510,14 +510,15 @@ class Device(LogMixin):
         self.status = DeviceStatus.INITIALIZED
         self.debug("completed initialization")
 
-    def on_remove(self) -> None:
+    async def on_remove(self) -> None:
         """Cancel tasks this device owns."""
         for task in self._tracked_tasks:
             if not task.done():
                 self.info("Cancelling task: %s", task)
                 task.cancel()
+                await task
             for platform_entity in self._platform_entities.values():
-                platform_entity.on_remove()
+                await platform_entity.on_remove()
 
     def async_update_last_seen(self, last_seen: float) -> None:
         """Set last seen on the zigpy device."""

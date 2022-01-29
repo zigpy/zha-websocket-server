@@ -152,7 +152,7 @@ class Controller:
         await self._application_controller.pre_shutdown()
         self._application_controller = None
         for device in self._devices.values():
-            device.on_remove()
+            await device.on_remove()
         self._devices.clear()
         self._groups.clear()
 
@@ -235,7 +235,7 @@ class Controller:
         _LOGGER.info("Removing device %s - %s", device.ieee, f"0x{device.nwk:04x}")
         device = self._devices.pop(device.ieee, None)
         if device is not None:
-            device.on_remove()
+            asyncio.create_task(device.on_remove())
             self.server.client_manager.broadcast(
                 {
                     DEVICE: device.zha_device_info,
