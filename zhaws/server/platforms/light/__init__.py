@@ -6,6 +6,7 @@ from collections import Counter
 import enum
 import functools
 import itertools
+import logging
 from typing import TYPE_CHECKING, Any, Final, Optional, Union
 
 from zigpy.zcl.clusters.general import Identify, LevelControl, OnOff
@@ -119,6 +120,8 @@ SUPPORT_GROUP_LIGHT = (
     | SUPPORT_COLOR
     | SUPPORT_TRANSITION
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class LightColorMode(enum.IntEnum):
@@ -402,7 +405,6 @@ class Light(PlatformEntity, BaseLight):
         if self._color_cluster_handler:
             self._min_mireds: Union[int, None] = self._color_cluster_handler.min_mireds
             self._max_mireds: Union[int, None] = self._color_cluster_handler.max_mireds
-        self._cancel_refresh_handle = None
         effect_list = []
 
         if self._level_cluster_handler:
@@ -463,7 +465,9 @@ class Light(PlatformEntity, BaseLight):
             await self.async_update()
             self.maybe_send_state_changed_event()
 
-        self._cancel_refresh_handle = asyncio.create_task(_refresh())
+        self._tracked_tasks.append(
+            asyncio.create_task(_refresh(), name=f"light_refresh_{self.unique_id}")
+        )
 
     def handle_cluster_handler_attribute_updated(
         self, event: ClusterAttributeUpdatedEvent

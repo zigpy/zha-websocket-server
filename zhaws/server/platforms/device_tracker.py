@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import logging
 import time
 from typing import TYPE_CHECKING
 
@@ -24,6 +25,8 @@ if TYPE_CHECKING:
 STRICT_MATCH = functools.partial(
     PLATFORM_ENTITIES.strict_match, Platform.DEVICE_TRACKER
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @STRICT_MATCH(cluster_handler_names=CLUSTER_HANDLER_POWER_CONFIGURATION)
@@ -51,7 +54,11 @@ class DeviceTracker(PlatformEntity):
         self._battery_cluster_handler.on_event(
             CLUSTER_HANDLER_EVENT, self._handle_event_protocol
         )
-        self._cancel_refresh_handle = asyncio.create_task(self._refresh())
+        self._tracked_tasks.append(
+            asyncio.create_task(
+                self._refresh(), name=f"device_tracker_refresh_{self.unique_id}"
+            )
+        )
 
     async def async_update(self) -> None:
         """Handle polling."""

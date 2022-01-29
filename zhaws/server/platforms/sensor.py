@@ -107,7 +107,12 @@ class Sensor(PlatformEntity):
             CLUSTER_HANDLER_EVENT, self._handle_event_protocol
         )
         if self.should_poll:
-            self.poller_task = asyncio.create_task(self._refresh())
+            self._tracked_tasks.append(
+                asyncio.create_task(
+                    self._refresh(),
+                    name=f"sensor_state_poller_{self.unique_id}_{self.__class__.__name__}",
+                )
+            )
 
     def get_state(self) -> dict:
         """Return the state for this sensor."""

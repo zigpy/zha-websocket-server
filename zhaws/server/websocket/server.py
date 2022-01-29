@@ -35,6 +35,7 @@ class Server:
         self._controller: Controller = Controller(self)
         self._client_manager: ClientManager = ClientManager(self)
         self._stopped_event: asyncio.Event = asyncio.Event()
+        self._tracked_tasks: list[asyncio.Task] = []
         self.data: dict[Any, Any] = {}
         for platform in PLATFORMS:
             self.data.setdefault(platform, [])
@@ -67,7 +68,9 @@ class Server:
 
     async def wait_closed(self) -> None:
         """Waits until the server is not running."""
-        return await self._stopped_event.wait()
+        await self._stopped_event.wait()
+        _LOGGER.info("Server stopped. Completing remaining tasks...")
+        await asyncio.gather(*self._tracked_tasks, return_exceptions=True)
 
     async def stop_server(self) -> None:
         """Stop the websocket server."""

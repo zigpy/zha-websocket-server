@@ -592,7 +592,11 @@ class SinopeTechnologiesThermostat(Thermostat):
         async def _update_time() -> None:
             await self._async_update_time()
 
-        self._update_time_task = asyncio.create_task(_update_time())
+        self._tracked_tasks.append(
+            asyncio.create_task(
+                _update_time(), name=f"sinope_time_updater_{self.unique_id}"
+            )
+        )
 
     @property
     def _rm_rs_action(self) -> Union[str, None]:
