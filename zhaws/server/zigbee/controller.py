@@ -247,14 +247,14 @@ class Controller:
         # need to handle endpoint correctly on groups
         group = self.get_or_create_group(zigpy_group)
         group.info("group_member_removed - endpoint: %s", endpoint)
-        self._emit_group_event(group, ControllerEvents.GROUP_MEMBER_REMOVED)
+        self._broadcast_group_event(group, ControllerEvents.GROUP_MEMBER_REMOVED)
 
     def group_member_added(self, zigpy_group: ZigpyGroup, endpoint: Endpoint) -> None:
         """Handle zigpy group member added event."""
         # need to handle endpoint correctly on groups
         group = self.get_or_create_group(zigpy_group)
         group.info("group_member_added - endpoint: %s", endpoint)
-        self._emit_group_event(group, ControllerEvents.GROUP_MEMBER_ADDED)
+        self._broadcast_group_event(group, ControllerEvents.GROUP_MEMBER_ADDED)
         if len(group.members) > 1:
             # we need to do this because there wasn't already a group entity to remove and re-add
             discovery.GROUP_PROBE.discover_group_entities(group)
@@ -263,7 +263,7 @@ class Controller:
         """Handle zigpy group added event."""
         group = self.get_or_create_group(zigpy_group)
         group.info("group_added")
-        self._emit_group_event(group, ControllerEvents.GROUP_ADDED)
+        self._broadcast_group_event(group, ControllerEvents.GROUP_ADDED)
 
     def group_removed(self, zigpy_group: ZigpyGroup) -> None:
         """Handle zigpy group removed event."""
@@ -271,7 +271,7 @@ class Controller:
         group = self._groups.pop(zigpy_group.group_id, None)
         if group is not None:
             group.info("group_removed")
-            self._emit_group_event(group, ControllerEvents.GROUP_REMOVED)
+            self._broadcast_group_event(group, ControllerEvents.GROUP_REMOVED)
 
     async def async_device_initialized(self, device: ZigpyDeviceType) -> None:
         """Handle device joined and basic information discovered (async)."""
@@ -412,8 +412,8 @@ class Controller:
                 await asyncio.gather(*tasks)
         self.application_controller.groups.pop(group_id)
 
-    def _emit_group_event(self, group: Group, event: str) -> None:
-        """Emit group event."""
+    def _broadcast_group_event(self, group: Group, event: str) -> None:
+        """Broadcast group event."""
         message: dict[str, Any] = {"group": group.to_json()}
         message[MESSAGE_TYPE] = MessageTypes.EVENT
         message[EVENT_TYPE] = EventTypes.CONTROLLER_EVENT
