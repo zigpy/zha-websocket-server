@@ -39,7 +39,7 @@ from zhaws.client.model.events import (
     GroupMemberAddedEvent,
     GroupMemberRemovedEvent,
     GroupRemovedEvent,
-    PlatformEntityEvent,
+    PlatformEntityStateChangedEvent,
     RawDeviceInitializedEvent,
 )
 from zhaws.client.proxy import DeviceProxy, GroupProxy
@@ -86,7 +86,7 @@ class Controller(EventBase):
 
         # subscribe to event types we care about
         self._client.on_event(
-            EventTypes.PLATFORM_ENTITY_EVENT, self.handle_platform_entity_event
+            EventTypes.PLATFORM_ENTITY_EVENT, self._handle_event_protocol
         )
         self._client.on_event(EventTypes.CONTROLLER_EVENT, self._handle_event_protocol)
 
@@ -142,7 +142,9 @@ class Controller(EventBase):
         for id, group in response_groups.items():
             self._groups[id] = GroupProxy(group, self, self._client)
 
-    def handle_platform_entity_event(self, event: PlatformEntityEvent) -> None:
+    def handle_platform_entity_state_changed(
+        self, event: PlatformEntityStateChangedEvent
+    ) -> None:
         """Handle a platform_entity_event from the websocket server."""
         _LOGGER.debug("platform_entity_event: %s", event)
         if event.device:
