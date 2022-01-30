@@ -79,7 +79,7 @@ class MinimalGroup(BaseModel):
     id: int
 
 
-class PlatformEntityEvent(BaseEvent):
+class PlatformEntityStateChangedEvent(BaseEvent):
     """Platform entity event."""
 
     """TODO use this as a base and create specific events for each entity type where state and attributes is fully modeled out"""
@@ -226,7 +226,7 @@ class GroupMemberRemovedEvent(ControllerEvent):
 
 Events = Annotated[
     Union[
-        PlatformEntityEvent,
+        PlatformEntityStateChangedEvent,
         ZCLAttributeUpdatedEvent,
         DeviceJoinedEvent,
         RawDeviceInitializedEvent,

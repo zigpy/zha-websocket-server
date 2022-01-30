@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from zhaws.client.model.events import PlatformEntityEvent
+from zhaws.client.model.events import PlatformEntityStateChangedEvent
 from zhaws.client.model.types import ButtonEntity
 from zhaws.event import EventBase
 
@@ -33,7 +33,9 @@ class BaseProxyObject(EventBase):
         """Return the client."""
         return self._client
 
-    def emit_platform_entity_event(self, event: PlatformEntityEvent) -> None:
+    def emit_platform_entity_event(
+        self, event: PlatformEntityStateChangedEvent
+    ) -> None:
         """Proxy the firing of an entity event."""
         entity = self._proxied_object.entities.get(event.platform_entity.unique_id)
         if entity is None:
