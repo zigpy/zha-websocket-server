@@ -123,7 +123,6 @@ class IasAce(ClusterHandler):
         """Handle the IAS ACE arm command."""
         mode = AceCluster.ArmMode(arm_mode)
 
-        """TODO figure out events
         self.zha_send_event(
             self._cluster.server_commands.get(IAS_ACE_ARM)[NAME],
             {
@@ -133,7 +132,6 @@ class IasAce(ClusterHandler):
                 "zone_id": zone_id,
             },
         )
-        """
 
         zigbee_reply = self.arm_map[mode](code)
         asyncio.create_task(zigbee_reply)
@@ -218,12 +216,11 @@ class IasAce(ClusterHandler):
 
     def _bypass(self, zone_list: Any, code: str) -> asyncio.Future:
         """Handle the IAS ACE bypass command."""
-        """TODO figure out events
+
         self.zha_send_event(
             self._cluster.server_commands.get(IAS_ACE_BYPASS)[NAME],
             {"zone_list": zone_list, "code": code},
         )
-        """
 
     def _emergency(self) -> asyncio.Future:
         """Handle the IAS ACE emergency command."""

@@ -41,6 +41,7 @@ class MinimalEndpoint(BaseModel):
     """Minimal endpoint model."""
 
     id: int
+    unique_id: str
 
 
 class MinimalDevice(BaseModel):
@@ -196,6 +197,18 @@ class DeviceOnlineEvent(BaseEvent):
     device: MinimalDevice
 
 
+class ZHAEvent(BaseEvent):
+    """ZHA event."""
+
+    event: Literal["zha_event"] = "zha_event"
+    event_type: Literal["device_event"] = "device_event"
+    device: MinimalDevice
+    cluster_handler: MinimalClusterHandler
+    endpoint: MinimalEndpoint
+    command: str
+    args: Union[list, dict]
+
+
 class GroupRemovedEvent(ControllerEvent):
     """Group removed event."""
 
@@ -240,6 +253,7 @@ Events = Annotated[
         GroupMemberRemovedEvent,
         DeviceOfflineEvent,
         DeviceOnlineEvent,
+        ZHAEvent,
     ],
     Field(discriminator="event"),  # noqa: F821
 ]

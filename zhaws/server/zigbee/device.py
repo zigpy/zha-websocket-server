@@ -18,7 +18,6 @@ from zigpy.zcl import Cluster
 from zigpy.zcl.clusters.general import Groups
 import zigpy.zdo.types as zdo_types
 
-from zhaws.backports.enum import StrEnum
 from zhaws.server.const import (
     DEVICE,
     EVENT,
@@ -26,6 +25,7 @@ from zhaws.server.const import (
     IEEE,
     MESSAGE_TYPE,
     NWK,
+    DeviceEvents,
     EventTypes,
     MessageTypes,
 )
@@ -106,13 +106,6 @@ class DeviceStatus(Enum):
 
     CREATED = 1
     INITIALIZED = 2
-
-
-class DeviceEvents(StrEnum):
-    """Events that devices can broadcast."""
-
-    DEVICE_OFFLINE = "device_offline"
-    DEVICE_ONLINE = "device_online"
 
 
 class Device(LogMixin):

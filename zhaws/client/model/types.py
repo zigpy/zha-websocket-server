@@ -43,6 +43,7 @@ class Endpoint(BaseModel):
     """Endpoint model."""
 
     id: int
+    unique_id: str
 
 
 class GenericState(BaseModel):

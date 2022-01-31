@@ -424,7 +424,7 @@ class PollControl(ClusterHandler):
         """Handle commands received to this cluster."""
         cmd_name = self.cluster.client_commands.get(command_id, [command_id])[0]
         self.debug("Received %s tsn command '%s': %s", tsn, cmd_name, args)
-        # TODO self.zha_send_event(cmd_name, args)
+        self.zha_send_event(cmd_name, args or [])
         if cmd_name == "checkin":
             self.cluster.create_catching_task(self.check_in_response(tsn))
 
