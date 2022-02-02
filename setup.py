@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="zhaws",
-    version="2022.01.27",
+    version="2022.02.02",
     description="Library implementing a Zigbee websocket server",
     long_description=(pathlib.Path(__file__).parent / "README.md").read_text(),
     long_description_content_type="text/markdown",
