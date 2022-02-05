@@ -305,7 +305,10 @@ class Device(LogMixin):
         if hasattr(self._zigpy_device, "device_automation_triggers"):
             triggers.update(self._zigpy_device.device_automation_triggers)
 
-        return triggers
+        return_triggers = {
+            f"{key[0]}~{key[1]}": value for key, value in triggers.items()
+        }
+        return return_triggers
 
     @property
     def available(self) -> bool:
@@ -566,6 +569,8 @@ class Device(LogMixin):
                     }
                 )
         device_info[ATTR_ENDPOINT_NAMES] = names
+
+        device_info["device_automation_triggers"] = self.device_automation_triggers
 
         return device_info
 

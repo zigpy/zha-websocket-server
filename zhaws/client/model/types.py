@@ -465,6 +465,7 @@ class Device(BaseDevice):
         ],
     ]
     neighbors: list[Any]
+    device_automation_triggers: dict[str, dict[str, Any]]
 
 
 class GroupEntity(BaseEntity):
