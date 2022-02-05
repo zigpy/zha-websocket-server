@@ -197,6 +197,7 @@ class PlatformEntity(BaseEntity):
         }
         signal["endpoint"] = {
             "id": self._endpoint.id,
+            "unique_id": self._endpoint.unique_id,
         }
         _LOGGER.info("Sending event from platform entity: %s", signal)
         self.device.send_event(signal)
