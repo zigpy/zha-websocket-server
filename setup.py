@@ -25,7 +25,7 @@ setup(
         "zha-quirks==0.0.66",
         "zigpy-deconz==0.14.0",
         "zigpy-xbee==0.14.0",
-        "zigpy-zigate==0.7.4",
+        "zigpy-zigate==0.8.0",
         "zigpy-znp==0.7.0",
     ],
     extras_require={"server": ["uvloop"]},
