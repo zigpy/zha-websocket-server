@@ -36,7 +36,8 @@ to stop the server paste the content of the `stop_network.json` file into the pr
 2. connect to the share for your installation
 3. copy the `zhaws` folder from this repo: <https://github.com/zigpy/zhaws-addon.git> to the addons directory on your test device
 4. copy the `zhaws` (homeassistant/components/zhaws) directory from this repo: <https://github.com/dmulcahey/home-assistant/tree/dm/zha-ws> to custom components on the test device (config/custom_components) - create the custom_components directory if it doesn't exist
-5. restart core via the supervisor panel and reload the supervisor
+5. open the manifest.json in this folder on the test device and add this: `"version": "2022.02.02"` to the file and save it. This is needed now for custom components but not for regular ones.
+6. restart core via the supervisor panel and reload the supervisor
 
 ## Start testing
 
