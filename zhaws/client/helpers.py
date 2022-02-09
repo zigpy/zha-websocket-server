@@ -899,11 +899,9 @@ class NetworkHelper:
             UpdateNetworkTopologyCommand().dict(exclude_none=True)
         )
 
-    async def start_network(self, configuration: dict) -> bool:
+    async def start_network(self) -> bool:
         """Start the Zigbee network."""
-        command = StartNetworkCommand(
-            **configuration
-        )  # TODO do this correctly once fully modeled
+        command = StartNetworkCommand()
         response = await self._client.async_send_command(
             command.dict(exclude_none=True)
         )

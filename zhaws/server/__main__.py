@@ -1,23 +1,34 @@
 """Websocket application to run a zigpy Zigbee network."""
+from __future__ import annotations
 
 import argparse
 import asyncio
 import logging
+from pathlib import Path
 
+from zhaws.server.config.model import ServerConfiguration
 from zhaws.server.websocket.server import Server
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def main(host: str, port: int) -> None:
-    async with Server(host=host, port=port) as server:
+async def main(config_path: str | None = None) -> None:
+    if config_path is None:
+        _LOGGER.info("No config file provided, using default configuration")
+        configuration = ServerConfiguration()
+    else:
+        _LOGGER.info("Loading configuration from %s", config_path)
+        path = Path(config_path)
+        configuration = ServerConfiguration.parse_file(path)
+    async with Server(configuration=configuration) as server:
         await server.wait_closed()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Start the ZHAWS server")
-    parser.add_argument("--host", type=str, default="0.0.0.0", help="Bind host")
-    parser.add_argument("--port", type=int, default=8001, help="Bind port")
+    parser.add_argument(
+        "--config", type=str, default=None, help="Path to the configuration file"
+    )
 
     args = parser.parse_args()
 
@@ -44,4 +55,4 @@ if __name__ == "__main__":
         )
     )
 
-    asyncio.run(main(args.host, args.port))
+    asyncio.run(main(args.config))
