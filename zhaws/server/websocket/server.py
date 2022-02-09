@@ -31,8 +31,6 @@ class Server:
     def __init__(self, *, configuration: ServerConfiguration) -> None:
         """Initialize the server."""
         self._config = configuration
-        self._host: str = configuration.host
-        self._port: int = configuration.port
         self._ws_server: websockets.Serve | None = None
         self._controller: Controller = Controller(self)
         self._client_manager: ClientManager = ClientManager(self)
@@ -70,7 +68,10 @@ class Server:
         assert self._ws_server is None
         self._stopped_event.clear()
         self._ws_server = await websockets.serve(
-            self.client_manager.add_client, self._host, self._port, logger=_LOGGER
+            self.client_manager.add_client,
+            self._config.host,
+            self._config.port,
+            logger=_LOGGER,
         )
         if self._config.network_auto_start:
             await self._controller.start_network()
