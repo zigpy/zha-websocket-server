@@ -95,6 +95,10 @@ class Controller:
 
     async def start_network(self) -> None:
         """Start the Zigbee network."""
+        if self.is_running:
+            _LOGGER.warning("Attempted to start an already running Zigbee network")
+            return
+        _LOGGER.info("Starting Zigbee network")
         zigpy_configuration = zigpy_config(self._server.config)
         if self._server.config.zigpy_configuration.enable_quirks:
             setup_quirks(zigpy_configuration)
