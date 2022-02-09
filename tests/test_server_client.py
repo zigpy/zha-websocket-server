@@ -1,28 +1,59 @@
+import os
+import tempfile
+
 import aiohttp
 import pytest
 
 from zhaws.client.client import Client
+from zhaws.server.config.model import ServerConfiguration
 from zhaws.server.websocket.server import Server
 
 
 @pytest.fixture
-async def connected_client_and_server(loop):
+def server_configuration() -> ServerConfiguration:
     port = aiohttp.test_utils.unused_port()
+    with tempfile.TemporaryDirectory() as tempdir:
+        # you can e.g. create a file here:
+        config_path = os.path.join(tempdir, "configuration.json")
+        server_config = ServerConfiguration.parse_obj(
+            {
+                "zigpy_configuration": {
+                    "database_path": os.path.join(tempdir, "zigbee.db"),
+                    "enable_quirks": True,
+                },
+                "radio_configuration": {
+                    "type": "ezsp",
+                    "path": "/dev/tty.SLAB_USBtoUART",
+                    "baudrate": 115200,
+                    "flow_control": "hardware",
+                },
+                "host": "localhost",
+                "port": port,
+                "network_auto_start": False,
+            }
+        )
+        with open(config_path, "w") as tmpfile:
+            tmpfile.write(server_config.json())
+            return server_config
 
-    async with Server(host="localhost", port=port) as server:
-        async with Client(f"ws://localhost:{port}") as client:
+
+@pytest.fixture
+async def connected_client_and_server(loop, server_configuration: ServerConfiguration):
+    async with Server(configuration=server_configuration) as server:
+        async with Client(f"ws://localhost:{server_configuration.port}") as client:
             yield client, server
 
 
-async def test_server_client_connect_disconnect():
+async def test_server_client_connect_disconnect(
+    server_configuration: ServerConfiguration,
+):
     """Tests basic connect/disconnect logic."""
-    port = aiohttp.test_utils.unused_port()
 
-    async with Server(host="localhost", port=port) as server:
+    async with Server(configuration=server_configuration) as server:
         assert server.is_serving
         assert server._ws_server is not None
 
-        async with Client(f"ws://localhost:{port}") as client:
+        async with Client(f"ws://localhost:{server_configuration.port}") as client:
             assert client.connected
             assert "connected" in repr(client)
 
