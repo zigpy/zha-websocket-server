@@ -1,5 +1,9 @@
+from __future__ import annotations
+
+from asyncio import AbstractEventLoop
 import os
 import tempfile
+from typing import AsyncGenerator
 
 import aiohttp
 import pytest
@@ -11,7 +15,7 @@ from zhaws.server.websocket.server import Server
 
 @pytest.fixture
 def server_configuration() -> ServerConfiguration:
-    port = aiohttp.test_utils.unused_port()
+    port = aiohttp.test_utils.unused_port()  # type: ignore
     with tempfile.TemporaryDirectory() as tempdir:
         # you can e.g. create a file here:
         config_path = os.path.join(tempdir, "configuration.json")
@@ -38,7 +42,9 @@ def server_configuration() -> ServerConfiguration:
 
 
 @pytest.fixture
-async def connected_client_and_server(loop, server_configuration: ServerConfiguration):
+async def connected_client_and_server(
+    loop: AbstractEventLoop, server_configuration: ServerConfiguration
+) -> AsyncGenerator[tuple[Client, Server], None]:
     async with Server(configuration=server_configuration) as server:
         async with Client(f"ws://localhost:{server_configuration.port}") as client:
             yield client, server
@@ -46,7 +52,7 @@ async def connected_client_and_server(loop, server_configuration: ServerConfigur
 
 async def test_server_client_connect_disconnect(
     server_configuration: ServerConfiguration,
-):
+) -> None:
     """Tests basic connect/disconnect logic."""
 
     async with Server(configuration=server_configuration) as server:
@@ -63,15 +69,17 @@ async def test_server_client_connect_disconnect(
             assert client._listen_task is not None
 
         # The listen task is automatically stopped when we disconnect
-        assert client._listen_task is None
+        assert client._listen_task is None  # type: ignore
         assert "not connected" in repr(client)
         assert not client.connected
 
-    assert not server.is_serving
+    assert not server.is_serving  # type: ignore
     assert server._ws_server is None
 
 
-async def test_client_message_id_uniqueness(connected_client_and_server):
+async def test_client_message_id_uniqueness(
+    connected_client_and_server: tuple[Client, Server]
+) -> None:
     """Tests that client message IDs are unique."""
     client, server = connected_client_and_server
 
@@ -79,7 +87,9 @@ async def test_client_message_id_uniqueness(connected_client_and_server):
     assert len(ids) == len(set(ids))
 
 
-async def test_client_stop_server(connected_client_and_server):
+async def test_client_stop_server(
+    connected_client_and_server: tuple[Client, Server]
+) -> None:
     """Tests that the client can stop the server"""
     client, server = connected_client_and_server
 
