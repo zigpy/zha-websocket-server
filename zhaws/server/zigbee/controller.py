@@ -16,9 +16,8 @@ from zigpy.types.named import EUI64
 from zigpy.typing import DeviceType as ZigpyDeviceType
 
 from zhaws.backports.enum import StrEnum
+from zhaws.server.config.util import zigpy_config
 from zhaws.server.const import (
-    CONF_ENABLE_QUIRKS,
-    CONF_RADIO_TYPE,
     DEVICE,
     EVENT,
     EVENT_TYPE,
@@ -94,14 +93,19 @@ class Controller:
         """Get groups."""
         return self._groups
 
-    async def start_network(self, configuration: dict) -> None:
+    async def start_network(self) -> None:
         """Start the Zigbee network."""
-        if configuration.get(CONF_ENABLE_QUIRKS):
-            setup_quirks(configuration)
-        radio_type = configuration[CONF_RADIO_TYPE]
+        if self.is_running:
+            _LOGGER.warning("Attempted to start an already running Zigbee network")
+            return
+        _LOGGER.info("Starting Zigbee network")
+        zigpy_configuration = zigpy_config(self._server.config)
+        if self._server.config.zigpy_configuration.enable_quirks:
+            setup_quirks(zigpy_configuration)
+        radio_type = self._server.config.radio_configuration.type
         app_controller_cls = RadioType[radio_type].controller
         self.radio_description = RadioType[radio_type].description
-        controller_config = app_controller_cls.SCHEMA(configuration)  # type: ignore
+        controller_config = app_controller_cls.SCHEMA(zigpy_configuration)  # type: ignore
         try:
             self._application_controller = await app_controller_cls.new(  # type: ignore
                 controller_config, auto_form=True, start_radio=True

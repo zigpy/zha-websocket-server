@@ -6,22 +6,9 @@ import logging
 from typing import TYPE_CHECKING, Any, Mapping, TypeVar, cast
 
 import voluptuous as vol
-from zigpy.config import CONF_DEVICE, CONF_DEVICE_PATH
 from zigpy.types.named import EUI64
 
-from zhaws.server.const import (
-    COMMAND,
-    CONF_BAUDRATE,
-    CONF_DATABASE,
-    CONF_ENABLE_QUIRKS,
-    CONF_FLOWCONTROL,
-    CONF_RADIO_TYPE,
-    DEVICES,
-    DURATION,
-    GROUPS,
-    IEEE,
-    APICommands,
-)
+from zhaws.server.const import COMMAND, DEVICES, DURATION, GROUPS, IEEE, APICommands
 from zhaws.server.websocket.api import decorators, register_api_command
 from zhaws.server.zigbee.controller import Controller
 from zhaws.server.zigbee.device import (
@@ -60,27 +47,13 @@ def ensure_list(value: T | None) -> list[T] | list[Any]:
     return cast("list[T]", value) if isinstance(value, list) else [value]
 
 
-@decorators.websocket_command(
-    {
-        vol.Required(COMMAND): str(APICommands.START_NETWORK),
-        vol.Required(CONF_RADIO_TYPE): str,
-        vol.Required(CONF_DEVICE): vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_PATH): str,
-                vol.Optional(CONF_FLOWCONTROL): str,
-                vol.Required(CONF_BAUDRATE): decorators.POSITIVE_INT,
-            }
-        ),
-        vol.Required(CONF_DATABASE): str,
-        vol.Required(CONF_ENABLE_QUIRKS): bool,
-    }
-)
+@decorators.websocket_command({vol.Required(COMMAND): str(APICommands.START_NETWORK)})
 @decorators.async_response
 async def start_network(
     server: Server, client: Client, message: dict[str, Any]
 ) -> None:
     """Start the Zigbee network."""
-    await server.controller.start_network(message)
+    await server.controller.start_network()
     client.send_result_success(message)
 
 

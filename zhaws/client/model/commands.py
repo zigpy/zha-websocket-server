@@ -41,12 +41,7 @@ class ZigbeeCoordinatorDeviceConfiguration(BaseModel):
 class StartNetworkCommand(Command):
     """Command to start the zigbee network."""
 
-    # TODO model this out correctly
     command: Literal["start_network"] = "start_network"
-    radio_type: str
-    device: ZigbeeCoordinatorDeviceConfiguration
-    database_path: str
-    enable_quirks: bool
 
 
 class StopServerCommand(Command):

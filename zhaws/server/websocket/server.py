@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 import voluptuous
 import websockets
 
+from zhaws.server.config.model import ServerConfiguration
 from zhaws.server.const import COMMAND, APICommands
 from zhaws.server.platforms import discovery
 from zhaws.server.platforms.api import load_platform_entity_apis
@@ -27,10 +28,9 @@ _LOGGER = logging.getLogger(__name__)
 class Server:
     """ZHAWSS server implementation."""
 
-    def __init__(self, *, host: str = "", port: int = 8001) -> None:
+    def __init__(self, *, configuration: ServerConfiguration) -> None:
         """Initialize the server."""
-        self._host: str = host
-        self._port: int = port
+        self._config = configuration
         self._ws_server: websockets.Serve | None = None
         self._controller: Controller = Controller(self)
         self._client_manager: ClientManager = ClientManager(self)
@@ -58,13 +58,23 @@ class Server:
         """Return the zigbee application controller."""
         return self._client_manager
 
+    @property
+    def config(self) -> ServerConfiguration:
+        """Return the server configuration."""
+        return self._config
+
     async def start_server(self) -> None:
         """Start the websocket server."""
         assert self._ws_server is None
         self._stopped_event.clear()
         self._ws_server = await websockets.serve(
-            self.client_manager.add_client, self._host, self._port, logger=_LOGGER
+            self.client_manager.add_client,
+            self._config.host,
+            self._config.port,
+            logger=_LOGGER,
         )
+        if self._config.network_auto_start:
+            await self._controller.start_network()
 
     async def wait_closed(self) -> None:
         """Waits until the server is not running."""
