@@ -14,7 +14,7 @@ from zigpy.zcl.foundation import Status
 
 from zhaws.event import EventBase
 from zhaws.model import BaseEvent
-from zhaws.server.const import EVENT, EVENT_TYPE, EventTypes
+from zhaws.server.const import EVENT, EVENT_TYPE, DeviceEvents, EventTypes
 from zhaws.server.util import LogMixin
 from zhaws.server.zigbee.cluster.const import (
     CLUSTER_HANDLER_ZDO,
@@ -350,18 +350,16 @@ class ClusterHandler(LogMixin, EventBase):
     def zdo_command(self, *args: Any, **kwargs: Any) -> None:
         """Handle ZDO commands on this cluster."""
 
-    def zha_send_event(self, command: str, args: int | dict) -> None:
+    def zha_send_event(self, command: str, args: list | dict) -> None:
         """Relay events to hass."""
-        """ TODO
-        self._ch_pool.zha_send_event(
+        self.send_event(
             {
-                ATTR_UNIQUE_ID: self.unique_id,
-                ATTR_CLUSTER_ID: self.cluster.cluster_id,
-                ATTR_COMMAND: command,
-                ATTR_ARGS: args,
+                EVENT: DeviceEvents.ZHA_EVENT,
+                EVENT_TYPE: EventTypes.DEVICE_EVENT,
+                "command": command,
+                "args": args,
             }
         )
-        """
 
     async def async_update(self) -> None:
         """Retrieve latest state from cluster."""
@@ -512,18 +510,15 @@ class ClientClusterHandler(ClusterHandler):
 
     def attribute_updated(self, attrid: int, value: Any) -> None:
         """Handle an attribute updated on this cluster."""
-        """ TODO
+
         self.zha_send_event(
             SIGNAL_ATTR_UPDATED,
             {
-                ATTR_ATTRIBUTE_ID: attrid,
-                ATTR_ATTRIBUTE_NAME: self._cluster.attributes.get(attrid, ["Unknown"])[
-                    0
-                ],
-                ATTR_VALUE: value,
+                "attribute_id": attrid,
+                "attribute_name": self._cluster.attributes.get(attrid, ["Unknown"])[0],
+                "value": value,
             },
         )
-        """
 
     def cluster_command(self, tsn: int, command_id: int, args: Any) -> None:
         """Handle a cluster command received on this cluster."""

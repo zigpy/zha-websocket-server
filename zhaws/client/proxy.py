@@ -1,7 +1,7 @@
 """Proxy object for the client side objects."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from zhaws.client.model.events import PlatformEntityStateChangedEvent
 from zhaws.client.model.types import ButtonEntity
@@ -86,6 +86,15 @@ class DeviceProxy(BaseProxyObject):
     def device_model(self, device_model: DeviceModel) -> None:
         """Set the device model."""
         self._proxied_object = device_model
+
+    @property
+    def device_automation_triggers(self) -> dict[tuple[str, str], dict[str, Any]]:
+        """Return the device automation triggers."""
+        model_triggers = self._proxied_object.device_automation_triggers
+        return {
+            (key.split("~")[0], key.split("~")[1]): value
+            for key, value in model_triggers.items()
+        }
 
     def __repr__(self) -> str:
         return self._proxied_object.__repr__()

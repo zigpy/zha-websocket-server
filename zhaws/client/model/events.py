@@ -41,6 +41,7 @@ class MinimalEndpoint(BaseModel):
     """Minimal endpoint model."""
 
     id: int
+    unique_id: str
 
 
 class MinimalDevice(BaseModel):
@@ -82,7 +83,6 @@ class MinimalGroup(BaseModel):
 class PlatformEntityStateChangedEvent(BaseEvent):
     """Platform entity event."""
 
-    """TODO use this as a base and create specific events for each entity type where state and attributes is fully modeled out"""
     event_type: Literal["platform_entity_event"] = "platform_entity_event"
     event: Literal["platform_entity_state_changed"] = "platform_entity_state_changed"
     platform_entity: MinimalPlatformEntity
@@ -196,6 +196,18 @@ class DeviceOnlineEvent(BaseEvent):
     device: MinimalDevice
 
 
+class ZHAEvent(BaseEvent):
+    """ZHA event."""
+
+    event: Literal["zha_event"] = "zha_event"
+    event_type: Literal["device_event"] = "device_event"
+    device: MinimalDevice
+    cluster_handler: MinimalClusterHandler
+    endpoint: MinimalEndpoint
+    command: str
+    args: Union[list, dict]
+
+
 class GroupRemovedEvent(ControllerEvent):
     """Group removed event."""
 
@@ -240,6 +252,7 @@ Events = Annotated[
         GroupMemberRemovedEvent,
         DeviceOfflineEvent,
         DeviceOnlineEvent,
+        ZHAEvent,
     ],
     Field(discriminator="event"),  # noqa: F821
 ]

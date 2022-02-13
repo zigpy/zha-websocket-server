@@ -41,6 +41,7 @@ from zhaws.client.model.events import (
     GroupRemovedEvent,
     PlatformEntityStateChangedEvent,
     RawDeviceInitializedEvent,
+    ZHAEvent,
 )
 from zhaws.client.proxy import DeviceProxy, GroupProxy
 from zhaws.event import EventBase
@@ -88,6 +89,7 @@ class Controller(EventBase):
         self._client.on_event(
             EventTypes.PLATFORM_ENTITY_EVENT, self._handle_event_protocol
         )
+        self._client.on_event(EventTypes.DEVICE_EVENT, self._handle_event_protocol)
         self._client.on_event(EventTypes.CONTROLLER_EVENT, self._handle_event_protocol)
 
     @property
@@ -159,6 +161,15 @@ class Controller(EventBase):
                 _LOGGER.warning("Received event from unknown group: %s", event)
                 return
             group.emit_platform_entity_event(event)
+
+    def handle_zha_event(self, event: ZHAEvent) -> None:
+        """Handle a zha_event from the websocket server."""
+        _LOGGER.debug("zha_event: %s", event)
+        device = self.devices.get(event.device.ieee)
+        if device is None:
+            _LOGGER.warning("Received zha_event from unknown device: %s", event)
+            return
+        device.emit("zha_event", event)
 
     def handle_device_joined(self, event: DeviceJoinedEvent) -> None:
         """Handle device joined.

@@ -43,6 +43,7 @@ class Endpoint(BaseModel):
     """Endpoint model."""
 
     id: int
+    unique_id: str
 
 
 class GenericState(BaseModel):
@@ -464,6 +465,7 @@ class Device(BaseDevice):
         ],
     ]
     neighbors: list[Any]
+    device_automation_triggers: dict[str, dict[str, Any]]
 
 
 class GroupEntity(BaseEntity):

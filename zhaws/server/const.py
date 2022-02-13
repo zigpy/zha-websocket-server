@@ -128,6 +128,14 @@ class RawZCLEvents(StrEnum):
     ATTRIBUTE_UPDATED = "attribute_updated"
 
 
+class DeviceEvents(StrEnum):
+    """Events that devices can broadcast."""
+
+    DEVICE_OFFLINE = "device_offline"
+    DEVICE_ONLINE = "device_online"
+    ZHA_EVENT = "zha_event"
+
+
 ATTR_UNIQUE_ID: Final[str] = "unique_id"
 COMMAND: Final[str] = "command"
 CONF_BAUDRATE: Final[str] = "baudrate"

@@ -202,8 +202,8 @@ class Endpoint:
         """Broadcast an event from this endpoint."""
         signal["endpoint"] = {
             "id": self.id,
+            "unique_id": self.unique_id,
         }
-        # signal["endpoint_id"] = self.id
         self.device.send_event(signal)
 
     def claim_cluster_handlers(self, cluster_handlers: list[ClusterHandler]) -> None:
@@ -218,15 +218,3 @@ class Endpoint:
             self.all_cluster_handlers[cluster_id]
             for cluster_id in (available - claimed)
         ]
-
-    """ TODO
-    def zha_send_event(self, event_data: dict[str, str | int]) -> None:
-        #Relay events to hass.
-        self._channels.zha_send_event(
-            {
-                const.ATTR_UNIQUE_ID: self.unique_id,
-                const.ATTR_ENDPOINT_ID: self.id,
-                **event_data,
-            }
-        )
-    """

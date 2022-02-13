@@ -93,7 +93,7 @@ class ProbeEndpoint:
     def discover_entities(self, endpoint: Endpoint) -> None:
         """Process an endpoint on a zigpy device."""
         _LOGGER.info(
-            "Discovering entitied for endpoint: %s-%s",
+            "Discovering entities for endpoint: %s-%s",
             str(endpoint.device.ieee),
             endpoint.id,
         )

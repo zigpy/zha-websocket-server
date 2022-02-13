@@ -18,7 +18,6 @@ from zigpy.zcl import Cluster
 from zigpy.zcl.clusters.general import Groups
 import zigpy.zdo.types as zdo_types
 
-from zhaws.backports.enum import StrEnum
 from zhaws.server.const import (
     DEVICE,
     EVENT,
@@ -26,6 +25,7 @@ from zhaws.server.const import (
     IEEE,
     MESSAGE_TYPE,
     NWK,
+    DeviceEvents,
     EventTypes,
     MessageTypes,
 )
@@ -106,13 +106,6 @@ class DeviceStatus(Enum):
 
     CREATED = 1
     INITIALIZED = 2
-
-
-class DeviceEvents(StrEnum):
-    """Events that devices can broadcast."""
-
-    DEVICE_OFFLINE = "device_offline"
-    DEVICE_ONLINE = "device_online"
 
 
 class Device(LogMixin):
@@ -312,7 +305,10 @@ class Device(LogMixin):
         if hasattr(self._zigpy_device, "device_automation_triggers"):
             triggers.update(self._zigpy_device.device_automation_triggers)
 
-        return triggers
+        return_triggers = {
+            f"{key[0]}~{key[1]}": value for key, value in triggers.items()
+        }
+        return return_triggers
 
     @property
     def available(self) -> bool:
@@ -573,6 +569,8 @@ class Device(LogMixin):
                     }
                 )
         device_info[ATTR_ENDPOINT_NAMES] = names
+
+        device_info["device_automation_triggers"] = self.device_automation_triggers
 
         return device_info
 
