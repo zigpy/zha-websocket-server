@@ -1,1 +1,15 @@
-{"radio_type":"ezsp","device":{"path":"/dev/cu.GoControl_zigbee\u0011","flow_control":"software","baudrate":57600},"database_path":"./zigbee.db","enable_quirks":true}
+{
+  "host": "localhost",
+  "port": "8001",
+  "network_auto_start": true,
+  "zigpy_configuration": {
+    "database_path": "./zigbee.db",
+    "enable_quirks": true
+  },
+  "radio_configuration": {
+    "type": "ezsp",
+    "flow_control": "software",
+    "baudrate": 57600,
+    "path": "/dev/cu.GoControl_zigbee\u000c"
+  }
+}
