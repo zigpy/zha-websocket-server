@@ -27,7 +27,7 @@ to stop the server paste the content of the `stop_network.json` file into the pr
 2. turn off protection mode
 3. Open the web UI for the addon
 4. execute this command: `docker exec -it hassio_supervisor bash`
-5. execute this command: `cp /usr/src/supervisor/discovery/services/zwave_js.py /usr/src/supervisor/discovery/services/zhaws.py`
+5. execute this command: `cp /usr/src/supervisor/supervisor/discovery/services/zwave_js.py /usr/src/supervisor/supervisor/discovery/services/zhaws.py`
 6. exit the web terminal
 
 ## Getting the pieces in place
