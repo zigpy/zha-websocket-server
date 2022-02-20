@@ -19,7 +19,6 @@ setup(
         "colorlog",
         "pydantic",
         "websockets",
-        "voluptuous",
         "zigpy==0.43.0",
         "bellows==0.29.0",
         "zha-quirks==0.0.67",

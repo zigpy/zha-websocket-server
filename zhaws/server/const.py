@@ -2,8 +2,6 @@
 
 from typing import Final
 
-import voluptuous
-
 from zhaws.backports.enum import StrEnum
 
 
@@ -171,14 +169,3 @@ MESSAGE_ID: Final[str] = "message_id"
 SUCCESS: Final[str] = "success"
 WEBSOCKET_API: Final[str] = "websocket_api"
 ZIGBEE_ERROR_CODE: Final[str] = "zigbee_error_code"
-
-
-MINIMAL_MESSAGE_SCHEMA: Final = voluptuous.Schema(
-    {
-        voluptuous.Required(COMMAND): voluptuous.In(
-            [str(item) for item in APICommands]
-        ),
-        voluptuous.Required(MESSAGE_ID): int,
-    },
-    extra=voluptuous.ALLOW_EXTRA,
-)

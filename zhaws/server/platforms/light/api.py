@@ -1,23 +1,13 @@
 """WS API for the light platform entity."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Annotated, Literal, Optional
 
-import voluptuous as vol
+from pydantic import Field
 
-from zhaws.backports.enum import StrEnum
-from zhaws.server.platforms.api import (
-    execute_platform_entity_command,
-    platform_entity_command_schema,
-)
-from zhaws.server.platforms.light import (
-    ATTR_BRIGHTNESS,
-    ATTR_COLOR_TEMP,
-    ATTR_EFFECT,
-    ATTR_FLASH,
-    ATTR_HS_COLOR,
-    ATTR_TRANSITION,
-)
+from zhaws.server.const import APICommands
+from zhaws.server.platforms import PlatformEntityCommand
+from zhaws.server.platforms.api import execute_platform_entity_command
 from zhaws.server.websocket.api import decorators, register_api_command
 
 if TYPE_CHECKING:
@@ -25,63 +15,40 @@ if TYPE_CHECKING:
     from zhaws.server.websocket.server import Server
 
 
-class LightAPICommands(StrEnum):
-    """Light API commands."""
+class LightTurnOnCommand(PlatformEntityCommand):
+    """Light turn on command."""
 
-    LIGHT_TURN_ON = "light_turn_on"
-    LIGHT_TURN_OFF = "light_turn_off"
-
-
-COLOR_GROUP = "Color descriptors"
-
-FLASH_SHORT = "short"
-FLASH_LONG = "long"
-
-VALID_TRANSITION = vol.All(vol.Coerce(float), vol.Clamp(min=0, max=6553))
-VALID_BRIGHTNESS = vol.All(vol.Coerce(int), vol.Clamp(min=0, max=255))
-VALID_FLASH = vol.In([FLASH_SHORT, FLASH_LONG])
+    command: Literal[APICommands.LIGHT_TURN_ON] = APICommands.LIGHT_TURN_ON
+    brightness: Optional[Annotated[int, Field(ge=0, le=255)]]
+    transition: Optional[Annotated[float, Field(ge=0, le=6553)]]
+    flash: Optional[Literal["short", "long"]]
+    effect: Optional[str]
+    hs_color: Optional[
+        tuple[Annotated[int, Field(ge=0, le=360)], Annotated[int, Field(ge=0, le=100)]]
+    ]
+    color_temp: Optional[int]
 
 
-@decorators.websocket_command(
-    platform_entity_command_schema(
-        LightAPICommands.LIGHT_TURN_ON,
-        {
-            vol.Optional(ATTR_BRIGHTNESS): VALID_BRIGHTNESS,
-            vol.Optional(ATTR_TRANSITION): VALID_TRANSITION,
-            vol.Optional(ATTR_FLASH): VALID_FLASH,
-            vol.Optional(ATTR_EFFECT): str,
-            vol.Exclusive(ATTR_HS_COLOR, COLOR_GROUP): vol.All(
-                vol.Coerce(tuple),
-                vol.ExactSequence(
-                    (
-                        vol.All(vol.Coerce(float), vol.Range(min=0, max=360)),
-                        vol.All(vol.Coerce(float), vol.Range(min=0, max=100)),
-                    )
-                ),
-            ),
-            vol.Exclusive(ATTR_COLOR_TEMP, COLOR_GROUP): vol.All(
-                vol.Coerce(int), vol.Range(min=1)
-            ),
-        },
-    )
-)
+@decorators.websocket_command(LightTurnOnCommand)
 @decorators.async_response
-async def turn_on(server: Server, client: Client, message: dict[str, Any]) -> None:
+async def turn_on(server: Server, client: Client, message: LightTurnOnCommand) -> None:
     """Turn on the light."""
     await execute_platform_entity_command(server, client, message, "async_turn_on")
 
 
-@decorators.websocket_command(
-    platform_entity_command_schema(
-        LightAPICommands.LIGHT_TURN_OFF,
-        {
-            vol.Optional(ATTR_TRANSITION): VALID_TRANSITION,
-            vol.Optional(ATTR_FLASH): VALID_FLASH,
-        },
-    )
-)
+class LightTurnOffCommand(PlatformEntityCommand):
+    """Light turn off command."""
+
+    command: Literal[APICommands.LIGHT_TURN_OFF] = APICommands.LIGHT_TURN_OFF
+    transition: Optional[Annotated[float, Field(ge=0, le=6553)]]
+    flash: Optional[Literal["short", "long"]]
+
+
+@decorators.websocket_command(LightTurnOffCommand)
 @decorators.async_response
-async def turn_off(server: Server, client: Client, message: dict[str, Any]) -> None:
+async def turn_off(
+    server: Server, client: Client, message: LightTurnOffCommand
+) -> None:
     """Turn on the light."""
     await execute_platform_entity_command(server, client, message, "async_turn_off")
 

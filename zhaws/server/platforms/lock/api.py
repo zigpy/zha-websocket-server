@@ -1,15 +1,11 @@
 """WS api for the lock platform entity."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Literal
 
-import voluptuous as vol
-
-from zhaws.backports.enum import StrEnum
-from zhaws.server.platforms.api import (
-    execute_platform_entity_command,
-    platform_entity_command_schema,
-)
+from zhaws.server.const import APICommands
+from zhaws.server.platforms import PlatformEntityCommand
+from zhaws.server.platforms.api import execute_platform_entity_command
 from zhaws.server.websocket.api import decorators, register_api_command
 
 if TYPE_CHECKING:
@@ -17,43 +13,44 @@ if TYPE_CHECKING:
     from zhaws.server.websocket.server import Server
 
 
-class LockCommands(StrEnum):
-    """Lock commands."""
+class LockLockCommand(PlatformEntityCommand):
+    """Lock lock command."""
 
-    LOCK = "lock_lock"
-    UNLOCK = "lock_unlock"
-    SET_USER_LOCK_CODE = "lock_set_user_lock_code"
-    ENABLE_USER_LOCK_CODE = "lock_enable_user_lock_code"
-    DISABLE_USER_LOCK_CODE = "lock_disable_user_lock_code"
-    CLEAR_USER_LOCK_CODE = "lock_clear_user_lock_code"
+    command: Literal[APICommands.LOCK_LOCK] = APICommands.LOCK_LOCK
 
 
-@decorators.websocket_command(platform_entity_command_schema(LockCommands.LOCK))
+@decorators.websocket_command(LockLockCommand)
 @decorators.async_response
-async def lock(server: Server, client: Client, message: dict[str, Any]) -> None:
+async def lock(server: Server, client: Client, message: LockLockCommand) -> None:
     """Lock the lock."""
     await execute_platform_entity_command(server, client, message, "async_lock")
 
 
-@decorators.websocket_command(platform_entity_command_schema(LockCommands.UNLOCK))
+class LockUnlockCommand(PlatformEntityCommand):
+    """Lock unlock command."""
+
+    command: Literal[APICommands.LOCK_UNLOCK] = APICommands.LOCK_UNLOCK
+
+
+@decorators.websocket_command(LockUnlockCommand)
 @decorators.async_response
-async def unlock(server: Server, client: Client, message: dict[str, Any]) -> None:
+async def unlock(server: Server, client: Client, message: LockUnlockCommand) -> None:
     """Unlock the lock."""
     await execute_platform_entity_command(server, client, message, "async_unlock")
 
 
-@decorators.websocket_command(
-    platform_entity_command_schema(
-        LockCommands.SET_USER_LOCK_CODE,
-        {
-            vol.Required("code_slot"): vol.Coerce(int),
-            vol.Required("user_code"): str,
-        },
-    )
-)
+class LockSetUserLockCodeCommand(PlatformEntityCommand):
+    """Set user lock code command."""
+
+    command: Literal[APICommands.LOCK_SET_USER_CODE] = APICommands.LOCK_SET_USER_CODE
+    code_slot: int
+    user_code: str
+
+
+@decorators.websocket_command(LockSetUserLockCodeCommand)
 @decorators.async_response
 async def set_user_lock_code(
-    server: Server, client: Client, message: dict[str, Any]
+    server: Server, client: Client, message: LockSetUserLockCodeCommand
 ) -> None:
     """Set a user lock code in the specified slot for the lock."""
     await execute_platform_entity_command(
@@ -61,17 +58,19 @@ async def set_user_lock_code(
     )
 
 
-@decorators.websocket_command(
-    platform_entity_command_schema(
-        LockCommands.ENABLE_USER_LOCK_CODE,
-        {
-            vol.Required("code_slot"): vol.Coerce(int),
-        },
-    )
-)
+class LockEnableUserLockCodeCommand(PlatformEntityCommand):
+    """Enable user lock code command."""
+
+    command: Literal[
+        APICommands.LOCK_ENAABLE_USER_CODE
+    ] = APICommands.LOCK_ENAABLE_USER_CODE
+    code_slot: int
+
+
+@decorators.websocket_command(LockEnableUserLockCodeCommand)
 @decorators.async_response
 async def enable_user_lock_code(
-    server: Server, client: Client, message: dict[str, Any]
+    server: Server, client: Client, message: LockEnableUserLockCodeCommand
 ) -> None:
     """Enable a user lock code for the lock."""
     await execute_platform_entity_command(
@@ -79,17 +78,19 @@ async def enable_user_lock_code(
     )
 
 
-@decorators.websocket_command(
-    platform_entity_command_schema(
-        LockCommands.DISABLE_USER_LOCK_CODE,
-        {
-            vol.Required("code_slot"): vol.Coerce(int),
-        },
-    )
-)
+class LockDisableUserLockCodeCommand(PlatformEntityCommand):
+    """Disable user lock code command."""
+
+    command: Literal[
+        APICommands.LOCK_DISABLE_USER_CODE
+    ] = APICommands.LOCK_DISABLE_USER_CODE
+    code_slot: int
+
+
+@decorators.websocket_command(LockDisableUserLockCodeCommand)
 @decorators.async_response
 async def disable_user_lock_code(
-    server: Server, client: Client, message: dict[str, Any]
+    server: Server, client: Client, message: LockDisableUserLockCodeCommand
 ) -> None:
     """Disable a user lock code for the lock."""
     await execute_platform_entity_command(
@@ -97,17 +98,19 @@ async def disable_user_lock_code(
     )
 
 
-@decorators.websocket_command(
-    platform_entity_command_schema(
-        LockCommands.CLEAR_USER_LOCK_CODE,
-        {
-            vol.Required("code_slot"): vol.Coerce(int),
-        },
-    )
-)
+class LockClearUserLockCodeCommand(PlatformEntityCommand):
+    """Clear user lock code command."""
+
+    command: Literal[
+        APICommands.LOCK_CLEAR_USER_CODE
+    ] = APICommands.LOCK_CLEAR_USER_CODE
+    code_slot: int
+
+
+@decorators.websocket_command(LockClearUserLockCodeCommand)
 @decorators.async_response
 async def clear_user_lock_code(
-    server: Server, client: Client, message: dict[str, Any]
+    server: Server, client: Client, message: LockClearUserLockCodeCommand
 ) -> None:
     """Clear a user lock code for the lock."""
     await execute_platform_entity_command(

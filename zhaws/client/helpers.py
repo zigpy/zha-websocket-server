@@ -5,62 +5,12 @@ from typing import Any, Literal, Optional, Union, cast
 
 from zhaws.client.client import Client
 from zhaws.client.model.commands import (
-    AddGroupMembersCommand,
-    AlarmControlPanelArmAwayCommand,
-    AlarmControlPanelArmHomeCommand,
-    AlarmControlPanelArmNightCommand,
-    AlarmControlPanelDisarmCommand,
-    AlarmControlPanelTriggerCommand,
-    ButtonPressCommand,
-    ClientDisconnectCommand,
-    ClientListenCommand,
-    ClientListenRawZCLCommand,
-    ClimateSetFanModeCommand,
-    ClimateSetHvacModeCommand,
-    ClimateSetPresetModeCommand,
-    ClimateSetTemperatureCommand,
     CommandResponse,
-    CoverCloseCommand,
-    CoverOpenCommand,
-    CoverSetPositionCommand,
-    CoverStopCommand,
-    CreateGroupCommand,
-    FanSetPercentageCommand,
-    FanSetPresetModeCommand,
-    FanTurnOffCommand,
-    FanTurnOnCommand,
-    GetDevicesCommand,
     GetDevicesResponse,
-    GetGroupsCommand,
     GroupsResponse,
-    LightTurnOffCommand,
-    LightTurnOnCommand,
-    LockClearUserLockCodeCommand,
-    LockDisableUserLockCodeCommand,
-    LockEnableUserLockCodeCommand,
-    LockLockCommand,
-    LockSetUserLockCodeCommand,
-    LockUnlockCommand,
-    NumberSetValueCommand,
-    PermitJoiningCommand,
     PermitJoiningResponse,
-    PlatformEntityRefreshStateCommand,
-    ReadClusterAttributesCommand,
     ReadClusterAttributesResponse,
-    ReconfigureDeviceCommand,
-    RemoveGroupMembersCommand,
-    RemoveGroupsCommand,
-    SelectSelectOptionCommand,
-    SirenTurnOffCommand,
-    SirenTurnOnCommand,
-    StartNetworkCommand,
-    StopNetworkCommand,
-    StopServerCommand,
-    SwitchTurnOffCommand,
-    SwitchTurnOnCommand,
     UpdateGroupResponse,
-    UpdateNetworkTopologyCommand,
-    WriteClusterAttributeCommand,
     WriteClusterAttributeResponse,
 )
 from zhaws.client.model.types import (
@@ -70,7 +20,68 @@ from zhaws.client.model.types import (
     Group,
     GroupEntity,
 )
+from zhaws.server.platforms.alarm_control_panel.api import (
+    ArmAwayCommand,
+    ArmHomeCommand,
+    ArmNightCommand,
+    DisarmCommand,
+    TriggerAlarmCommand,
+)
+from zhaws.server.platforms.api import PlatformEntityRefreshStateCommand
+from zhaws.server.platforms.button.api import ButtonPressCommand
+from zhaws.server.platforms.climate.api import (
+    ClimateSetFanModeCommand,
+    ClimateSetHVACModeCommand,
+    ClimateSetPresetModeCommand,
+    ClimateSetTemperatureCommand,
+)
+from zhaws.server.platforms.cover.api import (
+    CoverCloseCommand,
+    CoverOpenCommand,
+    CoverSetPositionCommand,
+    CoverStopCommand,
+)
+from zhaws.server.platforms.fan.api import (
+    FanSetPercentageCommand,
+    FanSetPresetModeCommand,
+    FanTurnOffCommand,
+    FanTurnOnCommand,
+)
+from zhaws.server.platforms.light.api import LightTurnOffCommand, LightTurnOnCommand
+from zhaws.server.platforms.lock.api import (
+    LockClearUserLockCodeCommand,
+    LockDisableUserLockCodeCommand,
+    LockEnableUserLockCodeCommand,
+    LockLockCommand,
+    LockSetUserLockCodeCommand,
+    LockUnlockCommand,
+)
+from zhaws.server.platforms.number.api import NumberSetValueCommand
 from zhaws.server.platforms.registries import Platform
+from zhaws.server.platforms.select.api import SelectSelectOptionCommand
+from zhaws.server.platforms.siren.api import SirenTurnOffCommand, SirenTurnOnCommand
+from zhaws.server.platforms.switch.api import SwitchTurnOffCommand, SwitchTurnOnCommand
+from zhaws.server.websocket.client import (
+    ClientDisconnectCommand,
+    ClientListenCommand,
+    ClientListenRawZCLCommand,
+)
+from zhaws.server.websocket.server import StopServerCommand
+from zhaws.server.zigbee.api import (
+    AddGroupMembersCommand,
+    CreateGroupCommand,
+    GetDevicesCommand,
+    GetGroupsCommand,
+    PermitJoiningCommand,
+    ReadClusterAttributesCommand,
+    ReconfigureDeviceCommand,
+    RemoveGroupMembersCommand,
+    RemoveGroupsCommand,
+    StartNetworkCommand,
+    StopNetworkCommand,
+    UpdateTopologyCommand,
+    WriteClusterAttributeCommand,
+)
 
 
 def ensure_platform_entity(entity: BaseEntity, platform: Platform) -> None:
@@ -522,7 +533,7 @@ class ClimateHelper:
     ) -> CommandResponse:
         """Set a climate."""
         ensure_platform_entity(climate_platform_entity, Platform.CLIMATE)
-        command = ClimateSetHvacModeCommand(
+        command = ClimateSetHVACModeCommand(
             ieee=climate_platform_entity.device_ieee,
             unique_id=climate_platform_entity.unique_id,
             hvac_mode=hvac_mode,
@@ -594,7 +605,7 @@ class AlarmControlPanelHelper:
         ensure_platform_entity(
             alarm_control_panel_platform_entity, Platform.ALARM_CONTROL_PANEL
         )
-        command = AlarmControlPanelDisarmCommand(
+        command = DisarmCommand(
             ieee=alarm_control_panel_platform_entity.device_ieee,
             unique_id=alarm_control_panel_platform_entity.unique_id,
             code=code,
@@ -608,7 +619,7 @@ class AlarmControlPanelHelper:
         ensure_platform_entity(
             alarm_control_panel_platform_entity, Platform.ALARM_CONTROL_PANEL
         )
-        command = AlarmControlPanelArmHomeCommand(
+        command = ArmHomeCommand(
             ieee=alarm_control_panel_platform_entity.device_ieee,
             unique_id=alarm_control_panel_platform_entity.unique_id,
             code=code,
@@ -622,7 +633,7 @@ class AlarmControlPanelHelper:
         ensure_platform_entity(
             alarm_control_panel_platform_entity, Platform.ALARM_CONTROL_PANEL
         )
-        command = AlarmControlPanelArmAwayCommand(
+        command = ArmAwayCommand(
             ieee=alarm_control_panel_platform_entity.device_ieee,
             unique_id=alarm_control_panel_platform_entity.unique_id,
             code=code,
@@ -636,7 +647,7 @@ class AlarmControlPanelHelper:
         ensure_platform_entity(
             alarm_control_panel_platform_entity, Platform.ALARM_CONTROL_PANEL
         )
-        command = AlarmControlPanelArmNightCommand(
+        command = ArmNightCommand(
             ieee=alarm_control_panel_platform_entity.device_ieee,
             unique_id=alarm_control_panel_platform_entity.unique_id,
             code=code,
@@ -651,7 +662,7 @@ class AlarmControlPanelHelper:
         ensure_platform_entity(
             alarm_control_panel_platform_entity, Platform.ALARM_CONTROL_PANEL
         )
-        command = AlarmControlPanelTriggerCommand(
+        command = TriggerAlarmCommand(
             ieee=alarm_control_panel_platform_entity.device_ieee,
             unique_id=alarm_control_panel_platform_entity.unique_id,
         )
@@ -896,7 +907,7 @@ class NetworkHelper:
     async def update_topology(self) -> None:
         """Update the network topology."""
         await self._client.async_send_command(
-            UpdateNetworkTopologyCommand().dict(exclude_none=True)
+            UpdateTopologyCommand().dict(exclude_none=True)
         )
 
     async def start_network(self) -> bool:
