@@ -21,9 +21,9 @@ class SwitchTurnOnCommand(PlatformEntityCommand):
 
 @decorators.websocket_command(SwitchTurnOnCommand)
 @decorators.async_response
-async def turn_on(server: Server, client: Client, message: SwitchTurnOnCommand) -> None:
+async def turn_on(server: Server, client: Client, command: SwitchTurnOnCommand) -> None:
     """Turn on the switch."""
-    await execute_platform_entity_command(server, client, message, "async_turn_on")
+    await execute_platform_entity_command(server, client, command, "async_turn_on")
 
 
 class SwitchTurnOffCommand(PlatformEntityCommand):
@@ -35,10 +35,10 @@ class SwitchTurnOffCommand(PlatformEntityCommand):
 @decorators.websocket_command(SwitchTurnOffCommand)
 @decorators.async_response
 async def turn_off(
-    server: Server, client: Client, message: SwitchTurnOffCommand
+    server: Server, client: Client, command: SwitchTurnOffCommand
 ) -> None:
     """Turn on the switch."""
-    await execute_platform_entity_command(server, client, message, "async_turn_off")
+    await execute_platform_entity_command(server, client, command, "async_turn_off")
 
 
 def load_api(server: Server) -> None:

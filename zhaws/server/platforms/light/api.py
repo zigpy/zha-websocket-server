@@ -1,9 +1,9 @@
 """WS API for the light platform entity."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Literal, Optional
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional
 
-from pydantic import Field
+from pydantic import Field, validator
 
 from zhaws.server.const import APICommands
 from zhaws.server.platforms import PlatformEntityCommand
@@ -28,12 +28,20 @@ class LightTurnOnCommand(PlatformEntityCommand):
     ]
     color_temp: Optional[int]
 
+    @validator("color_temp", pre=True, always=True, whole=True)
+    def check_color_setting_exclusivity(
+        cls, color_temp: Optional[int], values: dict[str, Any], **kwargs: Any
+    ) -> Optional[int]:
+        if "hs_color" in values and color_temp is not None:
+            raise ValueError('Only one of "hs_color" and "color_temp" can be set')
+        return color_temp
+
 
 @decorators.websocket_command(LightTurnOnCommand)
 @decorators.async_response
-async def turn_on(server: Server, client: Client, message: LightTurnOnCommand) -> None:
+async def turn_on(server: Server, client: Client, command: LightTurnOnCommand) -> None:
     """Turn on the light."""
-    await execute_platform_entity_command(server, client, message, "async_turn_on")
+    await execute_platform_entity_command(server, client, command, "async_turn_on")
 
 
 class LightTurnOffCommand(PlatformEntityCommand):
@@ -47,10 +55,10 @@ class LightTurnOffCommand(PlatformEntityCommand):
 @decorators.websocket_command(LightTurnOffCommand)
 @decorators.async_response
 async def turn_off(
-    server: Server, client: Client, message: LightTurnOffCommand
+    server: Server, client: Client, command: LightTurnOffCommand
 ) -> None:
     """Turn on the light."""
-    await execute_platform_entity_command(server, client, message, "async_turn_off")
+    await execute_platform_entity_command(server, client, command, "async_turn_off")
 
 
 def load_api(server: Server) -> None:

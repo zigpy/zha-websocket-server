@@ -18,44 +18,46 @@ _LOGGER = logging.getLogger(__name__)
 async def execute_platform_entity_command(
     server: Server,
     client: Client,
-    request_message: PlatformEntityCommand,
-    command: str,
+    command: PlatformEntityCommand,
+    method_name: str,
 ) -> None:
-    """Get the platform entity and execute a command."""
+    """Get the platform entity and execute a method based on the command."""
     try:
-        if request_message.ieee:
-            device = server.controller.get_device(request_message.ieee)
-            platform_entity: Any = device.get_platform_entity(request_message.unique_id)
+        if command.ieee:
+            _LOGGER.warning("command: %s", command)
+            device = server.controller.get_device(command.ieee)
+            platform_entity: Any = device.get_platform_entity(command.unique_id)
         else:
-            assert request_message.group_id
-            group = server.controller.get_group(request_message.group_id)
-            platform_entity = group.group_entities[request_message.unique_id]
+            assert command.group_id
+            group = server.controller.get_group(command.group_id)
+            platform_entity = group.group_entities[command.unique_id]
     except ValueError as err:
-        _LOGGER.exception("Error executing command: %s", command, exc_info=err)
-        client.send_result_error(
-            request_message, "PLATFORM_ENTITY_COMMAND_ERROR", str(err)
+        _LOGGER.exception(
+            "Error executing command: %s method_name: %s",
+            command,
+            method_name,
+            exc_info=err,
         )
+        client.send_result_error(command, "PLATFORM_ENTITY_COMMAND_ERROR", str(err))
         return None
 
     try:
-        action = getattr(platform_entity, command)
+        action = getattr(platform_entity, method_name)
         if action.__code__.co_argcount == 1:  # the only argument is self
             await action()
         else:
-            await action(**request_message.dict())
+            await action(**command.dict())
     except Exception as err:
-        _LOGGER.exception("Error executing command: %s", command, exc_info=err)
-        client.send_result_error(
-            request_message, "PLATFORM_ENTITY_ACTION_ERROR", str(err)
-        )
+        _LOGGER.exception("Error executing command: %s", method_name, exc_info=err)
+        client.send_result_error(command, "PLATFORM_ENTITY_ACTION_ERROR", str(err))
 
     result: dict[str, Any] = {}
-    if request_message.ieee:
-        result[IEEE] = request_message.ieee
+    if command.ieee:
+        result[IEEE] = str(command.ieee)
     else:
-        result["group_id"] = request_message.group_id
-    result[ATTR_UNIQUE_ID] = request_message.unique_id
-    client.send_result_success(request_message, result)
+        result["group_id"] = command.group_id
+    result[ATTR_UNIQUE_ID] = command.unique_id
+    client.send_result_success(command, result)
 
 
 class PlatformEntityRefreshStateCommand(PlatformEntityCommand):
@@ -69,10 +71,10 @@ class PlatformEntityRefreshStateCommand(PlatformEntityCommand):
 @decorators.websocket_command(PlatformEntityRefreshStateCommand)
 @decorators.async_response
 async def refresh_state(
-    server: Server, client: Client, message: PlatformEntityCommand
+    server: Server, client: Client, command: PlatformEntityCommand
 ) -> None:
     """Refresh the state of the platform entity."""
-    await execute_platform_entity_command(server, client, message, "async_update")
+    await execute_platform_entity_command(server, client, command, "async_update")
 
 
 def load_platform_entity_apis(server: Server) -> None:

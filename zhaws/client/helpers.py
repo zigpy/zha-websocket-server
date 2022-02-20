@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import Any, Literal, Optional, Union, cast
 
+from zigpy.types.named import EUI64
+
 from zhaws.client.client import Client
 from zhaws.client.model.commands import (
     CommandResponse,
@@ -126,7 +128,7 @@ class LightHelper:
             hs_color=hs_color,
             color_temp=color_temp,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def turn_off(
         self,
@@ -147,7 +149,7 @@ class LightHelper:
             transition=transition,
             flash=flash,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
 
 class SwitchHelper:
@@ -172,7 +174,7 @@ class SwitchHelper:
             else None,
             unique_id=switch_platform_entity.unique_id,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def turn_off(
         self,
@@ -189,7 +191,7 @@ class SwitchHelper:
             else None,
             unique_id=switch_platform_entity.unique_id,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
 
 class SirenHelper:
@@ -215,7 +217,7 @@ class SirenHelper:
             volume_level=volume_level,
             tone=tone,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def turn_off(
         self, siren_platform_entity: BasePlatformEntity
@@ -226,7 +228,7 @@ class SirenHelper:
             ieee=siren_platform_entity.device_ieee,
             unique_id=siren_platform_entity.unique_id,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
 
 class ButtonHelper:
@@ -245,7 +247,7 @@ class ButtonHelper:
             ieee=button_platform_entity.device_ieee,
             unique_id=button_platform_entity.unique_id,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
 
 class CoverHelper:
@@ -264,7 +266,7 @@ class CoverHelper:
             ieee=cover_platform_entity.device_ieee,
             unique_id=cover_platform_entity.unique_id,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def close_cover(
         self, cover_platform_entity: BasePlatformEntity
@@ -275,7 +277,7 @@ class CoverHelper:
             ieee=cover_platform_entity.device_ieee,
             unique_id=cover_platform_entity.unique_id,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def stop_cover(
         self, cover_platform_entity: BasePlatformEntity
@@ -286,7 +288,7 @@ class CoverHelper:
             ieee=cover_platform_entity.device_ieee,
             unique_id=cover_platform_entity.unique_id,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def set_cover_position(
         self,
@@ -300,7 +302,7 @@ class CoverHelper:
             unique_id=cover_platform_entity.unique_id,
             position=position,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
 
 class FanHelper:
@@ -331,7 +333,7 @@ class FanHelper:
             percentage=percentage,
             preset_mode=preset_mode,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def turn_off(
         self,
@@ -348,7 +350,7 @@ class FanHelper:
             else None,
             unique_id=fan_platform_entity.unique_id,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def set_fan_percentage(
         self,
@@ -367,7 +369,7 @@ class FanHelper:
             unique_id=fan_platform_entity.unique_id,
             percentage=percentage,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def set_fan_preset_mode(
         self,
@@ -386,7 +388,7 @@ class FanHelper:
             unique_id=fan_platform_entity.unique_id,
             preset_mode=preset_mode,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
 
 class LockHelper:
@@ -403,7 +405,7 @@ class LockHelper:
             ieee=lock_platform_entity.device_ieee,
             unique_id=lock_platform_entity.unique_id,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def unlock(self, lock_platform_entity: BasePlatformEntity) -> CommandResponse:
         """Unlock a lock."""
@@ -412,7 +414,7 @@ class LockHelper:
             ieee=lock_platform_entity.device_ieee,
             unique_id=lock_platform_entity.unique_id,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def set_user_lock_code(
         self,
@@ -428,7 +430,7 @@ class LockHelper:
             code_slot=code_slot,
             user_code=user_code,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def clear_user_lock_code(
         self,
@@ -442,7 +444,7 @@ class LockHelper:
             unique_id=lock_platform_entity.unique_id,
             code_slot=code_slot,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def enable_user_lock_code(
         self,
@@ -456,7 +458,7 @@ class LockHelper:
             unique_id=lock_platform_entity.unique_id,
             code_slot=code_slot,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def disable_user_lock_code(
         self,
@@ -470,7 +472,7 @@ class LockHelper:
             unique_id=lock_platform_entity.unique_id,
             code_slot=code_slot,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
 
 class NumberHelper:
@@ -492,7 +494,7 @@ class NumberHelper:
             unique_id=number_platform_entity.unique_id,
             value=value,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
 
 class SelectHelper:
@@ -514,7 +516,7 @@ class SelectHelper:
             unique_id=select_platform_entity.unique_id,
             option=option,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
 
 class ClimateHelper:
@@ -538,7 +540,7 @@ class ClimateHelper:
             unique_id=climate_platform_entity.unique_id,
             hvac_mode=hvac_mode,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def set_temperature(
         self,
@@ -560,7 +562,7 @@ class ClimateHelper:
             target_temp_low=target_temp_low,
             hvac_mode=hvac_mode,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def set_fan_mode(
         self,
@@ -574,7 +576,7 @@ class ClimateHelper:
             unique_id=climate_platform_entity.unique_id,
             fan_mode=fan_mode,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def set_preset_mode(
         self,
@@ -588,7 +590,7 @@ class ClimateHelper:
             unique_id=climate_platform_entity.unique_id,
             preset_mode=preset_mode,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
 
 class AlarmControlPanelHelper:
@@ -610,7 +612,7 @@ class AlarmControlPanelHelper:
             unique_id=alarm_control_panel_platform_entity.unique_id,
             code=code,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def arm_home(
         self, alarm_control_panel_platform_entity: BasePlatformEntity, code: str
@@ -624,7 +626,7 @@ class AlarmControlPanelHelper:
             unique_id=alarm_control_panel_platform_entity.unique_id,
             code=code,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def arm_away(
         self, alarm_control_panel_platform_entity: BasePlatformEntity, code: str
@@ -638,7 +640,7 @@ class AlarmControlPanelHelper:
             unique_id=alarm_control_panel_platform_entity.unique_id,
             code=code,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def arm_night(
         self, alarm_control_panel_platform_entity: BasePlatformEntity, code: str
@@ -652,7 +654,7 @@ class AlarmControlPanelHelper:
             unique_id=alarm_control_panel_platform_entity.unique_id,
             code=code,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def trigger(
         self,
@@ -666,7 +668,7 @@ class AlarmControlPanelHelper:
             ieee=alarm_control_panel_platform_entity.device_ieee,
             unique_id=alarm_control_panel_platform_entity.unique_id,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
 
 class PlatformEntityHelper:
@@ -684,7 +686,7 @@ class PlatformEntityHelper:
             ieee=platform_entity.device_ieee,
             unique_id=platform_entity.unique_id,
         )
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
 
 class ClientHelper:
@@ -697,17 +699,17 @@ class ClientHelper:
     async def listen(self) -> CommandResponse:
         """Listen for incoming messages."""
         command = ClientListenCommand()
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def listen_raw_zcl(self) -> CommandResponse:
         """Listen for incoming raw ZCL messages."""
         command = ClientListenRawZCLCommand()
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def disconnect(self) -> CommandResponse:
         """Disconnect this client from the server."""
         command = ClientDisconnectCommand()
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
 
 class GroupHelper:
@@ -721,9 +723,7 @@ class GroupHelper:
         """Get the groups."""
         response = cast(
             GroupsResponse,
-            await self._client.async_send_command(
-                GetGroupsCommand().dict(exclude_none=True)
-            ),
+            await self._client.async_send_command(GetGroupsCommand()),
         )
         return response.groups
 
@@ -747,7 +747,7 @@ class GroupHelper:
         command = CreateGroupCommand(**request_data)
         response = cast(
             UpdateGroupResponse,
-            await self._client.async_send_command(command.dict(exclude_none=True)),
+            await self._client.async_send_command(command),
         )
         return response.group
 
@@ -759,7 +759,7 @@ class GroupHelper:
         command = RemoveGroupsCommand(**request)
         response = cast(
             GroupsResponse,
-            await self._client.async_send_command(command.dict(exclude_none=True)),
+            await self._client.async_send_command(command),
         )
         return response.groups
 
@@ -778,7 +778,7 @@ class GroupHelper:
         command = AddGroupMembersCommand(**request_data)
         response = cast(
             UpdateGroupResponse,
-            await self._client.async_send_command(command.dict(exclude_none=True)),
+            await self._client.async_send_command(command),
         )
         return response.group
 
@@ -797,7 +797,7 @@ class GroupHelper:
         command = RemoveGroupMembersCommand(**request_data)
         response = cast(
             UpdateGroupResponse,
-            await self._client.async_send_command(command.dict(exclude_none=True)),
+            await self._client.async_send_command(command),
         )
         return response.group
 
@@ -809,20 +809,18 @@ class DeviceHelper:
         """Initialize the device helper."""
         self._client: Client = client
 
-    async def get_devices(self) -> dict[str, Device]:
+    async def get_devices(self) -> dict[EUI64, Device]:
         """Get the groups."""
         response = cast(
             GetDevicesResponse,
-            await self._client.async_send_command(
-                GetDevicesCommand().dict(exclude_none=True)
-            ),
+            await self._client.async_send_command(GetDevicesCommand()),
         )
         return response.devices
 
     async def reconfigure_device(self, device: Device) -> None:
         """Reconfigure a device."""
         await self._client.async_send_command(
-            ReconfigureDeviceCommand(ieee=device.ieee).dict(exclude_none=True)
+            ReconfigureDeviceCommand(ieee=device.ieee)
         )
 
     async def read_cluster_attributes(
@@ -845,7 +843,7 @@ class DeviceHelper:
                     cluster_type=cluster_type,
                     attributes=attributes,
                     manufacturer_code=manufacturer_code,
-                ).dict(exclude_none=True)
+                )
             ),
         )
         return response
@@ -872,7 +870,7 @@ class DeviceHelper:
                     attribute=attribute,
                     value=value,
                     manufacturer_code=manufacturer_code,
-                ).dict(exclude_none=True)
+                )
             ),
         )
         return response
@@ -900,29 +898,23 @@ class NetworkHelper:
         command = PermitJoiningCommand(**request_data)
         response = cast(
             PermitJoiningResponse,
-            await self._client.async_send_command(command.dict(exclude_none=True)),
+            await self._client.async_send_command(command),
         )
         return response.success
 
     async def update_topology(self) -> None:
         """Update the network topology."""
-        await self._client.async_send_command(
-            UpdateTopologyCommand().dict(exclude_none=True)
-        )
+        await self._client.async_send_command(UpdateTopologyCommand())
 
     async def start_network(self) -> bool:
         """Start the Zigbee network."""
         command = StartNetworkCommand()
-        response = await self._client.async_send_command(
-            command.dict(exclude_none=True)
-        )
+        response = await self._client.async_send_command(command)
         return response.success
 
     async def stop_network(self) -> bool:
         """Stop the Zigbee network."""
-        response = await self._client.async_send_command(
-            StopNetworkCommand().dict(exclude_none=True)
-        )
+        response = await self._client.async_send_command(StopNetworkCommand())
         return response.success
 
 
@@ -935,7 +927,5 @@ class ServerHelper:
 
     async def stop_server(self) -> bool:
         """Stop the websocket server."""
-        response = await self._client.async_send_command(
-            StopServerCommand().dict(exclude_none=True)
-        )
+        response = await self._client.async_send_command(StopServerCommand())
         return response.success

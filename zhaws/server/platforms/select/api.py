@@ -25,11 +25,11 @@ class SelectSelectOptionCommand(PlatformEntityCommand):
 @decorators.websocket_command(SelectSelectOptionCommand)
 @decorators.async_response
 async def select_option(
-    server: Server, client: Client, message: SelectSelectOptionCommand
+    server: Server, client: Client, command: SelectSelectOptionCommand
 ) -> None:
     """Select an option."""
     await execute_platform_entity_command(
-        server, client, message, "async_select_option"
+        server, client, command, "async_select_option"
     )
 
 

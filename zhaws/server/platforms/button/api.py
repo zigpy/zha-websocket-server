@@ -21,9 +21,9 @@ class ButtonPressCommand(PlatformEntityCommand):
 
 @decorators.websocket_command(ButtonPressCommand)
 @decorators.async_response
-async def press(server: Server, client: Client, message: PlatformEntityCommand) -> None:
+async def press(server: Server, client: Client, command: PlatformEntityCommand) -> None:
     """Turn on the button."""
-    await execute_platform_entity_command(server, client, message, "async_press")
+    await execute_platform_entity_command(server, client, command, "async_press")
 
 
 def load_api(server: Server) -> None:

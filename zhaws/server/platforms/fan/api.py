@@ -26,9 +26,9 @@ class FanTurnOnCommand(PlatformEntityCommand):
 
 @decorators.websocket_command(FanTurnOnCommand)
 @decorators.async_response
-async def turn_on(server: Server, client: Client, message: FanTurnOnCommand) -> None:
+async def turn_on(server: Server, client: Client, command: FanTurnOnCommand) -> None:
     """Turn fan on."""
-    await execute_platform_entity_command(server, client, message, "async_turn_on")
+    await execute_platform_entity_command(server, client, command, "async_turn_on")
 
 
 class FanTurnOffCommand(PlatformEntityCommand):
@@ -39,9 +39,9 @@ class FanTurnOffCommand(PlatformEntityCommand):
 
 @decorators.websocket_command(FanTurnOffCommand)
 @decorators.async_response
-async def turn_off(server: Server, client: Client, message: FanTurnOffCommand) -> None:
+async def turn_off(server: Server, client: Client, command: FanTurnOffCommand) -> None:
     """Turn fan off."""
-    await execute_platform_entity_command(server, client, message, "async_turn_off")
+    await execute_platform_entity_command(server, client, command, "async_turn_off")
 
 
 class FanSetPercentageCommand(PlatformEntityCommand):
@@ -54,11 +54,11 @@ class FanSetPercentageCommand(PlatformEntityCommand):
 @decorators.websocket_command(FanSetPercentageCommand)
 @decorators.async_response
 async def set_percentage(
-    server: Server, client: Client, message: FanSetPercentageCommand
+    server: Server, client: Client, command: FanSetPercentageCommand
 ) -> None:
     """Set the fan speed percentage."""
     await execute_platform_entity_command(
-        server, client, message, "async_set_percentage"
+        server, client, command, "async_set_percentage"
     )
 
 
@@ -72,11 +72,11 @@ class FanSetPresetModeCommand(PlatformEntityCommand):
 @decorators.websocket_command(FanSetPresetModeCommand)
 @decorators.async_response
 async def set_preset_mode(
-    server: Server, client: Client, message: FanSetPresetModeCommand
+    server: Server, client: Client, command: FanSetPresetModeCommand
 ) -> None:
     """Set the fan preset mode."""
     await execute_platform_entity_command(
-        server, client, message, "async_set_preset_mode"
+        server, client, command, "async_set_preset_mode"
     )
 
 

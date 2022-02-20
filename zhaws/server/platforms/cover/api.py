@@ -21,9 +21,9 @@ class CoverOpenCommand(PlatformEntityCommand):
 
 @decorators.websocket_command(CoverOpenCommand)
 @decorators.async_response
-async def open(server: Server, client: Client, message: CoverOpenCommand) -> None:
+async def open(server: Server, client: Client, command: CoverOpenCommand) -> None:
     """Open the cover."""
-    await execute_platform_entity_command(server, client, message, "async_open_cover")
+    await execute_platform_entity_command(server, client, command, "async_open_cover")
 
 
 class CoverCloseCommand(PlatformEntityCommand):
@@ -34,9 +34,9 @@ class CoverCloseCommand(PlatformEntityCommand):
 
 @decorators.websocket_command(CoverCloseCommand)
 @decorators.async_response
-async def close(server: Server, client: Client, message: CoverCloseCommand) -> None:
+async def close(server: Server, client: Client, command: CoverCloseCommand) -> None:
     """Close the cover."""
-    await execute_platform_entity_command(server, client, message, "async_close_cover")
+    await execute_platform_entity_command(server, client, command, "async_close_cover")
 
 
 class CoverSetPositionCommand(PlatformEntityCommand):
@@ -49,11 +49,11 @@ class CoverSetPositionCommand(PlatformEntityCommand):
 @decorators.websocket_command(CoverSetPositionCommand)
 @decorators.async_response
 async def set_position(
-    server: Server, client: Client, message: CoverSetPositionCommand
+    server: Server, client: Client, command: CoverSetPositionCommand
 ) -> None:
     """Set the cover position."""
     await execute_platform_entity_command(
-        server, client, message, "async_set_cover_position"
+        server, client, command, "async_set_cover_position"
     )
 
 
@@ -65,9 +65,9 @@ class CoverStopCommand(PlatformEntityCommand):
 
 @decorators.websocket_command(CoverStopCommand)
 @decorators.async_response
-async def stop(server: Server, client: Client, message: CoverStopCommand) -> None:
+async def stop(server: Server, client: Client, command: CoverStopCommand) -> None:
     """Stop the cover."""
-    await execute_platform_entity_command(server, client, message, "async_stop_cover")
+    await execute_platform_entity_command(server, client, command, "async_stop_cover")
 
 
 def load_api(server: Server) -> None:

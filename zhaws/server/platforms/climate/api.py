@@ -25,10 +25,10 @@ class ClimateSetFanModeCommand(PlatformEntityCommand):
 @decorators.websocket_command(ClimateSetFanModeCommand)
 @decorators.async_response
 async def set_fan_mode(
-    server: Server, client: Client, message: ClimateSetFanModeCommand
+    server: Server, client: Client, command: ClimateSetFanModeCommand
 ) -> None:
     """Set the fan mode for the climate platform entity."""
-    await execute_platform_entity_command(server, client, message, "async_set_fan_mode")
+    await execute_platform_entity_command(server, client, command, "async_set_fan_mode")
 
 
 class ClimateSetHVACModeCommand(PlatformEntityCommand):
@@ -51,11 +51,11 @@ class ClimateSetHVACModeCommand(PlatformEntityCommand):
 @decorators.websocket_command(ClimateSetHVACModeCommand)
 @decorators.async_response
 async def set_hvac_mode(
-    server: Server, client: Client, message: ClimateSetHVACModeCommand
+    server: Server, client: Client, command: ClimateSetHVACModeCommand
 ) -> None:
     """Set the hvac mode for the climate platform entity."""
     await execute_platform_entity_command(
-        server, client, message, "async_set_hvac_mode"
+        server, client, command, "async_set_hvac_mode"
     )
 
 
@@ -71,11 +71,11 @@ class ClimateSetPresetModeCommand(PlatformEntityCommand):
 @decorators.websocket_command(ClimateSetPresetModeCommand)
 @decorators.async_response
 async def set_preset_mode(
-    server: Server, client: Client, message: ClimateSetPresetModeCommand
+    server: Server, client: Client, command: ClimateSetPresetModeCommand
 ) -> None:
     """Set the preset mode for the climate platform entity."""
     await execute_platform_entity_command(
-        server, client, message, "async_set_preset_mode"
+        server, client, command, "async_set_preset_mode"
     )
 
 
@@ -102,11 +102,11 @@ class ClimateSetTemperatureCommand(PlatformEntityCommand):
 @decorators.websocket_command(ClimateSetTemperatureCommand)
 @decorators.async_response
 async def set_temperature(
-    server: Server, client: Client, message: ClimateSetTemperatureCommand
+    server: Server, client: Client, command: ClimateSetTemperatureCommand
 ) -> None:
     """Set the temperature and hvac mode for the climate platform entity."""
     await execute_platform_entity_command(
-        server, client, message, "async_set_temperature"
+        server, client, command, "async_set_temperature"
     )
 
 

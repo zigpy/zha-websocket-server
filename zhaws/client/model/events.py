@@ -2,11 +2,11 @@
 
 Events are unprompted messages from the server -> client and they contain only the data that is necessary to handle the event.
 """
-from __future__ import annotations
 
 from typing import Annotated, Any, Literal, Optional, Union
 
 from pydantic.fields import Field
+from zigpy.types.named import EUI64
 
 from zhaws.client.model.types import (
     BaseDevice,
@@ -47,7 +47,7 @@ class MinimalEndpoint(BaseModel):
 class MinimalDevice(BaseModel):
     """Minimal device model."""
 
-    ieee: str
+    ieee: EUI64
 
 
 class Attribute(BaseModel):
@@ -135,7 +135,7 @@ class DeviceJoinedEvent(DevicePairingEvent):
     """Device joined event."""
 
     event: Literal["device_joined"] = "device_joined"
-    ieee: str
+    ieee: EUI64
     nwk: str
 
 
@@ -143,7 +143,7 @@ class RawDeviceInitializedEvent(DevicePairingEvent):
     """Raw device initialized event."""
 
     event: Literal["raw_device_initialized"] = "raw_device_initialized"
-    ieee: str
+    ieee: EUI64
     nwk: str
     manufacturer: str
     model: str
@@ -169,7 +169,7 @@ class DeviceLeftEvent(ControllerEvent):
     """Device left event."""
 
     event: Literal["device_left"] = "device_left"
-    ieee: str
+    ieee: EUI64
     nwk: str
 
 

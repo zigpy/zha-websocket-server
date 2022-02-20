@@ -1,5 +1,4 @@
 """Models for the websocket API."""
-from __future__ import annotations
 
 from typing import Literal
 

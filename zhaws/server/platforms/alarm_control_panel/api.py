@@ -24,9 +24,9 @@ class DisarmCommand(PlatformEntityCommand):
 
 @decorators.websocket_command(DisarmCommand)
 @decorators.async_response
-async def disarm(server: Server, client: Client, message: DisarmCommand) -> None:
+async def disarm(server: Server, client: Client, command: DisarmCommand) -> None:
     """Disarm the alarm control panel."""
-    await execute_platform_entity_command(server, client, message, "async_alarm_disarm")
+    await execute_platform_entity_command(server, client, command, "async_alarm_disarm")
 
 
 class ArmHomeCommand(PlatformEntityCommand):
@@ -40,10 +40,10 @@ class ArmHomeCommand(PlatformEntityCommand):
 
 @decorators.websocket_command(ArmHomeCommand)
 @decorators.async_response
-async def arm_home(server: Server, client: Client, message: ArmHomeCommand) -> None:
+async def arm_home(server: Server, client: Client, command: ArmHomeCommand) -> None:
     """Arm the alarm control panel in home mode."""
     await execute_platform_entity_command(
-        server, client, message, "async_alarm_arm_home"
+        server, client, command, "async_alarm_arm_home"
     )
 
 
@@ -58,10 +58,10 @@ class ArmAwayCommand(PlatformEntityCommand):
 
 @decorators.websocket_command(ArmAwayCommand)
 @decorators.async_response
-async def arm_away(server: Server, client: Client, message: ArmAwayCommand) -> None:
+async def arm_away(server: Server, client: Client, command: ArmAwayCommand) -> None:
     """Arm the alarm control panel in away mode."""
     await execute_platform_entity_command(
-        server, client, message, "async_alarm_arm_away"
+        server, client, command, "async_alarm_arm_away"
     )
 
 
@@ -76,10 +76,10 @@ class ArmNightCommand(PlatformEntityCommand):
 
 @decorators.websocket_command(ArmNightCommand)
 @decorators.async_response
-async def arm_night(server: Server, client: Client, message: ArmNightCommand) -> None:
+async def arm_night(server: Server, client: Client, command: ArmNightCommand) -> None:
     """Arm the alarm control panel in night mode."""
     await execute_platform_entity_command(
-        server, client, message, "async_alarm_arm_night"
+        server, client, command, "async_alarm_arm_night"
     )
 
 
@@ -94,10 +94,10 @@ class TriggerAlarmCommand(PlatformEntityCommand):
 
 @decorators.websocket_command(TriggerAlarmCommand)
 @decorators.async_response
-async def trigger(server: Server, client: Client, message: TriggerAlarmCommand) -> None:
+async def trigger(server: Server, client: Client, command: TriggerAlarmCommand) -> None:
     """Trigger the alarm control panel."""
     await execute_platform_entity_command(
-        server, client, message, "async_alarm_trigger"
+        server, client, command, "async_alarm_trigger"
     )
 
 

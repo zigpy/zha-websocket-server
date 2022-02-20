@@ -24,9 +24,9 @@ class SirenTurnOnCommand(PlatformEntityCommand):
 
 @decorators.websocket_command(SirenTurnOnCommand)
 @decorators.async_response
-async def turn_on(server: Server, client: Client, message: SirenTurnOnCommand) -> None:
+async def turn_on(server: Server, client: Client, command: SirenTurnOnCommand) -> None:
     """Turn on the siren."""
-    await execute_platform_entity_command(server, client, message, "async_turn_on")
+    await execute_platform_entity_command(server, client, command, "async_turn_on")
 
 
 class SirenTurnOffCommand(PlatformEntityCommand):
@@ -38,10 +38,10 @@ class SirenTurnOffCommand(PlatformEntityCommand):
 @decorators.websocket_command(SirenTurnOffCommand)
 @decorators.async_response
 async def turn_off(
-    server: Server, client: Client, message: SirenTurnOffCommand
+    server: Server, client: Client, command: SirenTurnOffCommand
 ) -> None:
     """Turn on the siren."""
-    await execute_platform_entity_command(server, client, message, "async_turn_off")
+    await execute_platform_entity_command(server, client, command, "async_turn_off")
 
 
 def load_api(server: Server) -> None:

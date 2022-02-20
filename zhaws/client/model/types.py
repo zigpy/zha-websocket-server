@@ -2,11 +2,11 @@
 
 Types are representations of the objects that exist in zhawss.
 """
-from __future__ import annotations
 
 from typing import Annotated, Any, Literal, Optional, Union
 
 from pydantic.fields import Field
+from zigpy.types.named import EUI64
 
 from zhaws.event import EventBase
 from zhaws.model import BaseModel
@@ -213,7 +213,7 @@ class BaseEntity(BaseEventedModel):
 class BasePlatformEntity(BaseEntity):
     """Base platform entity model."""
 
-    device_ieee: str
+    device_ieee: EUI64
     endpoint_id: int
 
 
@@ -452,7 +452,7 @@ class DeviceSignature(BaseModel):
 class BaseDevice(BaseModel):
     """Base device model."""
 
-    ieee: str
+    ieee: EUI64
     nwk: str
     manufacturer: str
     model: str
@@ -581,5 +581,5 @@ class Group(BaseModel):
 class GroupMemberReference(BaseModel):
     """Group member reference model."""
 
-    ieee: str
+    ieee: EUI64
     endpoint_id: int

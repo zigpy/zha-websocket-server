@@ -210,8 +210,8 @@ class StopServerCommand(WebSocketCommand):
 @decorators.websocket_command(StopServerCommand)
 @decorators.async_response
 async def stop_server(
-    server: Server, client: Client, message: WebSocketCommand
+    server: Server, client: Client, command: WebSocketCommand
 ) -> None:
     """Stop the Zigbee network."""
-    client.send_result_success(message)
+    client.send_result_success(command)
     await server.stop_server()

@@ -52,11 +52,11 @@ class StartNetworkCommand(WebSocketCommand):
 @decorators.websocket_command(StartNetworkCommand)
 @decorators.async_response
 async def start_network(
-    server: Server, client: Client, message: StartNetworkCommand
+    server: Server, client: Client, command: StartNetworkCommand
 ) -> None:
     """Start the Zigbee network."""
     await server.controller.start_network()
-    client.send_result_success(message)
+    client.send_result_success(command)
 
 
 class StopNetworkCommand(WebSocketCommand):
@@ -68,11 +68,11 @@ class StopNetworkCommand(WebSocketCommand):
 @decorators.websocket_command(StopNetworkCommand)
 @decorators.async_response
 async def stop_network(
-    server: Server, client: Client, message: StopNetworkCommand
+    server: Server, client: Client, command: StopNetworkCommand
 ) -> None:
     """Stop the Zigbee network."""
     await server.controller.stop_network()
-    client.send_result_success(message)
+    client.send_result_success(command)
 
 
 class UpdateTopologyCommand(WebSocketCommand):
@@ -86,11 +86,11 @@ class UpdateTopologyCommand(WebSocketCommand):
 @decorators.websocket_command(UpdateTopologyCommand)
 @decorators.async_response
 async def update_topology(
-    server: Server, client: Client, message: WebSocketCommand
+    server: Server, client: Client, command: WebSocketCommand
 ) -> None:
     """Update the Zigbee network topology."""
     await server.controller.application_controller.topology.scan()
-    client.send_result_success(message)
+    client.send_result_success(command)
 
 
 class GetDevicesCommand(WebSocketCommand):
@@ -102,7 +102,7 @@ class GetDevicesCommand(WebSocketCommand):
 @decorators.websocket_command(GetDevicesCommand)
 @decorators.async_response
 async def get_devices(
-    server: Server, client: Client, message: GetDevicesCommand
+    server: Server, client: Client, command: GetDevicesCommand
 ) -> None:
     """Get Zigbee devices."""
     response_devices: dict[str, dict] = {
@@ -110,7 +110,7 @@ async def get_devices(
         for ieee, device in server.controller.devices.items()
     }
     _LOGGER.info("devices: %s", response_devices)
-    client.send_result_success(message, {DEVICES: response_devices})
+    client.send_result_success(command, {DEVICES: response_devices})
 
 
 class ReconfigureDeviceCommand(WebSocketCommand):
@@ -123,13 +123,13 @@ class ReconfigureDeviceCommand(WebSocketCommand):
 @decorators.websocket_command(ReconfigureDeviceCommand)
 @decorators.async_response
 async def reconfigure_device(
-    server: Server, client: Client, message: ReconfigureDeviceCommand
+    server: Server, client: Client, command: ReconfigureDeviceCommand
 ) -> None:
     """Reconfigure a zigbee device."""
-    device = server.controller.devices.get(message.ieee)
+    device = server.controller.devices.get(command.ieee)
     if device:
         await device.async_configure()
-    client.send_result_success(message)
+    client.send_result_success(command)
 
 
 class GetGroupsCommand(WebSocketCommand):
@@ -140,13 +140,13 @@ class GetGroupsCommand(WebSocketCommand):
 
 @decorators.websocket_command(GetGroupsCommand)
 @decorators.async_response
-async def get_groups(server: Server, client: Client, message: GetGroupsCommand) -> None:
+async def get_groups(server: Server, client: Client, command: GetGroupsCommand) -> None:
     """Get Zigbee groups."""
     groups: dict[int, Any] = {
         id: group.to_json() for id, group in server.controller.groups.items()
     }
     _LOGGER.info("groups: %s", groups)
-    client.send_result_success(message, {GROUPS: groups})
+    client.send_result_success(command, {GROUPS: groups})
 
 
 class PermitJoiningCommand(WebSocketCommand):
@@ -160,16 +160,16 @@ class PermitJoiningCommand(WebSocketCommand):
 @decorators.websocket_command(PermitJoiningCommand)
 @decorators.async_response
 async def permit_joining(
-    server: Server, client: Client, message: PermitJoiningCommand
+    server: Server, client: Client, command: PermitJoiningCommand
 ) -> None:
     """Permit joining devices to the Zigbee network."""
     # TODO add permit with code support
     await server.controller.application_controller.permit(
-        message.duration, message.ieee
+        command.duration, command.ieee
     )
     client.send_result_success(
-        message,
-        {DURATION: message.duration},
+        command,
+        {DURATION: command.duration},
     )
 
 
@@ -183,11 +183,11 @@ class RemoveDeviceCommand(WebSocketCommand):
 @decorators.websocket_command(RemoveDeviceCommand)
 @decorators.async_response
 async def remove_device(
-    server: Server, client: Client, message: RemoveDeviceCommand
+    server: Server, client: Client, command: RemoveDeviceCommand
 ) -> None:
     """Permit joining devices to the Zigbee network."""
-    await server.controller.application_controller.remove(EUI64.convert(message.ieee))
-    client.send_result_success(message)
+    await server.controller.application_controller.remove(command.ieee)
+    client.send_result_success(command)
 
 
 class ReadClusterAttributesCommand(WebSocketCommand):
@@ -199,7 +199,7 @@ class ReadClusterAttributesCommand(WebSocketCommand):
     ieee: EUI64
     endpoint_id: int
     cluster_id: int
-    cluster_type: str
+    cluster_type: Literal["in", "out"]
     attributes: list[str]
     manufacturer_code: Optional[int]
 
@@ -207,22 +207,22 @@ class ReadClusterAttributesCommand(WebSocketCommand):
 @decorators.websocket_command(ReadClusterAttributesCommand)
 @decorators.async_response
 async def read_cluster_attributes(
-    server: Server, client: Client, message: ReadClusterAttributesCommand
+    server: Server, client: Client, command: ReadClusterAttributesCommand
 ) -> None:
     """Read the specified cluster attributes."""
-    device: Device = server.controller.devices[message.ieee]
+    device: Device = server.controller.devices[command.ieee]
     if not device:
         client.send_result_error(
-            message,
+            command,
             "Device not found",
-            f"Device with ieee: {message.ieee} not found",
+            f"Device with ieee: {command.ieee} not found",
         )
         return
-    endpoint_id = message.endpoint_id
-    cluster_id = message.cluster_id
-    cluster_type = message.cluster_type
-    attributes = message.attributes
-    manufacturer = message.manufacturer_code
+    endpoint_id = command.endpoint_id
+    cluster_id = command.cluster_id
+    cluster_type = command.cluster_type
+    attributes = command.attributes
+    manufacturer = command.manufacturer_code
     if cluster_id >= MFG_CLUSTER_ID_START and manufacturer is None:
         manufacturer = device.manufacturer_code
     cluster = device.async_get_cluster(
@@ -230,19 +230,19 @@ async def read_cluster_attributes(
     )
     if not cluster:
         client.send_result_error(
-            message,
+            command,
             "Cluster not found",
-            f"Cluster: {endpoint_id}:{message.cluster_id} not found on device with ieee: {str(message.ieee)} not found",
+            f"Cluster: {endpoint_id}:{command.cluster_id} not found on device with ieee: {str(command.ieee)} not found",
         )
         return
     success, failure = await cluster.read_attributes(
         attributes, allow_cache=False, only_cache=False, manufacturer=manufacturer
     )
     client.send_result_success(
-        message,
+        command,
         {
             "device": {
-                "ieee": str(message.ieee),
+                "ieee": command.ieee,
             },
             "cluster": {
                 "id": cluster.cluster_id,
@@ -266,7 +266,7 @@ class WriteClusterAttributeCommand(WebSocketCommand):
     ieee: EUI64
     endpoint_id: int
     cluster_id: int
-    cluster_type: str
+    cluster_type: Literal["in", "out"]
     attribute: str
     value: Union[str, int, float, bool]
     manufacturer_code: Optional[int]
@@ -275,23 +275,23 @@ class WriteClusterAttributeCommand(WebSocketCommand):
 @decorators.websocket_command(WriteClusterAttributeCommand)
 @decorators.async_response
 async def write_cluster_attribute(
-    server: Server, client: Client, message: WriteClusterAttributeCommand
+    server: Server, client: Client, command: WriteClusterAttributeCommand
 ) -> None:
     """Set the value of the specifiec cluster attribute."""
-    device: Device = server.controller.devices[message.ieee]
+    device: Device = server.controller.devices[command.ieee]
     if not device:
         client.send_result_error(
-            message,
+            command,
             "Device not found",
-            f"Device with ieee: {message.ieee} not found",
+            f"Device with ieee: {command.ieee} not found",
         )
         return
-    endpoint_id = message.endpoint_id
-    cluster_id = message.cluster_id
-    cluster_type = message.cluster_type
-    attribute = message.attribute
-    value = message.value
-    manufacturer = message.manufacturer_code
+    endpoint_id = command.endpoint_id
+    cluster_id = command.cluster_id
+    cluster_type = command.cluster_type
+    attribute = command.attribute
+    value = command.value
+    manufacturer = command.manufacturer_code
     if cluster_id >= MFG_CLUSTER_ID_START and manufacturer is None:
         manufacturer = device.manufacturer_code
     cluster = device.async_get_cluster(
@@ -299,9 +299,9 @@ async def write_cluster_attribute(
     )
     if not cluster:
         client.send_result_error(
-            message,
+            command,
             "Cluster not found",
-            f"Cluster: {endpoint_id}:{message.cluster_id} not found on device with ieee: {str(message.ieee)} not found",
+            f"Cluster: {endpoint_id}:{command.cluster_id} not found on device with ieee: {str(command.ieee)} not found",
         )
         return
     response = await device.write_zigbee_attribute(
@@ -313,10 +313,10 @@ async def write_cluster_attribute(
         manufacturer=manufacturer,
     )
     client.send_result_success(
-        message,
+        command,
         {
             "device": {
-                "ieee": str(message.ieee),
+                "ieee": str(command.ieee),
             },
             "cluster": {
                 "id": cluster.cluster_id,
@@ -345,17 +345,17 @@ class CreateGroupCommand(WebSocketCommand):
 @decorators.websocket_command(CreateGroupCommand)
 @decorators.async_response
 async def create_group(
-    server: Server, client: Client, message: CreateGroupCommand
+    server: Server, client: Client, command: CreateGroupCommand
 ) -> None:
     """create a new group."""
     controller: Controller = server.controller
-    group_name = message.group_name
-    members = message.members
-    group_id = message.group_id
+    group_name = command.group_name
+    members = command.members
+    group_id = command.group_id
     group: Group = await controller.async_create_zigpy_group(
         group_name, members, group_id
     )
-    client.send_result_success(message, {"group": group.to_json()})
+    client.send_result_success(command, {"group": group.to_json()})
 
 
 class RemoveGroupsCommand(WebSocketCommand):
@@ -368,11 +368,11 @@ class RemoveGroupsCommand(WebSocketCommand):
 @decorators.websocket_command(RemoveGroupsCommand)
 @decorators.async_response
 async def remove_groups(
-    server: Server, client: Client, message: RemoveGroupsCommand
+    server: Server, client: Client, command: RemoveGroupsCommand
 ) -> None:
     """Remove the specified groups."""
     controller: Controller = server.controller
-    group_ids = message.group_ids
+    group_ids = command.group_ids
 
     if len(group_ids) > 1:
         tasks = []
@@ -384,7 +384,7 @@ async def remove_groups(
     groups: dict[int, Any] = {
         id: group.to_json() for id, group in server.controller.groups.items()
     }
-    client.send_result_success(message, {GROUPS: groups})
+    client.send_result_success(command, {GROUPS: groups})
 
 
 class AddGroupMembersCommand(WebSocketCommand):
@@ -400,22 +400,22 @@ class AddGroupMembersCommand(WebSocketCommand):
 @decorators.websocket_command(AddGroupMembersCommand)
 @decorators.async_response
 async def add_group_members(
-    server: Server, client: Client, message: AddGroupMembersCommand
+    server: Server, client: Client, command: AddGroupMembersCommand
 ) -> None:
     """Add members to a ZHA group."""
     controller: Controller = server.controller
-    group_id = message.group_id
-    members = message.members
+    group_id = command.group_id
+    members = command.members
     group = None
 
     if group_id in controller.groups:
         group = controller.groups[group_id]
         await group.async_add_members(members)
     if not group:
-        client.send_result_error(message, "G1", "ZHA Group not found")
+        client.send_result_error(command, "G1", "ZHA Group not found")
         return
     ret_group = group.to_json()
-    client.send_result_success(message, {GROUP: ret_group})
+    client.send_result_success(command, {GROUP: ret_group})
 
 
 class RemoveGroupMembersCommand(AddGroupMembersCommand):
@@ -429,22 +429,22 @@ class RemoveGroupMembersCommand(AddGroupMembersCommand):
 @decorators.websocket_command(RemoveGroupMembersCommand)
 @decorators.async_response
 async def remove_group_members(
-    server: Server, client: Client, message: RemoveGroupMembersCommand
+    server: Server, client: Client, command: RemoveGroupMembersCommand
 ) -> None:
     """Remove members from a ZHA group."""
     controller: Controller = server.controller
-    group_id = message.group_id
-    members = message.members
+    group_id = command.group_id
+    members = command.members
     group = None
 
     if group_id in controller.groups:
         group = controller.groups[group_id]
         await group.async_remove_members(members)
     if not group:
-        client.send_result_error(message, "G1", "ZHA Group not found")
+        client.send_result_error(command, "G1", "ZHA Group not found")
         return
     ret_group = group.to_json()
-    client.send_result_success(message, {GROUP: ret_group})
+    client.send_result_success(command, {GROUP: ret_group})
 
 
 def load_api(server: Server) -> None:

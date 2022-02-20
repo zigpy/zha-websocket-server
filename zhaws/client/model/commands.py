@@ -2,7 +2,9 @@
 
 from typing import Annotated, Any, Literal, Optional, Union
 
+from pydantic import validator
 from pydantic.fields import Field
+from zigpy.types.named import EUI64
 
 from zhaws.client.model.events import MinimalCluster, MinimalDevice
 from zhaws.client.model.types import Device, Group
@@ -77,7 +79,13 @@ class GetDevicesResponse(CommandResponse):
     """Get devices response."""
 
     command: Literal["get_devices"] = "get_devices"
-    devices: dict[str, Device]
+    devices: dict[EUI64, Device]
+
+    @validator("devices", pre=True, always=True, whole=True, check_fields=False)
+    def convert_device_ieee(
+        cls, devices: dict[str, dict], values: dict[str, Any], **kwargs: Any
+    ) -> dict[EUI64, Device]:
+        return {EUI64.convert(k): Device(**v) for k, v in devices.items()}
 
 
 class ReadClusterAttributesResponse(CommandResponse):

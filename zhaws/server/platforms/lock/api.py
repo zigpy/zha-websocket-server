@@ -21,9 +21,9 @@ class LockLockCommand(PlatformEntityCommand):
 
 @decorators.websocket_command(LockLockCommand)
 @decorators.async_response
-async def lock(server: Server, client: Client, message: LockLockCommand) -> None:
+async def lock(server: Server, client: Client, command: LockLockCommand) -> None:
     """Lock the lock."""
-    await execute_platform_entity_command(server, client, message, "async_lock")
+    await execute_platform_entity_command(server, client, command, "async_lock")
 
 
 class LockUnlockCommand(PlatformEntityCommand):
@@ -34,9 +34,9 @@ class LockUnlockCommand(PlatformEntityCommand):
 
 @decorators.websocket_command(LockUnlockCommand)
 @decorators.async_response
-async def unlock(server: Server, client: Client, message: LockUnlockCommand) -> None:
+async def unlock(server: Server, client: Client, command: LockUnlockCommand) -> None:
     """Unlock the lock."""
-    await execute_platform_entity_command(server, client, message, "async_unlock")
+    await execute_platform_entity_command(server, client, command, "async_unlock")
 
 
 class LockSetUserLockCodeCommand(PlatformEntityCommand):
@@ -50,11 +50,11 @@ class LockSetUserLockCodeCommand(PlatformEntityCommand):
 @decorators.websocket_command(LockSetUserLockCodeCommand)
 @decorators.async_response
 async def set_user_lock_code(
-    server: Server, client: Client, message: LockSetUserLockCodeCommand
+    server: Server, client: Client, command: LockSetUserLockCodeCommand
 ) -> None:
     """Set a user lock code in the specified slot for the lock."""
     await execute_platform_entity_command(
-        server, client, message, "async_set_lock_user_code"
+        server, client, command, "async_set_user_lock_code"
     )
 
 
@@ -70,11 +70,11 @@ class LockEnableUserLockCodeCommand(PlatformEntityCommand):
 @decorators.websocket_command(LockEnableUserLockCodeCommand)
 @decorators.async_response
 async def enable_user_lock_code(
-    server: Server, client: Client, message: LockEnableUserLockCodeCommand
+    server: Server, client: Client, command: LockEnableUserLockCodeCommand
 ) -> None:
     """Enable a user lock code for the lock."""
     await execute_platform_entity_command(
-        server, client, message, "async_enable_lock_user_code"
+        server, client, command, "async_enable_user_lock_code"
     )
 
 
@@ -90,11 +90,11 @@ class LockDisableUserLockCodeCommand(PlatformEntityCommand):
 @decorators.websocket_command(LockDisableUserLockCodeCommand)
 @decorators.async_response
 async def disable_user_lock_code(
-    server: Server, client: Client, message: LockDisableUserLockCodeCommand
+    server: Server, client: Client, command: LockDisableUserLockCodeCommand
 ) -> None:
     """Disable a user lock code for the lock."""
     await execute_platform_entity_command(
-        server, client, message, "async_disable_lock_user_code"
+        server, client, command, "async_disable_user_lock_code"
     )
 
 
@@ -110,11 +110,11 @@ class LockClearUserLockCodeCommand(PlatformEntityCommand):
 @decorators.websocket_command(LockClearUserLockCodeCommand)
 @decorators.async_response
 async def clear_user_lock_code(
-    server: Server, client: Client, message: LockClearUserLockCodeCommand
+    server: Server, client: Client, command: LockClearUserLockCodeCommand
 ) -> None:
     """Clear a user lock code for the lock."""
     await execute_platform_entity_command(
-        server, client, message, "async_clear_lock_user_code"
+        server, client, command, "async_clear_user_lock_code"
     )
 
 

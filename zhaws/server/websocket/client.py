@@ -63,14 +63,14 @@ class Client:
         self._send_data(message)
 
     def send_result_success(
-        self, request_message: WebSocketCommand, data: Optional[dict[str, Any]] = None
+        self, command: WebSocketCommand, data: Optional[dict[str, Any]] = None
     ) -> None:
         """Send success result prompted by a client request."""
         message = {
             SUCCESS: True,
-            MESSAGE_ID: request_message.message_id,
+            MESSAGE_ID: command.message_id,
             MESSAGE_TYPE: MessageTypes.RESULT,
-            COMMAND: request_message.command,
+            COMMAND: command.command,
         }
         if data:
             message.update(data)
@@ -78,7 +78,7 @@ class Client:
 
     def send_result_error(
         self,
-        request_message: WebSocketCommand,
+        command: WebSocketCommand,
         error_code: str,
         error_message: str,
         data: Optional[dict[str, Any]] = None,
@@ -86,9 +86,9 @@ class Client:
         """Send error result prompted by a client request."""
         message = {
             SUCCESS: False,
-            MESSAGE_ID: request_message.message_id,
+            MESSAGE_ID: command.message_id,
             MESSAGE_TYPE: MessageTypes.RESULT,
-            COMMAND: request_message.command,
+            COMMAND: command.command,
             ERROR_CODE: error_code,
             ERROR_MESSAGE: error_message,
             **(data or {}),
@@ -97,13 +97,13 @@ class Client:
 
     def send_result_zigbee_error(
         self,
-        request_message: WebSocketCommand,
+        command: WebSocketCommand,
         error_message: str,
         zigbee_error_code: str,
     ) -> None:
         """Send zigbee error result prompted by a client zigbee request."""
         self.send_result_error(
-            request_message,
+            command,
             error_code="zigbee_error",
             error_message=error_message,
             data={ZIGBEE_ERROR_CODE: zigbee_error_code},
@@ -206,24 +206,24 @@ class ClientDisconnectCommand(WebSocketCommand):
 @decorators.websocket_command(ClientListenRawZCLCommand)
 @decorators.async_response
 async def listen_raw_zcl(
-    server: Server, client: Client, message: WebSocketCommand
+    server: Server, client: Client, command: WebSocketCommand
 ) -> None:
     """Listen for raw ZCL events."""
     client.receive_raw_zcl_events = True
-    client.send_result_success(message)
+    client.send_result_success(command)
 
 
 @decorators.websocket_command(ClientListenCommand)
 @decorators.async_response
-async def listen(server: Server, client: Client, message: WebSocketCommand) -> None:
+async def listen(server: Server, client: Client, command: WebSocketCommand) -> None:
     """Listen for events."""
     client.receive_events = True
-    client.send_result_success(message)
+    client.send_result_success(command)
 
 
 @decorators.websocket_command(ClientDisconnectCommand)
 @decorators.async_response
-async def disconnect(server: Server, client: Client, message: WebSocketCommand) -> None:
+async def disconnect(server: Server, client: Client, command: WebSocketCommand) -> None:
     """Disconnect the client."""
     client.disconnect()
     server.client_manager.remove_client(client)

@@ -6,6 +6,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Callable
 
 import zigpy.exceptions
+from zigpy.types.named import EUI64
 
 from zhaws.model import BaseModel
 from zhaws.server.platforms import PlatformEntity
@@ -14,7 +15,6 @@ from zhaws.server.util import LogMixin
 
 if TYPE_CHECKING:
     from zigpy.group import Endpoint as ZigpyEndpoint, Group as ZigpyGroup
-    from zigpy.types.named import EUI64
 
     from zhaws.server.platforms import GroupEntity
     from zhaws.server.websocket.server import Server
