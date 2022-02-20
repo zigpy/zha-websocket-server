@@ -93,6 +93,11 @@ class Controller(EventBase):
         self._client.on_event(EventTypes.CONTROLLER_EVENT, self._handle_event_protocol)
 
     @property
+    def client(self) -> Client:
+        """Return the client."""
+        return self._client
+
+    @property
     def devices(self) -> dict[str, DeviceProxy]:
         """Return the devices."""
         return self._devices
@@ -104,6 +109,7 @@ class Controller(EventBase):
 
     async def connect(self) -> None:
         """Connect to the websocket server."""
+        _LOGGER.debug("Connecting to websocket server at: %s", self._ws_server_url)
         try:
             async with timeout(CONNECT_TIMEOUT):
                 await self._client.connect()
