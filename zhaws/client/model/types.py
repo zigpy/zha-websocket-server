@@ -121,7 +121,9 @@ class ShadeState(BaseModel):
     """Cover state model."""
 
     class_name: Literal["Shade", "KeenVent"]
-    current_position: int
+    current_position: Optional[
+        int
+    ]  # TODO: how should we represent this when it is None?
     is_closed: bool
 
 
@@ -129,8 +131,10 @@ class FanState(BaseModel):
     """Fan state model."""
 
     class_name: Literal["Fan", "FanGroup"]
-    preset_mode: str
-    percentage: int
+    preset_mode: Optional[
+        str
+    ]  # TODO: how should we represent these when they are None?
+    percentage: Optional[int]  # TODO: how should we represent these when they are None?
 
 
 class LockState(BaseModel):
@@ -349,9 +353,11 @@ class NumberEntity(BasePlatformEntity):
     """Number entity model."""
 
     class_name: Literal["Number"]
-    engineer_units: int
-    application_type: int
-    step: float
+    engineer_units: Optional[int]  # TODO: how should we represent this when it is None?
+    application_type: Optional[
+        int
+    ]  # TODO: how should we represent this when it is None?
+    step: Optional[float]  # TODO: how should we represent this when it is None?
     min_value: float
     max_value: float
     name: str
