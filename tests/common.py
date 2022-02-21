@@ -5,8 +5,6 @@ from unittest.mock import AsyncMock, Mock
 import zigpy.zcl
 import zigpy.zcl.foundation as zcl_f
 
-from zhaws.server.zigbee.device import Device
-
 
 def patch_cluster(cluster: zigpy.zcl.Cluster) -> None:
     """Patch a cluster for testing."""
@@ -95,13 +93,6 @@ async def send_attributes_report(cluster: zigpy.zcl.Cluster, attributes: dict) -
     hdr = make_zcl_header(zcl_f.Command.Report_Attributes)
     hdr.frame_control.disable_default_response = True
     cluster.handle_message(hdr, [attrs])
-    # await hass.async_block_till_done()
-
-
-async def async_enable_traffic(zha_devices: list[Device], enabled: bool = True) -> None:
-    """Allow traffic to flow through the gateway and the zha device."""
-    for zha_device in zha_devices:
-        zha_device.update_available(enabled)
     # await hass.async_block_till_done()
 
 
