@@ -90,10 +90,10 @@ async def connected_client_and_server(
 
     with application_controller_patch:
         async with Server(configuration=server_configuration) as server:
+            await server.controller.start_network()
             async with Controller(
                 f"ws://localhost:{server_configuration.port}"
             ) as controller:
-                _LOGGER.warning("issuing client listen")
                 await controller.clients.listen()
                 yield controller, server
 
@@ -103,7 +103,7 @@ def device_joined(connected_client_and_server: tuple[Controller, Server]) -> Cal
     """Return a newly joined ZHAWS device."""
 
     async def _zha_device(zigpy_dev: zigpy.device.Device) -> Device:
-        _LOGGER.warning("In device joined")
+        _LOGGER.debug("In device joined")
         client, server = connected_client_and_server
         await server.controller.async_device_initialized(zigpy_dev)
         return server.controller.get_device(zigpy_dev.ieee)
@@ -182,7 +182,7 @@ def zigpy_device_mock(zigpy_app_controller: ControllerApplication) -> Callable:
 def zha_device_mock(
     connected_client_and_server: tuple[Controller, Server],
     zigpy_device_mock: Callable,
-) -> Callable:
+) -> Callable[..., Device]:
     """Return a zha Device factory."""
 
     client, server = connected_client_and_server
