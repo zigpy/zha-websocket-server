@@ -73,6 +73,12 @@ class GenericState(BaseModel):
         "RSSISensor",
         "LQISensor",
         "LastSeenSensor",
+        # TODO following are temporary until we have a proper implementation
+        "Thermostat",
+        "SinopeTechnologiesThermostat",
+        "ZenWithinThermostat",
+        "MoesThermostat",
+        "BecaThermostat",
     ]
     state: Union[str, bool, int, float, None]
 
@@ -366,6 +372,19 @@ class SelectEntity(BasePlatformEntity):
     state: GenericState
 
 
+class ThermostatEntity(BasePlatformEntity):  # TODO fix this
+    """Thermostat entity model."""
+
+    class_name: Literal[
+        "Thermostat",
+        "SinopeTechnologiesThermostat",
+        "ZenWithinThermostat",
+        "MoesThermostat",
+        "BecaThermostat",
+    ]
+    state: GenericState  # TODO fix this
+
+
 class SirenEntity(BasePlatformEntity):
     """Siren entity model."""
 
@@ -460,6 +479,7 @@ class Device(BaseDevice):
                 BatteryEntity,
                 ElectricalMeasurementEntity,
                 SmareEnergyMeteringEntity,
+                ThermostatEntity,
             ],
             Field(discriminator="class_name"),  # noqa: F821
         ],
@@ -522,6 +542,7 @@ class GroupMember(BaseModel):
                 BatteryEntity,
                 ElectricalMeasurementEntity,
                 SmareEnergyMeteringEntity,
+                ThermostatEntity,
             ],
             Field(discriminator="class_name"),  # noqa: F821
         ],
