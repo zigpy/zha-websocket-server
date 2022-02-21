@@ -220,8 +220,10 @@ class Shade(PlatformEntity):
         ]
         self._is_open: bool = bool(self._on_off_cluster_handler.on_off)
         position = self._level_cluster_handler.current_level
-        position = max(0, min(255, position))
-        self._position: Union[int, None] = int(position * 100 / 255)
+        if position is not None:
+            position = max(0, min(255, position))
+            position = int(position * 100 / 255)
+        self._position: Union[int, None] = position
         self._on_off_cluster_handler.on_event(
             CLUSTER_HANDLER_EVENT, self._handle_event_protocol
         )
