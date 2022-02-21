@@ -1,6 +1,6 @@
 """Common test objects."""
 import asyncio
-from typing import Any, Coroutine, Optional
+from typing import Any, Awaitable, Coroutine, Optional
 from unittest.mock import AsyncMock, Mock
 
 import zigpy.zcl
@@ -129,3 +129,15 @@ def find_entity(
         if entity.platform == platform:
             return entity
     return None
+
+
+def mock_coro(
+    return_value: Any = None, exception: Optional[Exception] = None
+) -> Awaitable:
+    """Return a coro that returns a value or raise an exception."""
+    fut: asyncio.Future = asyncio.Future()
+    if exception is not None:
+        fut.set_exception(exception)
+    else:
+        fut.set_result(return_value)
+    return fut
