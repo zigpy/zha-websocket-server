@@ -617,6 +617,8 @@ class LQISensor(RSSISensor, id_suffix="lqi"):
     """LQI sensor for a device."""
 
 
+""" TODO uncomment when test device list is updated
 @MULTI_MATCH(cluster_handler_names=CLUSTER_HANDLER_BASIC)
 class LastSeenSensor(RSSISensor, id_suffix="last_seen"):
-    """Last seen sensor for a device."""
+    # Last seen sensor for a device.
+"""
