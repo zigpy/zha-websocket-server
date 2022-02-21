@@ -27,7 +27,7 @@ _LOGGER = logging.getLogger(__name__)
 class Number(PlatformEntity):
     """Representation of a zhawss number."""
 
-    PLATFORM = Platform.LOCK
+    PLATFORM = Platform.NUMBER
 
     def __init__(
         self,
