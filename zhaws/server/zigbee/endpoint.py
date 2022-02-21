@@ -177,7 +177,7 @@ class Endpoint:
         for cluster_handler, outcome in zip(cluster_handlers, results):
             if isinstance(outcome, Exception):
                 cluster_handler.warning(
-                    "'%s' stage failed: %s", func_name, str(outcome)
+                    "'%s' stage failed: %s", func_name, str(outcome), exc_info=outcome
                 )
                 continue
             cluster_handler.debug("'%s' stage succeeded", func_name)
