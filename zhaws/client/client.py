@@ -227,7 +227,7 @@ class Client(EventBase):
         if not self.connected:
             raise Exception()
 
-        _LOGGER.warning("Publishing message:\n%s\n", pprint.pformat(message))
+        _LOGGER.debug("Publishing message:\n%s\n", pprint.pformat(message))
 
         assert self._client
         assert "message_id" in message
