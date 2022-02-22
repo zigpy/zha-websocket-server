@@ -165,6 +165,9 @@ class ElectricalMeasurementState(BaseModel):
     ]
     state: Optional[Union[str, float, int]]
     measurement_type: Optional[str]
+    active_power_max: Optional[str]
+    rms_current_max: Optional[str]
+    rms_voltage_max: Optional[str]
 
 
 class LightState(BaseModel):
