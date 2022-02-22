@@ -85,7 +85,7 @@ class Number(PlatformEntity):
         """Handle value update from cluster handler."""
         self.maybe_send_state_changed_event()
 
-    async def async_set_value(self, value: Any) -> None:
+    async def async_set_value(self, value: Any, **kwargs: Any) -> None:
         """Update the current value from service."""
         num_value = float(value)
         if await self._analog_output_cluster_handler.async_set_present_value(num_value):
