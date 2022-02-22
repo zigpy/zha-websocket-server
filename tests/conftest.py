@@ -100,11 +100,12 @@ async def connected_client_and_server(
 
 
 @pytest.fixture
-def device_joined(connected_client_and_server: tuple[Controller, Server]) -> Callable:
+def device_joined(
+    connected_client_and_server: tuple[Controller, Server]
+) -> Callable[[zigpy.device.Device], Device]:
     """Return a newly joined ZHAWS device."""
 
     async def _zha_device(zigpy_dev: zigpy.device.Device) -> Device:
-        _LOGGER.debug("In device joined")
         client, server = connected_client_and_server
         await server.controller.async_device_initialized(zigpy_dev)
         return server.controller.get_device(zigpy_dev.ieee)

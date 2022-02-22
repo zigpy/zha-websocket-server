@@ -12,6 +12,7 @@ from zhaws.client.model.types import BasePlatformEntity
 from zhaws.client.proxy import DeviceProxy
 from zhaws.server.platforms.registries import Platform
 from zhaws.server.zigbee.device import Device
+from zhaws.server.zigbee.group import Group
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -179,7 +180,7 @@ def find_entity_ids(
     head = f"{domain}.{slugify(f'{zha_device.name} {ieeetail}', separator='_')}"
 
     entity_ids = [
-        f"{domain}.{slugify(entity.name, separator='_')}"
+        f"{entity.PLATFORM}.{slugify(entity.name, separator='_')}"
         for entity in zha_device.platform_entities.values()
     ]
 
@@ -201,3 +202,17 @@ def find_entity_ids(
     else:
         res = matches
     return res
+
+
+def async_find_group_entity_id(domain: str, group: Group) -> Optional[str]:
+    """Find the group entity id under test."""
+    entity_id = f"{domain}.{group.name.lower().replace(' ','_')}_0x{group.group_id:04x}"
+
+    entity_ids = [
+        f"{entity.PLATFORM}.{slugify(entity.name, separator='_')}"
+        for entity in group.group_entities.values()
+    ]
+
+    if entity_id in entity_ids:
+        return entity_id
+    return None
