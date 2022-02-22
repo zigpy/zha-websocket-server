@@ -241,6 +241,8 @@ class Controller(EventBase):
         """Handle group added event."""
         if event.group.id in self.groups:
             self.groups[event.group.id].group_model = event.group
+        else:
+            self.groups[event.group.id] = GroupProxy(event.group, self, self._client)
         self.emit(ControllerEvents.GROUP_ADDED, event)
 
     def handle_group_removed(self, event: GroupRemovedEvent) -> None:
