@@ -150,7 +150,7 @@ class BatteryState(BaseModel):
     class_name: Literal["Battery"] = "Battery"
     state: Optional[Union[str, float, int]]
     battery_size: Optional[str]
-    battery_quantity: Optional[str]
+    battery_quantity: Optional[int]
     battery_voltage: Optional[float]
 
 

@@ -1,14 +1,18 @@
 """Common test objects."""
 import asyncio
+import logging
 from typing import Any, Awaitable, Coroutine, Optional
 from unittest.mock import AsyncMock, Mock
 
+from slugify import slugify
 import zigpy.zcl
 import zigpy.zcl.foundation as zcl_f
 
 from zhaws.client.model.types import BasePlatformEntity
 from zhaws.client.proxy import DeviceProxy
 from zhaws.server.platforms.registries import Platform
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def patch_cluster(cluster: zigpy.zcl.Cluster) -> None:
@@ -141,3 +145,56 @@ def mock_coro(
     else:
         fut.set_result(return_value)
     return fut
+
+
+def find_entity_id(domain, zha_device, qualifier=None):
+    """Find the entity id under the testing.
+
+    This is used to get the entity id in order to get the state from the state
+    machine so that we can test state changes.
+    """
+    entities = find_entity_ids(domain, zha_device)
+    if not entities:
+        return None
+    if qualifier:
+        for entity_id in entities:
+            if qualifier in entity_id:
+                return entity_id
+    else:
+        return entities[0]
+
+
+def find_entity_ids(domain, zha_device, omit=None):
+    """Find the entity ids under the testing.
+
+    This is used to get the entity id in order to get the state from the state
+    machine so that we can test state changes.
+    """
+    ieeetail = "".join([f"{o:02x}" for o in zha_device.ieee[:4]])
+    head = f"{domain}.{slugify(f'{zha_device.name} {ieeetail}', separator='_')}"
+
+    entity_ids = [
+        f"{domain}.{slugify(entity.name, separator='_')}"
+        for entity in zha_device.platform_entities.values()
+    ]
+
+    _LOGGER.warning("entity_ids: %s", entity_ids)
+
+    matches = []
+    res = []
+    for entity_id in entity_ids:
+        if entity_id.startswith(head):
+            matches.append(entity_id)
+
+    if omit:
+        for entity_id in matches:
+            skip = False
+            for o in omit:
+                if o in entity_id:
+                    skip = True
+                    break
+            if not skip:
+                res.append(entity_id)
+    else:
+        res = matches
+    return res
