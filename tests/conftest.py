@@ -34,6 +34,7 @@ _LOGGER = logging.getLogger(__name__)
 
 @pytest.fixture
 def server_configuration() -> ServerConfiguration:
+    """Server configuration fixture."""
     port = aiohttp.test_utils.unused_port()  # type: ignore
     with tempfile.TemporaryDirectory() as tempdir:
         # you can e.g. create a file here:
@@ -128,7 +129,9 @@ def cluster_handler() -> Callable:
 
 
 @pytest.fixture
-def zigpy_device_mock(zigpy_app_controller: ControllerApplication) -> Callable:
+def zigpy_device_mock(
+    zigpy_app_controller: ControllerApplication,
+) -> Callable[..., zigpy.device.Device]:
     """Make a fake device using the specified cluster classes."""
 
     def _mock_dev(

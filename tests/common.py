@@ -11,6 +11,7 @@ import zigpy.zcl.foundation as zcl_f
 from zhaws.client.model.types import BasePlatformEntity
 from zhaws.client.proxy import DeviceProxy
 from zhaws.server.platforms.registries import Platform
+from zhaws.server.zigbee.device import Device
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -147,7 +148,9 @@ def mock_coro(
     return fut
 
 
-def find_entity_id(domain, zha_device, qualifier=None):
+def find_entity_id(
+    domain: str, zha_device: Device, qualifier: Optional[str] = None
+) -> Optional[str]:
     """Find the entity id under the testing.
 
     This is used to get the entity id in order to get the state from the state
@@ -164,7 +167,9 @@ def find_entity_id(domain, zha_device, qualifier=None):
         return entities[0]
 
 
-def find_entity_ids(domain, zha_device, omit=None):
+def find_entity_ids(
+    domain: str, zha_device: Device, omit: Optional[list[str]] = None
+) -> list[str]:
     """Find the entity ids under the testing.
 
     This is used to get the entity id in order to get the state from the state
@@ -177,8 +182,6 @@ def find_entity_ids(domain, zha_device, omit=None):
         f"{domain}.{slugify(entity.name, separator='_')}"
         for entity in zha_device.platform_entities.values()
     ]
-
-    _LOGGER.warning("entity_ids: %s", entity_ids)
 
     matches = []
     res = []

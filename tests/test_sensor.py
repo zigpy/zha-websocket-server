@@ -1,18 +1,25 @@
 """Test zha sensor."""
 import asyncio
 import math
-from typing import Awaitable, Callable, Optional
+from typing import Any, Awaitable, Callable, Optional
 
 import pytest
 from slugify import slugify
 from zigpy.device import Device as ZigpyDevice
 import zigpy.profiles.zha
+from zigpy.zcl import Cluster
 import zigpy.zcl.clusters.general as general
 import zigpy.zcl.clusters.homeautomation as homeautomation
 import zigpy.zcl.clusters.measurement as measurement
 import zigpy.zcl.clusters.smartenergy as smartenergy
 
 from zhaws.client.controller import Controller
+from zhaws.client.model.types import (
+    BatteryEntity,
+    ElectricalMeasurementEntity,
+    SensorEntity,
+    SmareEnergyMeteringEntity,
+)
 from zhaws.client.proxy import DeviceProxy
 from zhaws.server.platforms.registries import Platform
 from zhaws.server.websocket.server import Server
@@ -25,7 +32,9 @@ ENTITY_ID_PREFIX = "sensor.fakemanufacturer_fakemodel_e769900a_{}"
 
 
 @pytest.fixture
-async def elec_measurement_zigpy_dev(zigpy_device_mock):
+async def elec_measurement_zigpy_dev(
+    zigpy_device_mock: Callable[..., ZigpyDevice]
+) -> ZigpyDevice:
     """Electric Measurement zigpy device."""
 
     zigpy_device = zigpy_device_mock(
@@ -57,7 +66,10 @@ async def elec_measurement_zigpy_dev(zigpy_device_mock):
 
 
 @pytest.fixture
-async def elec_measurement_zha_dev(elec_measurement_zigpy_dev, device_joined):
+async def elec_measurement_zha_dev(
+    elec_measurement_zigpy_dev: ZigpyDevice,
+    device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
+) -> Device:
     """Electric Measurement ZHA device."""
 
     zha_dev = await device_joined(elec_measurement_zigpy_dev)
@@ -65,19 +77,19 @@ async def elec_measurement_zha_dev(elec_measurement_zigpy_dev, device_joined):
     return zha_dev
 
 
-async def async_test_humidity(cluster, entity):
+async def async_test_humidity(cluster: Cluster, entity: SensorEntity) -> None:
     """Test humidity sensor."""
     await send_attributes_report(cluster, {1: 1, 0: 1000, 2: 100})
     assert_state(entity, "10.0", "%")
 
 
-async def async_test_temperature(cluster, entity):
+async def async_test_temperature(cluster: Cluster, entity: SensorEntity) -> None:
     """Test temperature sensor."""
     await send_attributes_report(cluster, {1: 1, 0: 2900, 2: 100})
     assert_state(entity, "29.0", "°C")
 
 
-async def async_test_pressure(cluster, entity):
+async def async_test_pressure(cluster: Cluster, entity: SensorEntity) -> None:
     """Test pressure sensor."""
     await send_attributes_report(cluster, {1: 1, 0: 1000, 2: 10000})
     assert_state(entity, "1000", "hPa")
@@ -86,13 +98,15 @@ async def async_test_pressure(cluster, entity):
     assert_state(entity, "1000", "hPa")
 
 
-async def async_test_illuminance(cluster, entity):
+async def async_test_illuminance(cluster: Cluster, entity: SensorEntity) -> None:
     """Test illuminance sensor."""
     await send_attributes_report(cluster, {1: 1, 0: 10, 2: 20})
     assert_state(entity, "1.0", "lx")
 
 
-async def async_test_metering(cluster, entity):
+async def async_test_metering(
+    cluster: Cluster, entity: SmareEnergyMeteringEntity
+) -> None:
     """Test Smart Energy metering sensor."""
     await send_attributes_report(cluster, {1025: 1, 1024: 12345, 1026: 100})
     assert_state(entity, "12345.0", None)
@@ -108,7 +122,9 @@ async def async_test_metering(cluster, entity):
     assert entity.state.status == "<bitmap8.32: 32>"
 
 
-async def async_test_smart_energy_summation(cluster, entity):
+async def async_test_smart_energy_summation(
+    cluster: Cluster, entity: SmareEnergyMeteringEntity
+) -> None:
     """Test SmartEnergy Summation delivered sensro."""
 
     await send_attributes_report(
@@ -119,7 +135,9 @@ async def async_test_smart_energy_summation(cluster, entity):
     assert entity.state.device_type == "Electric Metering"
 
 
-async def async_test_electrical_measurement(cluster, entity):
+async def async_test_electrical_measurement(
+    cluster: Cluster, entity: ElectricalMeasurementEntity
+) -> None:
     """Test electrical measurement sensor."""
     # update divisor cached value
     await send_attributes_report(cluster, {"ac_power_divisor": 1})
@@ -140,7 +158,9 @@ async def async_test_electrical_measurement(cluster, entity):
     assert entity.state.active_power_max == "8.8"
 
 
-async def async_test_em_apparent_power(cluster, entity):
+async def async_test_em_apparent_power(
+    cluster: Cluster, entity: ElectricalMeasurementEntity
+) -> None:
     """Test electrical measurement Apparent Power sensor."""
     # update divisor cached value
     await send_attributes_report(cluster, {"ac_power_divisor": 1})
@@ -158,7 +178,9 @@ async def async_test_em_apparent_power(cluster, entity):
     assert_state(entity, "9.9", "VA")
 
 
-async def async_test_em_rms_current(cluster, entity):
+async def async_test_em_rms_current(
+    cluster: Cluster, entity: ElectricalMeasurementEntity
+) -> None:
     """Test electrical measurement RMS Current sensor."""
 
     await send_attributes_report(cluster, {0: 1, 0x0508: 1234, 10: 1000})
@@ -175,7 +197,9 @@ async def async_test_em_rms_current(cluster, entity):
     assert entity.state.rms_current_max == "8.8"
 
 
-async def async_test_em_rms_voltage(cluster, entity):
+async def async_test_em_rms_voltage(
+    cluster: Cluster, entity: ElectricalMeasurementEntity
+) -> None:
     """Test electrical measurement RMS Voltage sensor."""
 
     await send_attributes_report(cluster, {0: 1, 0x0505: 1234, 10: 1000})
@@ -192,7 +216,9 @@ async def async_test_em_rms_voltage(cluster, entity):
     assert entity.state.rms_voltage_max == "8.9"
 
 
-async def async_test_powerconfiguration(cluster, entity):
+async def async_test_powerconfiguration(
+    cluster: Cluster, entity: BatteryEntity
+) -> None:
     """Test powerconfiguration/battery sensor."""
     await send_attributes_report(cluster, {33: 98})
     assert_state(entity, "49", "%")
@@ -203,7 +229,7 @@ async def async_test_powerconfiguration(cluster, entity):
     assert entity.state.battery_voltage == 2.0
 
 
-async def async_test_device_temperature(cluster, entity):
+async def async_test_device_temperature(cluster: Cluster, entity: SensorEntity) -> None:
     """Test temperature sensor."""
     await send_attributes_report(cluster, {0: 2900})
     assert_state(entity, "29.0", "°C")
@@ -313,12 +339,12 @@ async def test_sensor(
     zigpy_device_mock: Callable[..., ZigpyDevice],
     device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
     connected_client_and_server: tuple[Controller, Server],
-    cluster_id,
-    entity_suffix,
-    test_func,
-    read_plug,
-    unsupported_attrs,
-):
+    cluster_id: int,
+    entity_suffix: str,
+    test_func: Callable[[Cluster, SensorEntity], Awaitable[None]],
+    read_plug: Optional[dict],
+    unsupported_attrs: Optional[set],
+) -> None:
     """Test zha sensor platform."""
 
     zigpy_device = zigpy_device_mock(
@@ -341,7 +367,7 @@ async def test_sensor(
     ):
         # this one is mains powered
         zigpy_device.node_desc.mac_capability_flags |= 0b_0000_0100
-    cluster.PLUGGED_ATTR_READS = read_plug
+    cluster.PLUGGED_ATTR_READS = read_plug or {}
     controller, server = connected_client_and_server
     zha_device = await device_joined(zigpy_device)
     await asyncio.sleep(0.001)
@@ -356,7 +382,7 @@ async def test_sensor(
     await test_func(cluster, entity)
 
 
-def get_entity(zha_dev, entity_id):
+def get_entity(zha_dev: DeviceProxy, entity_id: str) -> SensorEntity:
     """Get entity."""
     entities = {
         entity.platform + "." + slugify(entity.name, separator="_"): entity
@@ -365,7 +391,7 @@ def get_entity(zha_dev, entity_id):
     return entities[entity_id]
 
 
-def assert_state(entity, state, unit_of_measurement):
+def assert_state(entity: SensorEntity, state: Any, unit_of_measurement: str) -> None:
     """Check that the state is what is expected.
 
     This is used to ensure that the logic in each sensor class handled the
@@ -379,7 +405,7 @@ async def test_electrical_measurement_init(
     zigpy_device_mock: Callable[..., ZigpyDevice],
     device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
     connected_client_and_server: tuple[Controller, Server],
-):
+) -> None:
     """Test proper initialization of the electrical measurement cluster."""
 
     cluster_id = homeautomation.ElectricalMeasurement.cluster_id
@@ -400,10 +426,11 @@ async def test_electrical_measurement_init(
     client_device: Optional[DeviceProxy] = controller.devices.get(str(zha_device.ieee))
     assert client_device is not None
     entity_id = find_entity_id(Platform.SENSOR, zha_device)
+    assert entity_id is not None
     entity = get_entity(client_device, entity_id)
 
     await send_attributes_report(cluster, {0: 1, 1291: 100, 10: 1000})
-    assert int(entity.state.state) == 100
+    assert int(entity.state.state) == 100  # type: ignore
 
     cluster_handler = list(zha_device._endpoints.values())[0].all_cluster_handlers[
         "1:0x0b04"
@@ -503,11 +530,11 @@ async def test_unsupported_attributes_sensor(
     zigpy_device_mock: Callable[..., ZigpyDevice],
     device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
     connected_client_and_server: tuple[Controller, Server],
-    cluster_id,
-    unsupported_attributes,
-    entity_ids,
-    missing_entity_ids,
-):
+    cluster_id: int,
+    unsupported_attributes: set,
+    entity_ids: set,
+    missing_entity_ids: set,
+) -> None:
     """Test zha sensor platform."""
 
     entity_ids = {ENTITY_ID_PREFIX.format(e) for e in entity_ids}
@@ -623,11 +650,11 @@ async def test_se_summation_uom(
     zigpy_device_mock: Callable[..., ZigpyDevice],
     device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
     connected_client_and_server: tuple[Controller, Server],
-    raw_uom,
-    raw_value,
-    expected_state,
-    expected_uom,
-):
+    raw_uom: int,
+    raw_value: int,
+    expected_state: str,
+    expected_uom: str,
+) -> None:
     """Test zha smart energy summation."""
 
     entity_id = ENTITY_ID_PREFIX.format("smartenergy_metering_summation_delivered")
@@ -683,12 +710,12 @@ async def test_se_summation_uom(
     ),
 )
 async def test_elec_measurement_sensor_type(
-    elec_measurement_zigpy_dev,
-    raw_measurement_type,
-    expected_type,
+    elec_measurement_zigpy_dev: ZigpyDevice,
+    raw_measurement_type: int,
+    expected_type: str,
     device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
     connected_client_and_server: tuple[Controller, Server],
-):
+) -> None:
     """Test zha electrical measurement sensor type."""
 
     entity_id = ENTITY_ID_PREFIX.format("electrical_measurement")
@@ -739,9 +766,9 @@ async def test_elec_measurement_sensor_type(
     ),
 )
 async def test_elec_measurement_skip_unsupported_attribute(
-    elec_measurement_zha_dev,
-    supported_attributes,
-):
+    elec_measurement_zha_dev: ZigpyDevice,
+    supported_attributes: set[str],
+) -> None:
     """Test zha electrical measurement skipping update of unsupported attributes."""
 
     entity_id = ENTITY_ID_PREFIX.format("electrical_measurement")
