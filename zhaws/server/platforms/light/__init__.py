@@ -23,7 +23,6 @@ from zhaws.server.zigbee.cluster import (
 )
 from zhaws.server.zigbee.cluster.const import (
     CLUSTER_HANDLER_COLOR,
-    CLUSTER_HANDLER_IDENTIFY,
     CLUSTER_HANDLER_LEVEL,
     CLUSTER_HANDLER_ON_OFF,
 )
@@ -399,8 +398,8 @@ class Light(PlatformEntity, BaseLight):
         self._state = bool(self._on_off_cluster_handler.on_off)
         self._level_cluster_handler = self.cluster_handlers.get(CLUSTER_HANDLER_LEVEL)
         self._color_cluster_handler = self.cluster_handlers.get(CLUSTER_HANDLER_COLOR)
-        self._identify_cluster_handler = self.cluster_handlers.get(
-            CLUSTER_HANDLER_IDENTIFY
+        self._identify_cluster_handler = endpoint.all_cluster_handlers.get(
+            f"{endpoint.id}:0x{Identify.cluster_id:04x}"
         )
         if self._color_cluster_handler:
             self._min_mireds: Union[int, None] = self._color_cluster_handler.min_mireds
