@@ -403,7 +403,7 @@ class CommandResponse(BaseModel):
 
 
 class DefaultResponse(CommandResponse):
-    """Get devices response."""
+    """Default command response."""
 
     command: Literal[
         "start_network",
