@@ -57,7 +57,7 @@ async def set_user_lock_code(
 ) -> None:
     """Set a user lock code in the specified slot for the lock."""
     await execute_platform_entity_command(
-        server, client, message, "async_set_user_lock_code"
+        server, client, message, "async_set_lock_user_code"
     )
 
 
@@ -75,7 +75,7 @@ async def enable_user_lock_code(
 ) -> None:
     """Enable a user lock code for the lock."""
     await execute_platform_entity_command(
-        server, client, message, "async_enable_user_lock_code"
+        server, client, message, "async_enable_lock_user_code"
     )
 
 
@@ -93,7 +93,7 @@ async def disable_user_lock_code(
 ) -> None:
     """Disable a user lock code for the lock."""
     await execute_platform_entity_command(
-        server, client, message, "async_disable_user_lock_code"
+        server, client, message, "async_disable_lock_user_code"
     )
 
 
@@ -111,7 +111,7 @@ async def clear_user_lock_code(
 ) -> None:
     """Clear a user lock code for the lock."""
     await execute_platform_entity_command(
-        server, client, message, "async_clear_user_lock_code"
+        server, client, message, "async_clear_lock_user_code"
     )
 
 

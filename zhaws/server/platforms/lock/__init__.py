@@ -98,7 +98,9 @@ class Lock(PlatformEntity):
             if state is not None:
                 self._state = VALUE_TO_STATE.get(state, self._state)
 
-    async def async_set_lock_user_code(self, code_slot: int, user_code: str) -> None:
+    async def async_set_lock_user_code(
+        self, code_slot: int, user_code: str, **kwargs: Any
+    ) -> None:
         """Set the user_code to index X on the lock."""
         if self._doorlock_cluster_handler:
             await self._doorlock_cluster_handler.async_set_user_code(
@@ -106,19 +108,19 @@ class Lock(PlatformEntity):
             )
             self.debug("User code at slot %s set", code_slot)
 
-    async def async_enable_lock_user_code(self, code_slot: int) -> None:
+    async def async_enable_lock_user_code(self, code_slot: int, **kwargs: Any) -> None:
         """Enable user_code at index X on the lock."""
         if self._doorlock_cluster_handler:
             await self._doorlock_cluster_handler.async_enable_user_code(code_slot)
             self.debug("User code at slot %s enabled", code_slot)
 
-    async def async_disable_lock_user_code(self, code_slot: int) -> None:
+    async def async_disable_lock_user_code(self, code_slot: int, **kwargs: Any) -> None:
         """Disable user_code at index X on the lock."""
         if self._doorlock_cluster_handler:
             await self._doorlock_cluster_handler.async_disable_user_code(code_slot)
             self.debug("User code at slot %s disabled", code_slot)
 
-    async def async_clear_lock_user_code(self, code_slot: int) -> None:
+    async def async_clear_lock_user_code(self, code_slot: int, **kwargs: Any) -> None:
         """Clear the user_code at index X on the lock."""
         if self._doorlock_cluster_handler:
             await self._doorlock_cluster_handler.async_clear_user_code(code_slot)
