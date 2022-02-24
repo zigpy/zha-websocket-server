@@ -10,6 +10,7 @@ from typing import Any, Optional
 
 from aiohttp import ClientSession, ClientWebSocketResponse, client_exceptions
 from aiohttp.http_websocket import WSMsgType
+from async_timeout import timeout
 
 from zhaws.client.model.commands import CommandResponse
 from zhaws.client.model.messages import Message
@@ -78,8 +79,14 @@ class Client(EventBase):
         self._result_futures[message_id] = future
 
         try:
-            await self._send_json_message(message)
-            return await future
+            async with timeout(20):
+                await self._send_json_message(message)
+                return await future
+        except asyncio.TimeoutError:
+            _LOGGER.error("Timeout waiting for response")
+            return CommandResponse.parse_obj(
+                {"message_id": message_id, "success": False}
+            )
         finally:
             self._result_futures.pop(message_id)
 
