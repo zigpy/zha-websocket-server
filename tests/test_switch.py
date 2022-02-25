@@ -47,31 +47,6 @@ def zigpy_device(zigpy_device_mock: Callable[..., ZigpyDevice]) -> ZigpyDevice:
 
 
 @pytest.fixture
-async def coordinator(
-    zigpy_device_mock: Callable[..., ZigpyDevice],
-    device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
-) -> Device:
-    """Test zha light platform."""
-
-    zigpy_device = zigpy_device_mock(
-        {
-            1: {
-                SIG_EP_INPUT: [],
-                SIG_EP_OUTPUT: [],
-                SIG_EP_TYPE: zha.DeviceType.COLOR_DIMMABLE_LIGHT,
-                SIG_EP_PROFILE: zigpy.profiles.zha.PROFILE_ID,
-            }
-        },
-        ieee="00:15:8d:00:02:32:4f:32",
-        nwk=0x0000,
-        node_descriptor=b"\xf8\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff",
-    )
-    zha_device = await device_joined(zigpy_device)
-    zha_device.available = True
-    return zha_device
-
-
-@pytest.fixture
 async def device_switch_1(
     zigpy_device_mock: Callable[..., ZigpyDevice],
     device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
@@ -179,7 +154,6 @@ async def test_switch(
 async def test_zha_group_switch_entity(
     device_switch_1: Device,
     device_switch_2: Device,
-    coordinator: Device,
     connected_client_and_server: tuple[Controller, Server],
 ) -> None:
     """Test the switch entity for a ZHA group."""
