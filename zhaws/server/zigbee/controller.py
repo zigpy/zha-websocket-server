@@ -266,6 +266,7 @@ class Controller:
         """Handle zigpy group member removed event."""
         # need to handle endpoint correctly on groups
         group = self.get_or_create_group(zigpy_group)
+        discovery.GROUP_PROBE.discover_group_entities(group)
         group.info("group_member_removed - endpoint: %s", endpoint)
         self._broadcast_group_event(group, ControllerEvents.GROUP_MEMBER_REMOVED)
 
@@ -273,9 +274,7 @@ class Controller:
         """Handle zigpy group member added event."""
         # need to handle endpoint correctly on groups
         group = self.get_or_create_group(zigpy_group)
-        if len(group.members) > 1:
-            # we need to do this because there wasn't already a group entity to remove and re-add
-            discovery.GROUP_PROBE.discover_group_entities(group)
+        discovery.GROUP_PROBE.discover_group_entities(group)
         group.info("group_member_added - endpoint: %s", endpoint)
         self._broadcast_group_event(group, ControllerEvents.GROUP_MEMBER_ADDED)
 
