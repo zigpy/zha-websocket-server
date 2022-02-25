@@ -236,6 +236,7 @@ class GroupEntity(BaseEntity):
         self._name: str = f"{group.name}_0x{group.group_id:04x}"
         self._group: Group = group
         self._group.register_group_entity(self)
+        self.update()
 
     @property
     def name(self) -> str:
