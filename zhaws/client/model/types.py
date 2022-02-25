@@ -135,6 +135,8 @@ class FanState(BaseModel):
         str
     ]  # TODO: how should we represent these when they are None?
     percentage: Optional[int]  # TODO: how should we represent these when they are None?
+    is_on: bool
+    speed: Optional[str]
 
 
 class LockState(BaseModel):
@@ -338,6 +340,8 @@ class FanEntity(BasePlatformEntity):
     preset_modes: list[str]
     supported_features: int
     speed_count: int
+    speed_list: list[str]
+    percentage_step: float
     state: FanState
 
 
