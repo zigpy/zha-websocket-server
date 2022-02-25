@@ -93,7 +93,7 @@ class LightHelper:
         light_platform_entity: BasePlatformEntity | GroupEntity,
         brightness: int | None = None,
         transition: int | None = None,
-        flash: bool | None = None,
+        flash: str | None = None,
         effect: str | None = None,
         hs_color: tuple | None = None,
         color_temp: int | None = None,
