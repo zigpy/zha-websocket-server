@@ -125,6 +125,7 @@ class ShadeState(BaseModel):
         int
     ]  # TODO: how should we represent this when it is None?
     is_closed: bool
+    state: Optional[str]
 
 
 class FanState(BaseModel):
