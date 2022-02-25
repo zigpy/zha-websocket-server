@@ -166,7 +166,7 @@ class Endpoint:
 
         async def _throttle(coro: Awaitable) -> None:
             async with self._device.semaphore:
-                return await coro
+                await coro
 
         cluster_handlers = [
             *self.claimed_cluster_handlers.values(),
