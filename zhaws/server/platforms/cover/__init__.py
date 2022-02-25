@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import logging
-from typing import TYPE_CHECKING, Any, Final, Union
+from typing import TYPE_CHECKING, Any, Final, Union, final
 
 from zigpy.zcl.foundation import Status
 
@@ -62,12 +62,13 @@ class Cover(PlatformEntity):
         ]
         self._current_position = None
         self._state = None
-        if (
-            self._cover_cluster_handler
-        ):  # TODO this should brobably be changed to raise if None
-            self._current_position = 100 - self._cover_cluster_handler.cluster.get(
+        if self._cover_cluster_handler:
+            position = self._cover_cluster_handler.cluster.get(
                 "current_position_lift_percentage"
             )
+            if position is None:
+                position = 0
+            self._current_position = 100 - position
             if self._current_position == 0:
                 self._state = STATE_CLOSED
             elif self._current_position == 100:
@@ -130,13 +131,15 @@ class Cover(PlatformEntity):
         if isinstance(res, list) and res[1] is Status.SUCCESS:
             self.async_update_state(STATE_CLOSING)
 
-    async def async_set_cover_position(self, **kwargs: Any) -> None:
+    async def async_set_cover_position(self, position: int, **kwargs: Any) -> None:
         """Move the roller shutter to a specific position."""
-        new_pos = kwargs[ATTR_POSITION]
-        res = await self._cover_cluster_handler.go_to_lift_percentage(100 - new_pos)
+        res = await self._cover_cluster_handler.go_to_lift_percentage(100 - position)
         if isinstance(res, list) and res[1] is Status.SUCCESS:
             self.async_update_state(
-                STATE_CLOSING if new_pos < self._current_position else STATE_OPENING
+                STATE_CLOSING
+                if self._current_position is not None
+                and position < self._current_position
+                else STATE_OPENING
             )
 
     async def async_stop_cover(self, **kwargs: Any) -> None:
@@ -201,6 +204,13 @@ class Cover(PlatformEntity):
 class Shade(PlatformEntity):
     """ZHAWSS Shade."""
 
+    _attr_current_cover_position: int | None = None
+    _attr_current_cover_tilt_position: int | None = None
+    _attr_is_closed: bool | None
+    _attr_is_closing: bool | None = None
+    _attr_is_opening: bool | None = None
+    _attr_state: None = None
+
     PLATFORM = Platform.COVER
 
     def __init__(
@@ -242,6 +252,32 @@ class Shade(PlatformEntity):
     def is_closed(self) -> Union[bool, None]:
         """Return True if shade is closed."""
         return not self._is_open
+
+    @property
+    def is_opening(self) -> bool | None:
+        """Return if the cover is opening or not."""
+        return self._attr_is_opening
+
+    @property
+    def is_closing(self) -> bool | None:
+        """Return if the cover is closing or not."""
+        return self._attr_is_closing
+
+    @property
+    @final
+    def state(self) -> str | None:
+        """Return the state of the cover."""
+        if self.is_opening:
+            self._cover_is_last_toggle_direction_open = True
+            return STATE_OPENING
+        if self.is_closing:
+            self._cover_is_last_toggle_direction_open = False
+            return STATE_CLOSING
+
+        if (closed := self.is_closed) is None:
+            return None
+
+        return STATE_CLOSED if closed else STATE_OPEN
 
     def handle_cluster_handler_attribute_updated(
         self, event: ClusterAttributeUpdatedEvent
@@ -303,6 +339,7 @@ class Shade(PlatformEntity):
             {
                 ATTR_CURRENT_POSITION: self._position,
                 "is_closed": self.is_closed,
+                "state": self.state,
             }
         )
         return response
