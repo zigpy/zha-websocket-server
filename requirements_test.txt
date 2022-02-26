@@ -3,6 +3,7 @@
 asynctest
 coveralls
 pytest
+pytest-xdist
 pytest-aiohttp
 pytest-cov
 pytest-timeout
