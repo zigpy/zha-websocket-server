@@ -313,6 +313,9 @@ jobs:
         run: |
           . venv/bin/activate
           pytest \
+            -n 10 \
+            -rP \
+            -vv \
             -qq \
             --timeout=9 \
             --durations=10 \
