@@ -1,4 +1,5 @@
 """Test configuration for the ZHA component."""
+import asyncio
 from asyncio import AbstractEventLoop
 import itertools
 import logging
@@ -108,6 +109,7 @@ def device_joined(
     async def _zha_device(zigpy_dev: zigpy.device.Device) -> Device:
         client, server = connected_client_and_server
         await server.controller.async_device_initialized(zigpy_dev)
+        await asyncio.sleep(0.001)
         return server.controller.get_device(zigpy_dev.ieee)
 
     return _zha_device
