@@ -170,7 +170,7 @@ class Controller:
 
         await self._application_controller.pre_shutdown()
         self._application_controller = None
-        await asyncio.sleep(0.001)  # give bellows thread callback a chance to run
+        await asyncio.sleep(0.1)  # give bellows thread callback a chance to run
         self._devices.clear()
         self._groups.clear()
 
