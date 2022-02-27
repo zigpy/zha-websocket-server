@@ -5,6 +5,7 @@ from typing import Any, Awaitable, Optional
 from unittest.mock import AsyncMock, Mock
 
 from slugify import slugify
+import zigpy.types as t
 import zigpy.zcl
 import zigpy.zcl.foundation as zcl_f
 
@@ -62,6 +63,14 @@ def patch_cluster(cluster: zigpy.zcl.Cluster) -> None:
     )
     if cluster.cluster_id == 4:
         cluster.add = AsyncMock(return_value=[0])
+    if cluster.cluster_id == 0x1000:
+        cluster.get_group_identifiers = AsyncMock(return_value=[0, 0, []])
+    if cluster.cluster_id == 0xFC45:
+        cluster.attributes = {
+            # Relative Humidity Measurement Information
+            0x0000: ("measured_value", t.uint16_t),
+        }
+        cluster.attridx = {"measured_value": 0x0000}
 
 
 def update_attribute_cache(cluster: zigpy.zcl.Cluster) -> None:

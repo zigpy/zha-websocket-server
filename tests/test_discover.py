@@ -102,6 +102,9 @@ async def test_devices(
         cluster_identify.request.reset_mock()
     """
 
+    server.controller.application_controller.get_device(
+        nwk=0x0000
+    ).add_to_group = mock.AsyncMock(return_value=[0])
     orig_new_entity = Endpoint.async_new_entity
     _dispatch = mock.MagicMock(wraps=orig_new_entity)
     try:
@@ -308,10 +311,15 @@ def test_discover_probe_single_cluster() -> None:
 
 @pytest.mark.parametrize("device_info", DEVICES)
 async def test_discover_endpoint(
-    device_info: dict, zhaws_device_mock: Callable[..., Device]
+    device_info: dict,
+    zhaws_device_mock: Callable[..., Device],
+    connected_client_and_server: tuple[Controller, Server],
 ) -> None:
     """Test device discovery."""
-
+    controller, server = connected_client_and_server
+    server.controller.application_controller.get_device(
+        nwk=0x0000
+    ).add_to_group = mock.AsyncMock(return_value=[0])
     with mock.patch(
         "zhaws.server.zigbee.endpoint.Endpoint.async_new_entity"
     ) as new_ent:
