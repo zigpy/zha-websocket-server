@@ -1,5 +1,4 @@
 """Test zha analog output."""
-import asyncio
 from typing import Awaitable, Callable, Optional
 from unittest.mock import call
 
@@ -43,7 +42,7 @@ async def test_number(
     connected_client_and_server: tuple[Controller, Server],
 ) -> None:
     """Test zha number platform."""
-
+    controller, server = connected_client_and_server
     cluster: general.AnalogOutput = zigpy_analog_output_device.endpoints.get(
         1
     ).analog_output
@@ -60,7 +59,6 @@ async def test_number(
     cluster.PLUGGED_ATTR_READS["present_value"] = 15.0
 
     zha_device = await device_joined(zigpy_analog_output_device)
-    await asyncio.sleep(0.001)
     # one for present_value and one for the rest configuration attributes
     assert cluster.read_attributes.call_count == 3
     attr_reads = set()
@@ -74,7 +72,6 @@ async def test_number(
     assert "engineering_units" in attr_reads
     assert "application_type" in attr_reads
 
-    controller, server = connected_client_and_server
     client_device: Optional[DeviceProxy] = controller.devices.get(str(zha_device.ieee))
     assert client_device is not None
     entity: NumberEntity = find_entity(client_device, Platform.NUMBER)  # type: ignore
@@ -93,18 +90,18 @@ async def test_number(
 
     # change value from device
     assert cluster.read_attributes.call_count == 3
-    await send_attributes_report(cluster, {0x0055: 15})
-    await asyncio.sleep(0.001)
+    await send_attributes_report(server, cluster, {0x0055: 15})
+    await server.block_till_done()
     assert entity.state.state == "15.0"
 
     # update value from device
-    await send_attributes_report(cluster, {0x0055: 20})
-    await asyncio.sleep(0.001)
+    await send_attributes_report(server, cluster, {0x0055: 20})
+    await server.block_till_done()
     assert entity.state.state == "20.0"
 
     # change value from client
     await controller.numbers.set_value(entity, 30.0)
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
 
     assert len(cluster.write_attributes.mock_calls) == 1
     assert cluster.write_attributes.call_args == call({"present_value": 30.0})

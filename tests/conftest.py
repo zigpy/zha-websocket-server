@@ -1,5 +1,4 @@
 """Test configuration for the ZHA component."""
-import asyncio
 from asyncio import AbstractEventLoop
 import itertools
 import logging
@@ -109,7 +108,7 @@ def device_joined(
     async def _zha_device(zigpy_dev: zigpy.device.Device) -> Device:
         client, server = connected_client_and_server
         await server.controller.async_device_initialized(zigpy_dev)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         return server.controller.get_device(zigpy_dev.ieee)
 
     return _zha_device
@@ -182,42 +181,3 @@ def zigpy_device_mock(
         return device
 
     return _mock_dev
-
-
-@pytest.fixture
-def zha_device_mock(
-    connected_client_and_server: tuple[Controller, Server],
-    zigpy_device_mock: Callable,
-) -> Callable[..., Device]:
-    """Return a zha Device factory."""
-
-    client, server = connected_client_and_server
-
-    def _zha_device(
-        endpoints: Optional[dict[int, dict[str, Any]]] = None,
-        ieee: str = "00:11:22:33:44:55:66:77",
-        manufacturer: str = "mock manufacturer",
-        model: str = "mock model",
-        node_desc: bytes = b"\x02@\x807\x10\x7fd\x00\x00*d\x00\x00",
-        patch_cluster: bool = True,
-    ) -> Device:
-        if endpoints is None:
-            endpoints = {
-                1: {
-                    "in_clusters": [0, 1, 8, 768],
-                    "out_clusters": [0x19],
-                    "device_type": 0x0105,
-                },
-                2: {
-                    "in_clusters": [0],
-                    "out_clusters": [6, 8, 0x19, 768],
-                    "device_type": 0x0810,
-                },
-            }
-        zigpy_device = zigpy_device_mock(
-            endpoints, ieee, manufacturer, model, node_desc, patch_cluster=patch_cluster
-        )
-        zha_device = Device(zigpy_device, server.controller)
-        return zha_device
-
-    return _zha_device

@@ -1,9 +1,8 @@
 """Test zha light."""
 from __future__ import annotations
 
-import asyncio
 import logging
-from typing import Awaitable, Callable, Optional
+from typing import Awaitable, Callable
 from unittest.mock import AsyncMock, call, patch, sentinel
 
 import pytest
@@ -98,7 +97,6 @@ async def coordinator(
         node_descriptor=b"\xf8\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff",
     )
     zha_device = await device_joined(zigpy_device)
-    await asyncio.sleep(0.001)
     zha_device.available = True
     return zha_device
 
@@ -129,7 +127,6 @@ async def device_light_1(
         nwk=0xB79D,
     )
     zha_device = await device_joined(zigpy_device)
-    await asyncio.sleep(0.001)
     zha_device.available = True
     return zha_device
 
@@ -160,7 +157,6 @@ async def device_light_2(
         nwk=0xC79E,
     )
     zha_device = await device_joined(zigpy_device)
-    await asyncio.sleep(0.001)
     zha_device.available = True
     return zha_device
 
@@ -191,7 +187,6 @@ async def device_light_3(
         nwk=0xB89F,
     )
     zha_device = await device_joined(zigpy_device)
-    await asyncio.sleep(0.001)
     zha_device.available = True
     return zha_device
 
@@ -207,7 +202,7 @@ def get_entity(zha_dev: DeviceProxy, entity_id: str) -> LightEntity:
 
 def get_group_entity(
     group_proxy: GroupProxy, entity_id: str
-) -> Optional[LightGroupEntity]:
+) -> LightGroupEntity | None:
     """Get entity."""
     entities = {
         entity.platform + "." + slugify(entity.name, separator="_"): entity
@@ -290,11 +285,9 @@ async def test_light(
     # create zigpy devices
     zigpy_device = zigpy_device_mock(device)
     zha_device = await device_joined(zigpy_device)
-    await asyncio.sleep(0.001)
+    controller, server = connected_client_and_server
     entity_id = find_entity_id(Platform.LIGHT, zha_device)
     assert entity_id is not None
-
-    controller, server = connected_client_and_server
 
     cluster_on_off: general.OnOff = zigpy_device.endpoints[1].on_off
     cluster_level: general.LevelControl = getattr(
@@ -307,7 +300,7 @@ async def test_light(
         zigpy_device.endpoints[1], "identify", None
     )
 
-    client_device: Optional[DeviceProxy] = controller.devices.get(str(zha_device.ieee))
+    client_device: DeviceProxy | None = controller.devices.get(str(zha_device.ieee))
     assert client_device is not None
     entity = get_entity(client_device, entity_id)
     assert entity is not None
@@ -315,29 +308,29 @@ async def test_light(
     assert entity.state.on is False
 
     # test turning the lights on and off from the light
-    await async_test_on_off_from_light(cluster_on_off, entity)
+    await async_test_on_off_from_light(server, cluster_on_off, entity)
 
     # test turning the lights on and off from the client
-    await async_test_on_off_from_client(cluster_on_off, entity, controller)
+    await async_test_on_off_from_client(server, cluster_on_off, entity, controller)
 
     # test short flashing the lights from the client
     if cluster_identify:
         await async_test_flash_from_client(
-            cluster_identify, entity, FLASH_SHORT, controller
+            server, cluster_identify, entity, FLASH_SHORT, controller
         )
 
     # test turning the lights on and off from the client
     if cluster_level:
         await async_test_level_on_off_from_client(
-            cluster_on_off, cluster_level, entity, controller
+            server, cluster_on_off, cluster_level, entity, controller
         )
 
         # test getting a brightness change from the network
-        await async_test_on_from_light(cluster_on_off, entity)
-        await async_test_dimmer_from_light(cluster_level, entity, 150, True)
+        await async_test_on_from_light(server, cluster_on_off, entity)
+        await async_test_dimmer_from_light(server, cluster_level, entity, 150, True)
 
     # test rejoin
-    await async_test_off_from_client(cluster_on_off, entity, controller)
+    await async_test_off_from_client(server, cluster_on_off, entity, controller)
     clusters = [cluster_on_off]
     if cluster_level:
         clusters.append(cluster_level)
@@ -347,39 +340,40 @@ async def test_light(
     # test long flashing the lights from the client
     if cluster_identify:
         await async_test_flash_from_client(
-            cluster_identify, entity, FLASH_LONG, controller
+            server, cluster_identify, entity, FLASH_LONG, controller
         )
         await async_test_flash_from_client(
-            cluster_identify, entity, FLASH_SHORT, controller
+            server, cluster_identify, entity, FLASH_SHORT, controller
         )
 
 
 async def async_test_on_off_from_light(
-    cluster: general.OnOff, entity: LightEntity | LightGroupEntity
+    server: Server, cluster: general.OnOff, entity: LightEntity | LightGroupEntity
 ) -> None:
     """Test on off functionality from the light."""
     # turn on at light
-    await send_attributes_report(cluster, {1: 0, 0: 1, 2: 3})
-    await asyncio.sleep(0.001)
+    await send_attributes_report(server, cluster, {1: 0, 0: 1, 2: 3})
+    await server.block_till_done()
     assert entity.state.on is True
 
     # turn off at light
-    await send_attributes_report(cluster, {1: 1, 0: 0, 2: 3})
-    await asyncio.sleep(0.001)
+    await send_attributes_report(server, cluster, {1: 1, 0: 0, 2: 3})
+    await server.block_till_done()
     assert entity.state.on is False
 
 
 async def async_test_on_from_light(
-    cluster: general.OnOff, entity: LightEntity | LightGroupEntity
+    server: Server, cluster: general.OnOff, entity: LightEntity | LightGroupEntity
 ) -> None:
     """Test on off functionality from the light."""
     # turn on at light
-    await send_attributes_report(cluster, {1: -1, 0: 1, 2: 2})
-    await asyncio.sleep(0.001)
+    await send_attributes_report(server, cluster, {1: -1, 0: 1, 2: 2})
+    await server.block_till_done()
     assert entity.state.on is True
 
 
 async def async_test_on_off_from_client(
+    server: Server,
     cluster: general.OnOff,
     entity: LightEntity | LightGroupEntity,
     controller: Controller,
@@ -388,17 +382,18 @@ async def async_test_on_off_from_client(
     # turn on via UI
     cluster.request.reset_mock()
     await controller.lights.turn_on(entity)
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert cluster.request.call_count == 1
     assert cluster.request.await_count == 1
     assert cluster.request.call_args == call(
         False, ON, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
     )
 
-    await async_test_off_from_client(cluster, entity, controller)
+    await async_test_off_from_client(server, cluster, entity, controller)
 
 
 async def async_test_off_from_client(
+    server: Server,
     cluster: general.OnOff,
     entity: LightEntity | LightGroupEntity,
     controller: Controller,
@@ -408,7 +403,7 @@ async def async_test_off_from_client(
     # turn off via UI
     cluster.request.reset_mock()
     await controller.lights.turn_off(entity)
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert cluster.request.call_count == 1
     assert cluster.request.await_count == 1
     assert cluster.request.call_args == call(
@@ -417,6 +412,7 @@ async def async_test_off_from_client(
 
 
 async def async_test_level_on_off_from_client(
+    server: Server,
     on_off_cluster: general.OnOff,
     level_cluster: general.LevelControl,
     entity: LightEntity | LightGroupEntity,
@@ -428,7 +424,7 @@ async def async_test_level_on_off_from_client(
     level_cluster.request.reset_mock()
     # turn on via UI
     await controller.lights.turn_on(entity)
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert on_off_cluster.request.call_count == 1
     assert on_off_cluster.request.await_count == 1
     assert level_cluster.request.call_count == 0
@@ -440,7 +436,7 @@ async def async_test_level_on_off_from_client(
     level_cluster.request.reset_mock()
 
     await controller.lights.turn_on(entity, transition=10)
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert on_off_cluster.request.call_count == 1
     assert on_off_cluster.request.await_count == 1
     assert level_cluster.request.call_count == 1
@@ -463,7 +459,7 @@ async def async_test_level_on_off_from_client(
     level_cluster.request.reset_mock()
 
     await controller.lights.turn_on(entity, brightness=10)
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     # the onoff cluster is now not used when brightness is present by default
     assert on_off_cluster.request.call_count == 0
     assert on_off_cluster.request.await_count == 0
@@ -483,10 +479,11 @@ async def async_test_level_on_off_from_client(
     on_off_cluster.request.reset_mock()
     level_cluster.request.reset_mock()
 
-    await async_test_off_from_client(on_off_cluster, entity, controller)
+    await async_test_off_from_client(server, on_off_cluster, entity, controller)
 
 
 async def async_test_dimmer_from_light(
+    server: Server,
     cluster: general.LevelControl,
     entity: LightEntity | LightGroupEntity,
     level: int,
@@ -495,9 +492,9 @@ async def async_test_dimmer_from_light(
     """Test dimmer functionality from the light."""
 
     await send_attributes_report(
-        cluster, {1: level + 10, 0: level, 2: level - 10 or 22}
+        server, cluster, {1: level + 10, 0: level, 2: level - 10 or 22}
     )
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert entity.state.on == expected_state
     # hass uses None for brightness of 0 in state attributes
     if level == 0:
@@ -507,6 +504,7 @@ async def async_test_dimmer_from_light(
 
 
 async def async_test_flash_from_client(
+    server: Server,
     cluster: general.Identify,
     entity: LightEntity | LightGroupEntity,
     flash: str,
@@ -516,7 +514,7 @@ async def async_test_flash_from_client(
     # turn on via UI
     cluster.request.reset_mock()
     await controller.lights.turn_on(entity, flash=flash)
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert cluster.request.call_count == 1
     assert cluster.request.await_count == 1
     assert cluster.request.call_args == call(
@@ -567,8 +565,7 @@ async def test_zha_group_light_entity(
     zha_group: Group = await server.controller.async_create_zigpy_group(
         "Test Group", members
     )
-    await asyncio.sleep(0.001)
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
 
     assert zha_group is not None
     assert len(zha_group.members) == 2
@@ -580,25 +577,25 @@ async def test_zha_group_light_entity(
     entity_id = async_find_group_entity_id(Platform.LIGHT, zha_group)
     assert entity_id is not None
 
-    group_proxy: Optional[GroupProxy] = controller.groups.get(2)
+    group_proxy: GroupProxy | None = controller.groups.get(2)
     assert group_proxy is not None
 
-    device_1_proxy: Optional[DeviceProxy] = controller.devices.get(
+    device_1_proxy: DeviceProxy | None = controller.devices.get(
         str(device_light_1.ieee)
     )
     assert device_1_proxy is not None
 
-    device_2_proxy: Optional[DeviceProxy] = controller.devices.get(
+    device_2_proxy: DeviceProxy | None = controller.devices.get(
         str(device_light_2.ieee)
     )
     assert device_2_proxy is not None
 
-    device_3_proxy: Optional[DeviceProxy] = controller.devices.get(
+    device_3_proxy: DeviceProxy | None = controller.devices.get(
         str(device_light_3.ieee)
     )
     assert device_3_proxy is not None
 
-    entity: Optional[LightGroupEntity] = get_group_entity(group_proxy, entity_id)
+    entity: LightGroupEntity | None = get_group_entity(group_proxy, entity_id)
     assert entity is not None
 
     assert isinstance(entity, LightGroupEntity)
@@ -652,58 +649,60 @@ async def test_zha_group_light_entity(
     assert entity.state.on is False
 
     # test turning the lights on and off from the client
-    await async_test_on_off_from_client(group_cluster_on_off, entity, controller)
+    await async_test_on_off_from_client(
+        server, group_cluster_on_off, entity, controller
+    )
 
     # test turning the lights on and off from the light
-    await async_test_on_off_from_light(dev1_cluster_on_off, entity)
+    await async_test_on_off_from_light(server, dev1_cluster_on_off, entity)
 
     # test turning the lights on and off from the client
     await async_test_level_on_off_from_client(
-        group_cluster_on_off, group_cluster_level, entity, controller
+        server, group_cluster_on_off, group_cluster_level, entity, controller
     )
 
     # test getting a brightness change from the network
-    await async_test_on_from_light(dev1_cluster_on_off, entity)
-    await async_test_dimmer_from_light(dev1_cluster_level, entity, 150, True)
+    await async_test_on_from_light(server, dev1_cluster_on_off, entity)
+    await async_test_dimmer_from_light(server, dev1_cluster_level, entity, 150, True)
 
     # test short flashing the lights from the client
     await async_test_flash_from_client(
-        group_cluster_identify, entity, FLASH_SHORT, controller
+        server, group_cluster_identify, entity, FLASH_SHORT, controller
     )
     # test long flashing the lights from the client
     await async_test_flash_from_client(
-        group_cluster_identify, entity, FLASH_LONG, controller
+        server, group_cluster_identify, entity, FLASH_LONG, controller
     )
 
     assert len(zha_group.members) == 2
     # test some of the group logic to make sure we key off states correctly
-    await send_attributes_report(dev1_cluster_on_off, {0: 1})
-    await send_attributes_report(dev2_cluster_on_off, {0: 1})
-    await asyncio.sleep(0.001)
+    await send_attributes_report(server, dev1_cluster_on_off, {0: 1})
+    await send_attributes_report(server, dev2_cluster_on_off, {0: 1})
+    await server.block_till_done()
 
     # test that group light is on
     assert device_1_light_entity.state.on is True
     assert device_2_light_entity.state.on is True
     assert entity.state.on is True
 
-    await send_attributes_report(dev1_cluster_on_off, {0: 0})
-    await asyncio.sleep(0.001)
+    await send_attributes_report(server, dev1_cluster_on_off, {0: 0})
+    await server.block_till_done()
 
     # test that group light is still on
     assert device_1_light_entity.state.on is False
     assert device_2_light_entity.state.on is True
     assert entity.state.on is True
 
-    await send_attributes_report(dev2_cluster_on_off, {0: 0})
-    await asyncio.sleep(0.001)
+    await send_attributes_report(server, dev2_cluster_on_off, {0: 0})
+    await server.block_till_done()
 
     # test that group light is now off
     assert device_1_light_entity.state.on is False
     assert device_2_light_entity.state.on is False
     assert entity.state.on is False
 
-    await send_attributes_report(dev1_cluster_on_off, {0: 1})
-    await asyncio.sleep(0.001)
+    await send_attributes_report(server, dev1_cluster_on_off, {0: 1})
+    await server.block_till_done()
 
     # test that group light is now back on
     assert device_1_light_entity.state.on is True
@@ -711,22 +710,21 @@ async def test_zha_group_light_entity(
     assert entity.state.on is True
 
     # turn it off to test a new member add being tracked
-    await send_attributes_report(dev1_cluster_on_off, {0: 0})
-    await asyncio.sleep(0.001)
+    await send_attributes_report(server, dev1_cluster_on_off, {0: 0})
+    await server.block_till_done()
     assert device_1_light_entity.state.on is False
     assert device_2_light_entity.state.on is False
     assert entity.state.on is False
 
     # add a new member and test that his state is also tracked
     await zha_group.async_add_members([GroupMemberReference(device_light_3.ieee, 1)])
-    await asyncio.sleep(0.001)
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert device_3_light_entity.unique_id in zha_group.all_member_entity_unique_ids
     assert len(zha_group.members) == 3
     entity = get_group_entity(group_proxy, group_entity_id)
     assert entity is not None
-    await send_attributes_report(dev3_cluster_on_off, {0: 1})
-    await asyncio.sleep(0.001)
+    await send_attributes_report(server, dev3_cluster_on_off, {0: 1})
+    await server.block_till_done()
 
     assert device_1_light_entity.state.on is False
     assert device_2_light_entity.state.on is False
@@ -740,8 +738,7 @@ async def test_zha_group_light_entity(
             GroupMemberReference(device_light_3.ieee, 1),
         ]
     )
-    await asyncio.sleep(0.001)
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert len(zha_group.members) == 1
     assert device_2_light_entity.unique_id not in zha_group.all_member_entity_unique_ids
     assert device_3_light_entity.unique_id not in zha_group.all_member_entity_unique_ids
@@ -752,21 +749,20 @@ async def test_zha_group_light_entity(
 
     # add a member back and ensure that the group entity was created again
     await zha_group.async_add_members([GroupMemberReference(device_light_3.ieee, 1)])
-    await asyncio.sleep(0.001)
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert len(zha_group.members) == 2
 
     entity = get_group_entity(group_proxy, group_entity_id)
     assert entity is not None
-    await send_attributes_report(dev3_cluster_on_off, {0: 1})
-    await asyncio.sleep(0.001)
+    await send_attributes_report(server, dev3_cluster_on_off, {0: 1})
+    await server.block_till_done()
     assert entity.state.on is True
 
     # add a 3rd member and ensure we still have an entity and we track the new member
     # First we turn the lights currently in the group off
-    await send_attributes_report(dev1_cluster_on_off, {0: 0})
-    await send_attributes_report(dev3_cluster_on_off, {0: 0})
-    await asyncio.sleep(0.001)
+    await send_attributes_report(server, dev1_cluster_on_off, {0: 0})
+    await send_attributes_report(server, dev3_cluster_on_off, {0: 0})
+    await server.block_till_done()
     assert entity.state.on is False
 
     # this will test that _reprobe_group is used correctly
@@ -776,18 +772,16 @@ async def test_zha_group_light_entity(
             GroupMemberReference(coordinator.ieee, 1),
         ]
     )
-    await asyncio.sleep(0.001)
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert len(zha_group.members) == 4
     entity = get_group_entity(group_proxy, group_entity_id)
     assert entity is not None
-    await send_attributes_report(dev2_cluster_on_off, {0: 1})
-    await asyncio.sleep(0.001)
+    await send_attributes_report(server, dev2_cluster_on_off, {0: 1})
+    await server.block_till_done()
     assert entity.state.on is True
 
     await zha_group.async_remove_members([GroupMemberReference(coordinator.ieee, 1)])
-    await asyncio.sleep(0.001)
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     entity = get_group_entity(group_proxy, group_entity_id)
     assert entity is not None
     assert entity.state.on is True
@@ -795,7 +789,6 @@ async def test_zha_group_light_entity(
 
     # remove the group and ensure that there is no entity and that the entity registry is cleaned up
     await server.controller.async_remove_zigpy_group(zha_group.group_id)
-    await asyncio.sleep(0.001)
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     entity = get_group_entity(group_proxy, group_entity_id)
     assert entity is None

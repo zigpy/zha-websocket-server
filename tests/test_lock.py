@@ -1,5 +1,4 @@
 """Test zha lock."""
-import asyncio
 from typing import Awaitable, Callable, Optional
 from unittest.mock import patch
 
@@ -49,7 +48,6 @@ async def lock(
     )
 
     zha_device = await device_joined(zigpy_device)
-    await asyncio.sleep(0.001)
     return zha_device, zigpy_device.endpoints[1].door_lock
 
 
@@ -81,69 +79,78 @@ async def test_lock(
     assert entity.state.is_locked is False
 
     # set state to locked
-    await send_attributes_report(cluster, {1: 0, 0: 1, 2: 2})
+    await send_attributes_report(server, cluster, {1: 0, 0: 1, 2: 2})
     assert entity.state.is_locked is True
 
     # set state to unlocked
-    await send_attributes_report(cluster, {1: 0, 0: 2, 2: 3})
+    await send_attributes_report(server, cluster, {1: 0, 0: 2, 2: 3})
     assert entity.state.is_locked is False
 
     # lock from HA
-    await async_lock(cluster, entity, controller)
+    await async_lock(server, cluster, entity, controller)
 
     # unlock from HA
-    await async_unlock(cluster, entity, controller)
+    await async_unlock(server, cluster, entity, controller)
 
     # set user code
-    await async_set_user_code(cluster, entity, controller)
+    await async_set_user_code(server, cluster, entity, controller)
 
     # clear user code
-    await async_clear_user_code(cluster, entity, controller)
+    await async_clear_user_code(server, cluster, entity, controller)
 
     # enable user code
-    await async_enable_user_code(cluster, entity, controller)
+    await async_enable_user_code(server, cluster, entity, controller)
 
     # disable user code
-    await async_disable_user_code(cluster, entity, controller)
+    await async_disable_user_code(server, cluster, entity, controller)
 
 
 async def async_lock(
-    cluster: closures.DoorLock, entity: LockEntity, controller: Controller
+    server: Server,
+    cluster: closures.DoorLock,
+    entity: LockEntity,
+    controller: Controller,
 ) -> None:
     """Test lock functionality from client."""
     with patch(
         "zigpy.zcl.Cluster.request", return_value=mock_coro([zcl_f.Status.SUCCESS])
     ):
         await controller.locks.lock(entity)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert cluster.request.call_count == 1
         assert cluster.request.call_args[0][0] is False
         assert cluster.request.call_args[0][1] == LOCK_DOOR
 
 
 async def async_unlock(
-    cluster: closures.DoorLock, entity: LockEntity, controller: Controller
+    server: Server,
+    cluster: closures.DoorLock,
+    entity: LockEntity,
+    controller: Controller,
 ) -> None:
     """Test lock functionality from client."""
     with patch(
         "zigpy.zcl.Cluster.request", return_value=mock_coro([zcl_f.Status.SUCCESS])
     ):
         await controller.locks.unlock(entity)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert cluster.request.call_count == 1
         assert cluster.request.call_args[0][0] is False
         assert cluster.request.call_args[0][1] == UNLOCK_DOOR
 
 
 async def async_set_user_code(
-    cluster: closures.DoorLock, entity: LockEntity, controller: Controller
+    server: Server,
+    cluster: closures.DoorLock,
+    entity: LockEntity,
+    controller: Controller,
 ) -> None:
     """Test set lock code functionality from client."""
     with patch(
         "zigpy.zcl.Cluster.request", return_value=mock_coro([zcl_f.Status.SUCCESS])
     ):
         await controller.locks.set_user_lock_code(entity, 3, "13246579")
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert cluster.request.call_count == 1
         assert cluster.request.call_args[0][0] is False
         assert cluster.request.call_args[0][1] == SET_PIN_CODE
@@ -156,14 +163,17 @@ async def async_set_user_code(
 
 
 async def async_clear_user_code(
-    cluster: closures.DoorLock, entity: LockEntity, controller: Controller
+    server: Server,
+    cluster: closures.DoorLock,
+    entity: LockEntity,
+    controller: Controller,
 ) -> None:
     """Test clear lock code functionality from client."""
     with patch(
         "zigpy.zcl.Cluster.request", return_value=mock_coro([zcl_f.Status.SUCCESS])
     ):
         await controller.locks.clear_user_lock_code(entity, 3)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert cluster.request.call_count == 1
         assert cluster.request.call_args[0][0] is False
         assert cluster.request.call_args[0][1] == CLEAR_PIN_CODE
@@ -171,14 +181,17 @@ async def async_clear_user_code(
 
 
 async def async_enable_user_code(
-    cluster: closures.DoorLock, entity: LockEntity, controller: Controller
+    server: Server,
+    cluster: closures.DoorLock,
+    entity: LockEntity,
+    controller: Controller,
 ) -> None:
     """Test enable lock code functionality from client."""
     with patch(
         "zigpy.zcl.Cluster.request", return_value=mock_coro([zcl_f.Status.SUCCESS])
     ):
         await controller.locks.enable_user_lock_code(entity, 3)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert cluster.request.call_count == 1
         assert cluster.request.call_args[0][0] is False
         assert cluster.request.call_args[0][1] == SET_USER_STATUS
@@ -187,14 +200,17 @@ async def async_enable_user_code(
 
 
 async def async_disable_user_code(
-    cluster: closures.DoorLock, entity: LockEntity, controller: Controller
+    server: Server,
+    cluster: closures.DoorLock,
+    entity: LockEntity,
+    controller: Controller,
 ) -> None:
     """Test disable lock code functionality from client."""
     with patch(
         "zigpy.zcl.Cluster.request", return_value=mock_coro([zcl_f.Status.SUCCESS])
     ):
         await controller.locks.disable_user_lock_code(entity, 3)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert cluster.request.call_count == 1
         assert cluster.request.call_args[0][0] is False
         assert cluster.request.call_args[0][1] == SET_USER_STATUS

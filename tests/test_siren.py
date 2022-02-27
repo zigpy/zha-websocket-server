@@ -1,5 +1,4 @@
 """Test zha siren."""
-import asyncio
 from typing import Awaitable, Callable, Optional
 from unittest.mock import patch
 
@@ -42,7 +41,6 @@ async def siren(
     )
 
     zha_device = await device_joined(zigpy_device)
-    await asyncio.sleep(0.001)
     return zha_device, zigpy_device.endpoints[1].ias_wd
 
 
@@ -80,7 +78,7 @@ async def test_siren(
         return_value=mock_coro([0x00, zcl_f.Status.SUCCESS]),
     ):
         await controller.sirens.turn_on(entity)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert len(cluster.request.mock_calls) == 1
         assert cluster.request.call_args[0][0] is False
         assert cluster.request.call_args[0][1] == 0
@@ -98,7 +96,7 @@ async def test_siren(
         return_value=mock_coro([0x00, zcl_f.Status.SUCCESS]),
     ):
         await controller.sirens.turn_off(entity)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert len(cluster.request.mock_calls) == 1
         assert cluster.request.call_args[0][0] is False
         assert cluster.request.call_args[0][1] == 0

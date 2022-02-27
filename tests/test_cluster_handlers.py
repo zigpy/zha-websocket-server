@@ -1,5 +1,4 @@
 """Test ZHA Core cluster_handlers."""
-import asyncio
 import math
 from typing import Any, Awaitable, Callable
 from unittest import mock
@@ -118,7 +117,6 @@ async def poll_control_device(
     )
 
     zha_device = await device_joined(zigpy_dev)
-    await asyncio.sleep(0.001)
     return zha_device
 
 
@@ -399,7 +397,6 @@ async def test_ep_cluster_handlers_all_cluster_handlers(
             }
         )
     )
-    await asyncio.sleep(0.001)
     assert "1:0x0000" in zha_device._endpoints[1].all_cluster_handlers
     assert "1:0x0001" in zha_device._endpoints[1].all_cluster_handlers
     assert "1:0x0006" in zha_device._endpoints[1].all_cluster_handlers
@@ -453,7 +450,6 @@ async def test_cluster_handler_power_config(
             ieee="01:2d:6f:00:0a:90:69:e8",
         )
     )
-    await asyncio.sleep(0.001)
     assert "1:0x0000" in zha_device._endpoints[1].all_cluster_handlers
     assert "1:0x0001" in zha_device._endpoints[1].all_cluster_handlers
     assert "1:0x0006" in zha_device._endpoints[1].all_cluster_handlers
@@ -484,7 +480,6 @@ async def test_cluster_handler_power_config(
             ieee="02:2d:6f:00:0a:90:69:e8",
         )
     )
-    await asyncio.sleep(0.001)
     assert "1:0x0001" not in zha_device._endpoints[1].all_cluster_handlers
     assert "2:0x0001" in zha_device._endpoints[2].all_cluster_handlers
 
@@ -501,7 +496,6 @@ async def test_cluster_handler_power_config(
             ieee="03:2d:6f:00:0a:90:69:e8",
         )
     )
-    await asyncio.sleep(0.001)
     assert "2:0x0001" in zha_device._endpoints[2].all_cluster_handlers
 
 
@@ -595,7 +589,7 @@ async def test_poll_control_cluster_command(poll_control_device: Device) -> None
         cluster.handle_message(
             hdr, [mock.sentinel.args, mock.sentinel.args2, mock.sentinel.args3]
         )
-        await asyncio.sleep(0.001)
+        await poll_control_device.controller.server.block_till_done()
 
     assert checkin_mock.call_count == 1
     assert checkin_mock.await_count == 1

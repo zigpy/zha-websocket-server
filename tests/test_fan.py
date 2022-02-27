@@ -1,5 +1,4 @@
 """Test zha fan."""
-import asyncio
 import logging
 from typing import Awaitable, Callable, Optional
 from unittest.mock import call
@@ -67,7 +66,6 @@ async def coordinator(
         node_descriptor=b"\xf8\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff",
     )
     zha_device = await device_joined(zigpy_device)
-    await asyncio.sleep(0.001)
     zha_device.available = True
     return zha_device
 
@@ -95,7 +93,6 @@ async def device_fan_1(
         ieee=IEEE_GROUPABLE_DEVICE,
     )
     zha_device = await device_joined(zigpy_device)
-    await asyncio.sleep(0.001)
     zha_device.available = True
     return zha_device
 
@@ -124,7 +121,6 @@ async def device_fan_2(
         ieee=IEEE_GROUPABLE_DEVICE2,
     )
     zha_device = await device_joined(zigpy_device)
-    await asyncio.sleep(0.001)
     zha_device.available = True
     return zha_device
 
@@ -158,7 +154,6 @@ async def test_fan(
     """Test zha fan platform."""
     controller, server = connected_client_and_server
     zha_device = await device_joined(zigpy_device)
-    await asyncio.sleep(0.001)
     cluster = zigpy_device.endpoints.get(1).fan
     entity_id = find_entity_id(Platform.FAN, zha_device)
     assert entity_id is not None
@@ -170,34 +165,34 @@ async def test_fan(
     assert entity.state.is_on is False
 
     # turn on at fan
-    await send_attributes_report(cluster, {1: 2, 0: 1, 2: 3})
+    await send_attributes_report(server, cluster, {1: 2, 0: 1, 2: 3})
     assert entity.state.is_on is True
 
     # turn off at fan
-    await send_attributes_report(cluster, {1: 1, 0: 0, 2: 2})
+    await send_attributes_report(server, cluster, {1: 1, 0: 0, 2: 2})
     assert entity.state.is_on is False
 
     # turn on from client
     cluster.write_attributes.reset_mock()
-    await async_turn_on(entity, controller)
+    await async_turn_on(server, entity, controller)
     assert len(cluster.write_attributes.mock_calls) == 1
     assert cluster.write_attributes.call_args == call({"fan_mode": 2})
 
     # turn off from client
     cluster.write_attributes.reset_mock()
-    await async_turn_off(entity, controller)
+    await async_turn_off(server, entity, controller)
     assert len(cluster.write_attributes.mock_calls) == 1
     assert cluster.write_attributes.call_args == call({"fan_mode": 0})
 
     # change speed from client
     cluster.write_attributes.reset_mock()
-    await async_set_speed(entity, controller, speed=SPEED_HIGH)
+    await async_set_speed(server, entity, controller, speed=SPEED_HIGH)
     assert len(cluster.write_attributes.mock_calls) == 1
     assert cluster.write_attributes.call_args == call({"fan_mode": 3})
 
     # change preset_mode from client
     cluster.write_attributes.reset_mock()
-    await async_set_preset_mode(entity, controller, preset_mode=PRESET_MODE_ON)
+    await async_set_preset_mode(server, entity, controller, preset_mode=PRESET_MODE_ON)
     assert len(cluster.write_attributes.mock_calls) == 1
     assert cluster.write_attributes.call_args == call({"fan_mode": 4})
 
@@ -213,34 +208,45 @@ async def test_fan(
 
 
 async def async_turn_on(
-    entity: FanEntity, controller: Controller, speed: Optional[str] = None
+    server: Server,
+    entity: FanEntity,
+    controller: Controller,
+    speed: Optional[str] = None,
 ) -> None:
     """Turn fan on."""
     await controller.fans.turn_on(entity, speed=speed)
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
 
 
-async def async_turn_off(entity: FanEntity, controller: Controller) -> None:
+async def async_turn_off(
+    server: Server, entity: FanEntity, controller: Controller
+) -> None:
     """Turn fan off."""
     await controller.fans.turn_off(entity)
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
 
 
 async def async_set_speed(
-    entity: FanEntity, controller: Controller, speed: Optional[str] = None
+    server: Server,
+    entity: FanEntity,
+    controller: Controller,
+    speed: Optional[str] = None,
 ) -> None:
     """Set speed for specified fan."""
     await controller.fans.turn_on(entity, speed=speed)
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
 
 
 async def async_set_preset_mode(
-    entity: FanEntity, controller: Controller, preset_mode: Optional[str] = None
+    server: Server,
+    entity: FanEntity,
+    controller: Controller,
+    preset_mode: Optional[str] = None,
 ) -> None:
     """Set preset_mode for specified fan."""
     assert preset_mode is not None
     await controller.fans.set_fan_preset_mode(entity, preset_mode)
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
 
 
 """

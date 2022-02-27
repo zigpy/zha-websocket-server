@@ -1,7 +1,7 @@
 """Common test objects."""
 import asyncio
 import logging
-from typing import Any, Awaitable, Coroutine, Optional
+from typing import Any, Awaitable, Optional
 from unittest.mock import AsyncMock, Mock
 
 from slugify import slugify
@@ -11,6 +11,7 @@ import zigpy.zcl.foundation as zcl_f
 from zhaws.client.model.types import BasePlatformEntity
 from zhaws.client.proxy import DeviceProxy
 from zhaws.server.platforms.registries import Platform
+from zhaws.server.websocket.server import Server
 from zhaws.server.zigbee.device import Device
 from zhaws.server.zigbee.group import Group
 
@@ -84,14 +85,9 @@ def make_attribute(attrid: int, value: Any, status: int = 0) -> zcl_f.Attribute:
     return attr
 
 
-def send_attribute_report(
-    cluster: zigpy.zcl.Cluster, attrid: int, value: Any
-) -> Coroutine:
-    """Send a single attribute report."""
-    return send_attributes_report(cluster, {attrid: value})
-
-
-async def send_attributes_report(cluster: zigpy.zcl.Cluster, attributes: dict) -> None:
+async def send_attributes_report(
+    server: Server, cluster: zigpy.zcl.Cluster, attributes: dict
+) -> None:
     """Cause the sensor to receive an attribute report from the network.
 
     This is to simulate the normal device communication that happens when a
@@ -104,7 +100,7 @@ async def send_attributes_report(cluster: zigpy.zcl.Cluster, attributes: dict) -
     hdr = make_zcl_header(zcl_f.Command.Report_Attributes)
     hdr.frame_control.disable_default_response = True
     cluster.handle_message(hdr, [attrs])
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
 
 
 def make_zcl_header(

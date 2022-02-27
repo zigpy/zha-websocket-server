@@ -1,5 +1,4 @@
 """Test zha alarm control panel."""
-import asyncio
 import logging
 from typing import Awaitable, Callable, Optional
 from unittest.mock import AsyncMock, call, patch, sentinel
@@ -49,7 +48,6 @@ async def test_alarm_control_panel(
     """Test zhaws alarm control panel platform."""
     controller, server = connected_client_and_server
     zhaws_device: Device = await device_joined(zigpy_device)
-    await asyncio.sleep(0.001)
     cluster: security.IasAce = zigpy_device.endpoints.get(1).ias_ace
     client_device: Optional[DeviceProxy] = controller.devices.get(
         str(zhaws_device.ieee)
@@ -79,12 +77,12 @@ async def test_alarm_control_panel(
     assert alarm_entity.state.state == "armed_away"
 
     # disarm
-    await reset_alarm_panel(controller, cluster, alarm_entity)
+    await reset_alarm_panel(server, controller, cluster, alarm_entity)
 
     # trip alarm from faulty code entry. First we need to arm away
     cluster.client_command.reset_mock()
     await controller.alarm_control_panels.arm_away(alarm_entity, "1234")
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert alarm_entity.state.state == "armed_away"
     cluster.client_command.reset_mock()
 
@@ -92,7 +90,7 @@ async def test_alarm_control_panel(
     await controller.alarm_control_panels.disarm(alarm_entity, "0000")
     await controller.alarm_control_panels.disarm(alarm_entity, "0000")
     await controller.alarm_control_panels.disarm(alarm_entity, "0000")
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
 
     assert alarm_entity.state.state == "triggered"
     assert cluster.client_command.call_count == 6
@@ -106,11 +104,11 @@ async def test_alarm_control_panel(
     )
 
     # reset the panel
-    await reset_alarm_panel(controller, cluster, alarm_entity)
+    await reset_alarm_panel(server, controller, cluster, alarm_entity)
 
     # arm_home
     await controller.alarm_control_panels.arm_home(alarm_entity, "1234")
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert alarm_entity.state.state == "armed_home"
     assert cluster.client_command.call_count == 2
     assert cluster.client_command.await_count == 2
@@ -123,11 +121,11 @@ async def test_alarm_control_panel(
     )
 
     # reset the panel
-    await reset_alarm_panel(controller, cluster, alarm_entity)
+    await reset_alarm_panel(server, controller, cluster, alarm_entity)
 
     # arm_night
     await controller.alarm_control_panels.arm_night(alarm_entity, "1234")
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert alarm_entity.state.state == "armed_night"
     assert cluster.client_command.call_count == 2
     assert cluster.client_command.await_count == 2
@@ -140,95 +138,98 @@ async def test_alarm_control_panel(
     )
 
     # reset the panel
-    await reset_alarm_panel(controller, cluster, alarm_entity)
+    await reset_alarm_panel(server, controller, cluster, alarm_entity)
 
     # arm from panel
     cluster.listener_event(
         "cluster_command", 1, 0, [security.IasAce.ArmMode.Arm_All_Zones, "", 0]
     )
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert alarm_entity.state.state == "armed_away"
 
     # reset the panel
-    await reset_alarm_panel(controller, cluster, alarm_entity)
+    await reset_alarm_panel(server, controller, cluster, alarm_entity)
 
     # arm day home only from panel
     cluster.listener_event(
         "cluster_command", 1, 0, [security.IasAce.ArmMode.Arm_Day_Home_Only, "", 0]
     )
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert alarm_entity.state.state == "armed_home"
 
     # reset the panel
-    await reset_alarm_panel(controller, cluster, alarm_entity)
+    await reset_alarm_panel(server, controller, cluster, alarm_entity)
 
     # arm night sleep only from panel
     cluster.listener_event(
         "cluster_command", 1, 0, [security.IasAce.ArmMode.Arm_Night_Sleep_Only, "", 0]
     )
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert alarm_entity.state.state == "armed_night"
 
     # disarm from panel with bad code
     cluster.listener_event(
         "cluster_command", 1, 0, [security.IasAce.ArmMode.Disarm, "", 0]
     )
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert alarm_entity.state.state == "armed_night"
 
     # disarm from panel with bad code for 2nd time still armed
     cluster.listener_event(
         "cluster_command", 1, 0, [security.IasAce.ArmMode.Disarm, "", 0]
     )
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert alarm_entity.state.state == "armed_night"
 
     # disarm from panel with bad code for 3rd time trips alarm
     cluster.listener_event(
         "cluster_command", 1, 0, [security.IasAce.ArmMode.Disarm, "", 0]
     )
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert alarm_entity.state.state == "triggered"
 
     # disarm from panel with good code
     cluster.listener_event(
         "cluster_command", 1, 0, [security.IasAce.ArmMode.Disarm, "1234", 0]
     )
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert alarm_entity.state.state == "disarmed"
 
     # panic from panel
     cluster.listener_event("cluster_command", 1, 4, [])
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert alarm_entity.state.state == "triggered"
 
     # reset the panel
-    await reset_alarm_panel(controller, cluster, alarm_entity)
+    await reset_alarm_panel(server, controller, cluster, alarm_entity)
 
     # fire from panel
     cluster.listener_event("cluster_command", 1, 3, [])
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert alarm_entity.state.state == "triggered"
 
     # reset the panel
-    await reset_alarm_panel(controller, cluster, alarm_entity)
+    await reset_alarm_panel(server, controller, cluster, alarm_entity)
 
     # emergency from panel
     cluster.listener_event("cluster_command", 1, 2, [])
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert alarm_entity.state.state == "triggered"
 
     # reset the panel
-    await reset_alarm_panel(controller, cluster, alarm_entity)
+    await reset_alarm_panel(server, controller, cluster, alarm_entity)
 
 
 async def reset_alarm_panel(
-    controller: Controller, cluster: security.IasAce, entity: AlarmControlPanelEntity
+    server: Server,
+    controller: Controller,
+    cluster: security.IasAce,
+    entity: AlarmControlPanelEntity,
 ) -> None:
     """Reset the state of the alarm panel."""
     cluster.client_command.reset_mock()
     await controller.alarm_control_panels.disarm(entity, "1234")
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert entity.state.state == "disarmed"
     assert cluster.client_command.call_count == 2
     assert cluster.client_command.await_count == 2

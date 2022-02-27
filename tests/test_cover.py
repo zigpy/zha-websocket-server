@@ -102,7 +102,6 @@ async def test_cover(
     cluster = zigpy_cover_device.endpoints.get(1).window_covering
     cluster.PLUGGED_ATTR_READS = {"current_position_lift_percentage": 100}
     zha_device = await device_joined(zigpy_cover_device)
-    await asyncio.sleep(0.001)
     assert cluster.read_attributes.call_count == 1
     assert "current_position_lift_percentage" in cluster.read_attributes.call_args[0][0]
 
@@ -115,11 +114,11 @@ async def test_cover(
     assert entity is not None
 
     # test that the state has changed from unavailable to off
-    await send_attributes_report(cluster, {0: 0, 8: 100, 1: 1})
+    await send_attributes_report(server, cluster, {0: 0, 8: 100, 1: 1})
     assert entity.state.state == STATE_CLOSED
 
     # test to see if it opens
-    await send_attributes_report(cluster, {0: 1, 8: 0, 1: 100})
+    await send_attributes_report(server, cluster, {0: 1, 8: 0, 1: 100})
     assert entity.state.state == STATE_OPEN
 
     # close from client
@@ -127,7 +126,7 @@ async def test_cover(
         "zigpy.zcl.Cluster.request", return_value=mock_coro([0x1, zcl_f.Status.SUCCESS])
     ):
         await controller.covers.close_cover(entity)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert cluster.request.call_count == 1
         assert cluster.request.call_args[0][0] is False
         assert cluster.request.call_args[0][1] == 0x01
@@ -139,7 +138,7 @@ async def test_cover(
         "zigpy.zcl.Cluster.request", return_value=mock_coro([0x0, zcl_f.Status.SUCCESS])
     ):
         await controller.covers.open_cover(entity)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert cluster.request.call_count == 1
         assert cluster.request.call_args[0][0] is False
         assert cluster.request.call_args[0][1] == 0x00
@@ -151,7 +150,7 @@ async def test_cover(
         "zigpy.zcl.Cluster.request", return_value=mock_coro([0x5, zcl_f.Status.SUCCESS])
     ):
         await controller.covers.set_cover_position(entity, 47)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert cluster.request.call_count == 1
         assert cluster.request.call_args[0][0] is False
         assert cluster.request.call_args[0][1] == 0x05
@@ -164,7 +163,7 @@ async def test_cover(
         "zigpy.zcl.Cluster.request", return_value=mock_coro([0x2, zcl_f.Status.SUCCESS])
     ):
         await controller.covers.stop_cover(entity)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert cluster.request.call_count == 1
         assert cluster.request.call_args[0][0] is False
         assert cluster.request.call_args[0][1] == 0x02
@@ -180,7 +179,6 @@ async def test_shade(
     """Test zha cover platform for shade device type."""
     controller, server = connected_client_and_server
     zha_device = await device_joined(zigpy_shade_device)
-    await asyncio.sleep(0.001)
     cluster_on_off = zigpy_shade_device.endpoints.get(1).on_off
     cluster_level = zigpy_shade_device.endpoints.get(1).level
     entity_id = find_entity_id(Platform.COVER, zha_device)
@@ -192,17 +190,17 @@ async def test_shade(
     assert entity is not None
 
     # test that the state has changed from unavailable to off
-    await send_attributes_report(cluster_on_off, {8: 0, 0: False, 1: 1})
+    await send_attributes_report(server, cluster_on_off, {8: 0, 0: False, 1: 1})
     assert entity.state.state == STATE_CLOSED
 
     # test to see if it opens
-    await send_attributes_report(cluster_on_off, {8: 0, 0: True, 1: 1})
+    await send_attributes_report(server, cluster_on_off, {8: 0, 0: True, 1: 1})
     assert entity.state.state == STATE_OPEN
 
     # close from client command fails
     with patch("zigpy.zcl.Cluster.request", side_effect=asyncio.TimeoutError):
         await controller.covers.close_cover(entity)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert cluster_on_off.request.call_count == 1
         assert cluster_on_off.request.call_args[0][0] is False
         assert cluster_on_off.request.call_args[0][1] == 0x0000
@@ -212,17 +210,17 @@ async def test_shade(
         "zigpy.zcl.Cluster.request", AsyncMock(return_value=[0x1, zcl_f.Status.SUCCESS])
     ):
         await controller.covers.close_cover(entity)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert cluster_on_off.request.call_count == 1
         assert cluster_on_off.request.call_args[0][0] is False
         assert cluster_on_off.request.call_args[0][1] == 0x0000
         assert entity.state.state == STATE_CLOSED
 
     # open from client command fails
-    await send_attributes_report(cluster_level, {0: 0})
+    await send_attributes_report(server, cluster_level, {0: 0})
     with patch("zigpy.zcl.Cluster.request", side_effect=asyncio.TimeoutError):
         await controller.covers.open_cover(entity)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert cluster_on_off.request.call_count == 1
         assert cluster_on_off.request.call_args[0][0] is False
         assert cluster_on_off.request.call_args[0][1] == 0x0001
@@ -233,7 +231,7 @@ async def test_shade(
         "zigpy.zcl.Cluster.request", AsyncMock(return_value=[0x0, zcl_f.Status.SUCCESS])
     ):
         await controller.covers.open_cover(entity)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert cluster_on_off.request.call_count == 1
         assert cluster_on_off.request.call_args[0][0] is False
         assert cluster_on_off.request.call_args[0][1] == 0x0001
@@ -242,7 +240,7 @@ async def test_shade(
     # set position UI command fails
     with patch("zigpy.zcl.Cluster.request", side_effect=asyncio.TimeoutError):
         await controller.covers.set_cover_position(entity, 47)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert cluster_level.request.call_count == 1
         assert cluster_level.request.call_args[0][0] is False
         assert cluster_level.request.call_args[0][1] == 0x0004
@@ -254,7 +252,7 @@ async def test_shade(
         "zigpy.zcl.Cluster.request", AsyncMock(return_value=[0x5, zcl_f.Status.SUCCESS])
     ):
         await controller.covers.set_cover_position(entity, 47)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert cluster_level.request.call_count == 1
         assert cluster_level.request.call_args[0][0] is False
         assert cluster_level.request.call_args[0][1] == 0x0004
@@ -262,13 +260,13 @@ async def test_shade(
         assert entity.state.current_position == 47
 
     # report position change
-    await send_attributes_report(cluster_level, {8: 0, 0: 100, 1: 1})
+    await send_attributes_report(server, cluster_level, {8: 0, 0: 100, 1: 1})
     assert entity.state.current_position == int(100 * 100 / 255)
 
     # test cover stop
     with patch("zigpy.zcl.Cluster.request", side_effect=asyncio.TimeoutError):
         await controller.covers.stop_cover(entity)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert cluster_level.request.call_count == 1
         assert cluster_level.request.call_args[0][0] is False
         assert cluster_level.request.call_args[0][1] in (0x0003, 0x0007)
@@ -282,7 +280,6 @@ async def test_keen_vent(
     """Test keen vent."""
     controller, server = connected_client_and_server
     zha_device = await device_joined(zigpy_keen_vent)
-    await asyncio.sleep(0.001)
     cluster_on_off = zigpy_keen_vent.endpoints.get(1).on_off
     cluster_level = zigpy_keen_vent.endpoints.get(1).level
     entity_id = find_entity_id(Platform.COVER, zha_device)
@@ -294,7 +291,7 @@ async def test_keen_vent(
     assert entity is not None
 
     # test that the state has changed from unavailable to off
-    await send_attributes_report(cluster_on_off, {8: 0, 0: False, 1: 1})
+    await send_attributes_report(server, cluster_on_off, {8: 0, 0: False, 1: 1})
     assert entity.state.state == STATE_CLOSED
 
     # open from client command fails
@@ -303,7 +300,7 @@ async def test_keen_vent(
 
     with p1, p2:
         await controller.covers.open_cover(entity)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert cluster_on_off.request.call_count == 1
         assert cluster_on_off.request.call_args[0][0] is False
         assert cluster_on_off.request.call_args[0][1] == 0x0001
@@ -316,7 +313,7 @@ async def test_keen_vent(
 
     with p1, p2:
         await controller.covers.open_cover(entity)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert cluster_on_off.request.call_count == 1
         assert cluster_on_off.request.call_args[0][0] is False
         assert cluster_on_off.request.call_args[0][1] == 0x0001

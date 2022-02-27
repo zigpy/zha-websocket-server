@@ -1,6 +1,5 @@
 """Test zha device discovery."""
 
-import asyncio
 import itertools
 import re
 from typing import Awaitable, Callable
@@ -43,10 +42,13 @@ UNIQUE_ID_HD = re.compile(r"^(([\da-fA-F]{2}:){7}[\da-fA-F]{2}-\d{1,3})", re.X)
 
 
 @pytest.fixture
-def zhaws_device_mock(zha_device_mock: Callable[..., Device]) -> Callable[..., Device]:
+def zhaws_device_mock(
+    zigpy_device_mock: Callable[..., zigpy.device.Device],
+    device_joined: Callable[..., Device],
+) -> Callable[..., Device]:
     """Channels mock factory."""
 
-    def _mock(
+    async def _mock(
         endpoints,
         ieee="00:11:22:33:44:55:66:77",
         manufacturer="mock manufacturer",
@@ -54,10 +56,16 @@ def zhaws_device_mock(zha_device_mock: Callable[..., Device]) -> Callable[..., D
         node_desc=b"\x02@\x807\x10\x7fd\x00\x00*d\x00\x00",
         patch_cluster=False,
     ):
-        zhaws_dev = zha_device_mock(
-            endpoints, ieee, manufacturer, model, node_desc, patch_cluster=patch_cluster
+        return await device_joined(
+            zigpy_device_mock(
+                endpoints,
+                ieee=ieee,
+                manufacturer=manufacturer,
+                model=model,
+                node_descriptor=node_desc,
+                patch_cluster=patch_cluster,
+            )
         )
-        return zhaws_dev
 
     return _mock
 
@@ -78,6 +86,7 @@ async def test_devices(
     connected_client_and_server: tuple[Controller, Server],
 ) -> None:
     """Test device discovery."""
+    controller, server = connected_client_and_server
     zigpy_device = zigpy_device_mock(
         device[SIG_ENDPOINTS],
         "00:11:22:33:44:55:66:77",
@@ -98,7 +107,7 @@ async def test_devices(
     try:
         Endpoint.async_new_entity = lambda *a, **kw: _dispatch(*a, **kw)  # type: ignore
         zha_dev = await device_joined(zigpy_device)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
     finally:
         Endpoint.async_new_entity = orig_new_entity  # type: ignore
 
@@ -306,12 +315,12 @@ async def test_discover_endpoint(
     with mock.patch(
         "zhaws.server.zigbee.endpoint.Endpoint.async_new_entity"
     ) as new_ent:
-        device: Device = zhaws_device_mock(
+        device: Device = await zhaws_device_mock(
             device_info[SIG_ENDPOINTS],
             manufacturer=device_info[SIG_MANUFACTURER],
             model=device_info[SIG_MODEL],
             node_desc=device_info[SIG_NODE_DESC],
-            patch_cluster=False,
+            patch_cluster=True,
         )
 
     assert device_info[DEV_SIG_EVT_CHANNELS] == sorted(

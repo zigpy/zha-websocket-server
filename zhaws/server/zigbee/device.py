@@ -410,7 +410,9 @@ class Device(LogMixin):
         self.available = available
         if availability_changed and available:
             # reinit channels then signal entities
-            asyncio.create_task(self._async_became_available())
+            self.controller.server.track_task(
+                asyncio.create_task(self._async_became_available())
+            )
             return
 
         if availability_changed and not available:
@@ -514,14 +516,14 @@ class Device(LogMixin):
 
     async def on_remove(self) -> None:
         """Cancel tasks this device owns."""
-        for task in self._tracked_tasks:
-            if not task.done():
-                self.debug("Cancelling task: %s", task)
-                task.cancel()
-                with suppress(asyncio.CancelledError):
-                    await task
-            for platform_entity in self._platform_entities.values():
-                await platform_entity.on_remove()
+        tasks = [t for t in self._tracked_tasks if not (t.done() or t.cancelled())]
+        for task in tasks:
+            self.debug("Cancelling task: %s", task)
+            task.cancel()
+        with suppress(asyncio.CancelledError):
+            await asyncio.gather(*tasks, return_exceptions=True)
+        for platform_entity in self._platform_entities.values():
+            await platform_entity.on_remove()
 
     def async_update_last_seen(self, last_seen: float) -> None:
         """Set last seen on the zigpy device."""

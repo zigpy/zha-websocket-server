@@ -46,7 +46,7 @@ async def test_client_message_id_uniqueness(
 async def test_client_stop_server(
     connected_client_and_server: tuple[Controller, Server]
 ) -> None:
-    """Tests that the client can stop the server"""
+    # Tests that the client can stop the server
     controller, server = connected_client_and_server
 
     assert server.is_serving

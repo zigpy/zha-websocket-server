@@ -48,7 +48,9 @@ def async_response(
         """Schedule the handler."""
         # As the webserver is now started before the start
         # event we do not want to block for websocket responders
-        asyncio.create_task(_handle_async_response(func, server, client, msg))
+        server.track_task(
+            asyncio.create_task(_handle_async_response(func, server, client, msg))
+        )
 
     return schedule_handler
 

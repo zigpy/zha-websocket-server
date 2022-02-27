@@ -1,5 +1,4 @@
 """Test zha switch."""
-import asyncio
 import logging
 from typing import Awaitable, Callable, Optional
 from unittest.mock import call, patch
@@ -66,7 +65,6 @@ async def device_switch_1(
     )
     zha_device = await device_joined(zigpy_device)
     zha_device.available = True
-    await asyncio.sleep(0.001)
     return zha_device
 
 
@@ -90,7 +88,6 @@ async def device_switch_2(
     )
     zha_device = await device_joined(zigpy_device)
     zha_device.available = True
-    await asyncio.sleep(0.001)
     return zha_device
 
 
@@ -102,7 +99,6 @@ async def test_switch(
     """Test zha switch platform."""
     controller, server = connected_client_and_server
     zha_device = await device_joined(zigpy_device)
-    await asyncio.sleep(0.001)
     cluster = zigpy_device.endpoints.get(1).on_off
     entity_id = find_entity_id(Platform.SWITCH, zha_device)
     assert entity_id is not None
@@ -117,11 +113,11 @@ async def test_switch(
     assert entity.state.state is False
 
     # turn on at switch
-    await send_attributes_report(cluster, {1: 0, 0: 1, 2: 2})
+    await send_attributes_report(server, cluster, {1: 0, 0: 1, 2: 2})
     assert entity.state.state is True
 
     # turn off at switch
-    await send_attributes_report(cluster, {1: 1, 0: 0, 2: 2})
+    await send_attributes_report(server, cluster, {1: 1, 0: 0, 2: 2})
     assert entity.state.state is False
 
     # turn on from client
@@ -131,7 +127,7 @@ async def test_switch(
     ):
         # turn on via UI
         await controller.switches.turn_on(entity)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert len(cluster.request.mock_calls) == 1
         assert cluster.request.call_args == call(
             False, ON, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
@@ -144,7 +140,7 @@ async def test_switch(
     ):
         # turn off via UI
         await controller.switches.turn_off(entity)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert len(cluster.request.mock_calls) == 1
         assert cluster.request.call_args == call(
             False, OFF, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
@@ -168,7 +164,7 @@ async def test_zha_group_switch_entity(
     zha_group: Group = await server.controller.async_create_zigpy_group(
         "Test Group", members
     )
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
 
     assert zha_group is not None
     assert len(zha_group.members) == 2
@@ -204,7 +200,7 @@ async def test_zha_group_switch_entity(
     ):
         # turn on via UI
         await controller.switches.turn_on(entity)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert len(group_cluster_on_off.request.mock_calls) == 1
         assert group_cluster_on_off.request.call_args == call(
             False, ON, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
@@ -218,7 +214,7 @@ async def test_zha_group_switch_entity(
     ):
         # turn off via UI
         await controller.switches.turn_off(entity)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert len(group_cluster_on_off.request.mock_calls) == 1
         assert group_cluster_on_off.request.call_args == call(
             False, OFF, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
@@ -226,27 +222,27 @@ async def test_zha_group_switch_entity(
     assert entity.state.state is False
 
     # test some of the group logic to make sure we key off states correctly
-    await send_attributes_report(dev1_cluster_on_off, {0: 1})
-    await send_attributes_report(dev2_cluster_on_off, {0: 1})
-    await asyncio.sleep(0.001)
+    await send_attributes_report(server, dev1_cluster_on_off, {0: 1})
+    await send_attributes_report(server, dev2_cluster_on_off, {0: 1})
+    await server.block_till_done()
 
     # test that group light is on
     assert entity.state.state is True
 
-    await send_attributes_report(dev1_cluster_on_off, {0: 0})
-    await asyncio.sleep(0.001)
+    await send_attributes_report(server, dev1_cluster_on_off, {0: 0})
+    await server.block_till_done()
 
     # test that group light is still on
     assert entity.state.state is True
 
-    await send_attributes_report(dev2_cluster_on_off, {0: 0})
-    await asyncio.sleep(0.001)
+    await send_attributes_report(server, dev2_cluster_on_off, {0: 0})
+    await server.block_till_done()
 
     # test that group light is now off
     assert entity.state.state is False
 
-    await send_attributes_report(dev1_cluster_on_off, {0: 1})
-    await asyncio.sleep(0.001)
+    await send_attributes_report(server, dev1_cluster_on_off, {0: 1})
+    await server.block_till_done()
 
     # test that group light is now back on
     assert entity.state.state is True

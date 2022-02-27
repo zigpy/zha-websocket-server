@@ -5,7 +5,7 @@ import abc
 import asyncio
 from contextlib import suppress
 import logging
-from typing import TYPE_CHECKING, Any, Type, Union
+from typing import TYPE_CHECKING, Any
 
 from zhaws.event import EventBase
 from zhaws.server.const import EVENT, EVENT_TYPE, EventTypes, PlatformEntityEvents
@@ -62,12 +62,12 @@ class BaseEntity(LogMixin, EventBase):
 
     async def on_remove(self) -> None:
         """Cancel tasks this entity owns."""
-        for task in self._tracked_tasks:
-            if not task.done():
-                self.debug("Cancelling task: %s", task)
-                task.cancel()
-                with suppress(asyncio.CancelledError):
-                    await task
+        tasks = [t for t in self._tracked_tasks if not (t.done() or t.cancelled())]
+        for task in tasks:
+            self.debug("Cancelling task: %s", task)
+            task.cancel()
+        with suppress(asyncio.CancelledError):
+            await asyncio.gather(*tasks, return_exceptions=True)
 
     def maybe_send_state_changed_event(self) -> None:
         """Send the state of this platform entity."""
@@ -104,10 +104,10 @@ class BaseEntity(LogMixin, EventBase):
 class PlatformEntity(BaseEntity):
     """Class that represents an entity for a device platform."""
 
-    unique_id_suffix: Union[str, None] = None
+    unique_id_suffix: str | None = None
 
     def __init_subclass__(
-        cls: Type[PlatformEntity], id_suffix: Union[str, None] = None, **kwargs: Any
+        cls: type[PlatformEntity], id_suffix: str | None = None, **kwargs: Any
     ):
         """Initialize subclass.
         :param id_suffix: suffix to add to the unique_id of the entity. Used for multi
@@ -142,13 +142,13 @@ class PlatformEntity(BaseEntity):
 
     @classmethod
     def create_platform_entity(
-        cls: Type[PlatformEntity],
+        cls: type[PlatformEntity],
         unique_id: str,
         cluster_handlers: list[ClusterHandler],
         endpoint: Endpoint,
         device: Device,
         **kwargs: Any,
-    ) -> Union[PlatformEntity, None]:
+    ) -> PlatformEntity | None:
         """Entity Factory.
         Return a platform entity if it is a supported configuration, otherwise return None
         """

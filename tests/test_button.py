@@ -1,5 +1,4 @@
 """Test ZHA button."""
-import asyncio
 from typing import Awaitable, Callable, Optional
 from unittest.mock import patch
 
@@ -44,8 +43,7 @@ async def contact_sensor(
         },
     )
 
-    zhaws_device = await device_joined(zigpy_device)
-    await asyncio.sleep(0.001)
+    zhaws_device: Device = await device_joined(zigpy_device)
     return zhaws_device, zigpy_device.endpoints[1].identify
 
 
@@ -71,7 +69,7 @@ async def test_button(
         return_value=mock_coro([0x00, zcl_f.Status.SUCCESS]),
     ):
         await controller.buttons.press(entity)
-        await asyncio.sleep(0.001)
+        await server.block_till_done()
         assert len(cluster.request.mock_calls) == 1
         assert cluster.request.call_args[0][0] is False
         assert cluster.request.call_args[0][1] == 0

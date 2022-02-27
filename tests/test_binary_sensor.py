@@ -1,5 +1,4 @@
 """Test zhaws binary sensor."""
-import asyncio
 from typing import Awaitable, Callable, Optional
 
 import pytest
@@ -40,30 +39,30 @@ DEVICE_OCCUPANCY = {
 
 
 async def async_test_binary_sensor_on_off(
-    cluster: general.OnOff, entity: BinarySensorEntity
+    server: Server, cluster: general.OnOff, entity: BinarySensorEntity
 ) -> None:
     """Test getting on and off messages for binary sensors."""
     # binary sensor on
-    await send_attributes_report(cluster, {1: 0, 0: 1, 2: 2})
+    await send_attributes_report(server, cluster, {1: 0, 0: 1, 2: 2})
     assert entity.state.state is True
 
     # binary sensor off
-    await send_attributes_report(cluster, {1: 1, 0: 0, 2: 2})
+    await send_attributes_report(server, cluster, {1: 1, 0: 0, 2: 2})
     assert entity.state.state is False
 
 
 async def async_test_iaszone_on_off(
-    cluster: security.IasZone, entity: BinarySensorEntity
+    server: Server, cluster: security.IasZone, entity: BinarySensorEntity
 ) -> None:
     """Test getting on and off messages for iaszone binary sensors."""
     # binary sensor on
     cluster.listener_event("cluster_command", 1, 0, [1])
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert entity.state.state is True
 
     # binary sensor off
     cluster.listener_event("cluster_command", 1, 0, [0])
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert entity.state.state is False
 
 
@@ -87,7 +86,6 @@ async def test_binary_sensor(
     zigpy_device = zigpy_device_mock(device)
     controller, server = connected_client_and_server
     zhaws_device = await device_joined(zigpy_device)
-    await asyncio.sleep(0.001)
 
     client_device: Optional[DeviceProxy] = controller.devices.get(
         str(zhaws_device.ieee)
@@ -100,4 +98,4 @@ async def test_binary_sensor(
 
     # test getting messages that trigger and reset the sensors
     cluster = getattr(zigpy_device.endpoints[1], cluster_name)
-    await on_off_test(cluster, entity)
+    await on_off_test(server, cluster, entity)

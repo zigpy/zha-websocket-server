@@ -1,6 +1,5 @@
 """Test ZHA select entities."""
 
-import asyncio
 from typing import Awaitable, Callable, Optional
 
 import pytest
@@ -41,7 +40,6 @@ async def siren(
     )
 
     zha_device = await device_joined(zigpy_device)
-    await asyncio.sleep(0.001)
     return zha_device, zigpy_device.endpoints[1].ias_wd
 
 
@@ -90,5 +88,5 @@ async def test_select(
     await controller.selects.select_option(
         entity, security.IasWd.Warning.WarningMode.Burglar.name
     )
-    await asyncio.sleep(0.001)
+    await server.block_till_done()
     assert entity.state.state == security.IasWd.Warning.WarningMode.Burglar.name
