@@ -138,7 +138,9 @@ class PlatformEntity(BaseEntity):
             self.cluster_handlers[cluster_handler.name] = cluster_handler
         self._device: Device = device
         self._endpoint = endpoint
-        self._device.platform_entities[self.unique_id] = self
+        # we double create these in discovery tests because we reissue the create calls to count and prove them out
+        if self.unique_id not in self._device.platform_entities:
+            self._device.platform_entities[self.unique_id] = self
 
     @classmethod
     def create_platform_entity(

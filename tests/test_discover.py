@@ -149,6 +149,7 @@ async def test_devices(
             unique_id, channels, channels[0]._endpoint, zha_dev
         )
         if response:
+            await response.on_remove()
             created_entity_count += 1
             unique_id_head = UNIQUE_ID_HD.match(unique_id).group(
                 0
