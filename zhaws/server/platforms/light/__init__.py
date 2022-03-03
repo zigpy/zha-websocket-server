@@ -7,7 +7,7 @@ import enum
 import functools
 import itertools
 import logging
-from typing import TYPE_CHECKING, Any, Final, Optional, Union
+from typing import TYPE_CHECKING, Any, Final
 
 from zigpy.zcl.clusters.general import Identify, LevelControl, OnOff
 from zigpy.zcl.clusters.lighting import Color
@@ -145,20 +145,20 @@ class BaseLight(BaseEntity):
         """Initialize the light."""
         super().__init__(*args, **kwargs)
         self._available: bool = False
-        self._brightness: Union[int, None] = None
-        self._off_brightness: Union[int, None] = None
-        self._hs_color: Union[tuple[float, float], None] = None
-        self._color_temp: Union[int, None] = None
-        self._min_mireds: Union[int, None] = 153
-        self._max_mireds: Union[int, None] = 500
-        self._effect_list: Union[list[str], None] = None
-        self._effect: Union[str, None] = None
+        self._brightness: int | None = None
+        self._off_brightness: int | None = None
+        self._hs_color: tuple[float, float] | None = None
+        self._color_temp: int | None = None
+        self._min_mireds: int | None = 153
+        self._max_mireds: int | None = 500
+        self._effect_list: list[str] | None = None
+        self._effect: str | None = None
         self._supported_features: int = 0
         self._state: bool | None = None
         self._on_off_cluster_handler: ClusterHandler
-        self._level_cluster_handler: Optional[ClusterHandler] = None
-        self._color_cluster_handler: Optional[ClusterHandler] = None
-        self._identify_cluster_handler: Optional[ClusterHandler] = None
+        self._level_cluster_handler: ClusterHandler | None = None
+        self._color_cluster_handler: ClusterHandler | None = None
+        self._identify_cluster_handler: ClusterHandler | None = None
         self._default_transition: int | None = None
 
     def get_state(self) -> dict[str, Any]:
@@ -205,7 +205,7 @@ class BaseLight(BaseEntity):
         self.maybe_send_state_changed_event()
 
     @property
-    def hs_color(self) -> Optional[tuple[float, float]]:
+    def hs_color(self) -> tuple[float, float] | None:
         """Return the hs color value [int, int]."""
         return self._hs_color
 
@@ -402,8 +402,8 @@ class Light(PlatformEntity, BaseLight):
             f"{endpoint.id}:0x{Identify.cluster_id:04x}"
         )
         if self._color_cluster_handler:
-            self._min_mireds: Union[int, None] = self._color_cluster_handler.min_mireds
-            self._max_mireds: Union[int, None] = self._color_cluster_handler.max_mireds
+            self._min_mireds: int | None = self._color_cluster_handler.min_mireds
+            self._max_mireds: int | None = self._color_cluster_handler.max_mireds
         effect_list = []
 
         if self._level_cluster_handler:
@@ -540,6 +540,11 @@ class HueLight(Light):
 
     _REFRESH_INTERVAL = (180, 300)
 
+    @property
+    def should_poll(self) -> bool:
+        """Return True if we need to poll for state changes."""
+        return True
+
 
 @STRICT_MATCH(
     cluster_handler_names=CLUSTER_HANDLER_ON_OFF,
@@ -562,15 +567,15 @@ class LightGroup(GroupEntity, BaseLight):
         self._on_off_cluster_handler: ClusterHandler = group.zigpy_group.endpoint[
             OnOff.cluster_id
         ]
-        self._level_cluster_handler: Optional[
+        self._level_cluster_handler: None | (
             ClusterHandler
-        ] = group.zigpy_group.endpoint[LevelControl.cluster_id]
-        self._color_cluster_handler: Optional[
+        ) = group.zigpy_group.endpoint[LevelControl.cluster_id]
+        self._color_cluster_handler: None | (
             ClusterHandler
-        ] = group.zigpy_group.endpoint[Color.cluster_id]
-        self._identify_cluster_handler: Optional[
+        ) = group.zigpy_group.endpoint[Color.cluster_id]
+        self._identify_cluster_handler: None | (
             ClusterHandler
-        ] = group.zigpy_group.endpoint[Identify.cluster_id]
+        ) = group.zigpy_group.endpoint[Identify.cluster_id]
 
     def update(self, _: Any = None) -> None:
         # Query all members and determine the light group state.

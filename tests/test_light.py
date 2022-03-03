@@ -124,6 +124,8 @@ async def device_light_1(
             }
         },
         ieee=IEEE_GROUPABLE_DEVICE,
+        manufacturer="Philips",
+        model="LWA004",
         nwk=0xB79D,
     )
     zha_device = await device_joined(zigpy_device)
