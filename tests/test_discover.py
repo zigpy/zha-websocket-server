@@ -34,6 +34,7 @@ from .zha_devices_list import (
     DEV_SIG_ENT_MAP_CLASS,
     DEV_SIG_ENT_MAP_ID,
     DEV_SIG_EVT_CHANNELS,
+    DEV_SIG_ZHA_QUIRK,
     DEVICES,
 )
 
@@ -93,6 +94,7 @@ async def test_devices(
         device[SIG_MANUFACTURER],
         device[SIG_MODEL],
         node_descriptor=device[SIG_NODE_DESC],
+        quirk=device[DEV_SIG_ZHA_QUIRK] if DEV_SIG_ZHA_QUIRK in device else None,
         patch_cluster=True,
     )
 

@@ -1,5 +1,6 @@
 """Example Zigbee Devices."""
 
+from zhaquirks.xiaomi.aqara.vibration_aq1 import VibrationAQ1
 from zigpy.const import (
     SIG_ENDPOINTS,
     SIG_EP_INPUT,
@@ -3523,7 +3524,6 @@ DEVICES = [
             "button.lumi_lumi_vibration_aq1_77665544_identify",
             "sensor.lumi_lumi_vibration_aq1_77665544_power",
             "binary_sensor.lumi_lumi_vibration_aq1_77665544_ias_zone",
-            "lock.lumi_lumi_vibration_aq1_77665544_door_lock",
             "sensor.lumi_lumi_vibration_aq1_77665544_basic_rssi",
             "sensor.lumi_lumi_vibration_aq1_77665544_basic_lqi",
         ],
@@ -3553,12 +3553,8 @@ DEVICES = [
                 DEV_SIG_ENT_MAP_CLASS: "LQISensor",
                 DEV_SIG_ENT_MAP_ID: "sensor.lumi_lumi_vibration_aq1_77665544_basic_lqi",
             },
-            ("lock", "00:11:22:33:44:55:66:77-1-257"): {
-                DEV_SIG_CHANNELS: ["door_lock"],
-                DEV_SIG_ENT_MAP_CLASS: "Lock",
-                DEV_SIG_ENT_MAP_ID: "lock.lumi_lumi_vibration_aq1_77665544_door_lock",
-            },
         },
+        DEV_SIG_ZHA_QUIRK: VibrationAQ1,
     },
     {
         DEV_SIG_DEV_NO: 64,
