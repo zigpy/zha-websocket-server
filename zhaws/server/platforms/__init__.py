@@ -215,6 +215,7 @@ class PlatformEntity(BaseEntity):
 
     async def async_update(self) -> None:
         """Retrieve latest state."""
+        self.debug("polling current state")
         tasks = [
             cluster_handler.async_update()
             for cluster_handler in self.cluster_handlers.values()

@@ -91,16 +91,6 @@ class Number(PlatformEntity):
         if await self._analog_output_cluster_handler.async_set_present_value(num_value):
             self.maybe_send_state_changed_event()
 
-    async def async_update(self) -> None:
-        """Attempt to retrieve the state of the entity."""
-        await super().async_update()
-        _LOGGER.debug("polling current state")
-        if self._analog_output_cluster_handler:
-            value = await self._analog_output_cluster_handler.get_attribute_value(
-                "present_value", from_cache=False
-            )
-            _LOGGER.debug("read value=%s", value)
-
     def to_json(self) -> dict:
         json = super().to_json()
         json["engineer_units"] = self._analog_output_cluster_handler.engineering_units

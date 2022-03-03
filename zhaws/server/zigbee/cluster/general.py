@@ -49,6 +49,11 @@ class AnalogInput(ClusterHandler):
 
     REPORT_CONFIG = [{"attr": "present_value", "config": REPORT_CONFIG_DEFAULT}]
 
+    async def async_update(self) -> None:
+        """Attempt to retrieve the present_value."""
+        value = self.get_attribute_value("present_value", from_cache=False)
+        self.debug("read value=%s", value)
+
 
 @registries.BINDABLE_CLUSTERS.register(general.AnalogOutput.cluster_id)
 @registries.CLUSTER_HANDLER_REGISTRY.register(general.AnalogOutput.cluster_id)
@@ -249,7 +254,6 @@ class LevelControlClusterHandler(ClusterHandler):
         self.debug("received attribute: %s update with value: %s", attrid, value)
         if attrid == self.CURRENT_LEVEL:
             self.dispatch_level_change("set_level", value)
-            pass
 
     def dispatch_level_change(self, command: str, level: int) -> None:
         """Dispatch level change."""
@@ -388,7 +392,6 @@ class Ota(ClusterHandler):
             """TODO
             self.send_event(SIGNAL_UPDATE_DEVICE.format(signal_id), args[3])
             """
-            pass
 
 
 @registries.CLUSTER_HANDLER_REGISTRY.register(general.Partition.cluster_id)
