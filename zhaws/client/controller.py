@@ -250,5 +250,5 @@ class Controller(EventBase):
     def handle_group_removed(self, event: GroupRemovedEvent) -> None:
         """Handle group removed event."""
         if event.group.id in self.groups:
-            self.groups[event.group.id].group_model = event.group
+            self.groups.pop(event.group.id)
         self.emit(ControllerEvents.GROUP_REMOVED, event)

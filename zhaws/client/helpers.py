@@ -1,7 +1,7 @@
 """Helper classes for zhaws.client."""
 from __future__ import annotations
 
-from typing import Any, Literal, Optional, Union, cast
+from typing import Any, Literal, cast
 
 from zigpy.types.named import EUI64
 
@@ -77,6 +77,7 @@ from zhaws.server.zigbee.api import (
     PermitJoiningCommand,
     ReadClusterAttributesCommand,
     ReconfigureDeviceCommand,
+    RemoveDeviceCommand,
     RemoveGroupMembersCommand,
     RemoveGroupsCommand,
     StartNetworkCommand,
@@ -204,9 +205,9 @@ class SirenHelper:
     async def turn_on(
         self,
         siren_platform_entity: BasePlatformEntity,
-        duration: Optional[int] = None,
-        volume_level: Optional[int] = None,
-        tone: Optional[str] = None,
+        duration: int | None = None,
+        volume_level: int | None = None,
+        tone: str | None = None,
     ) -> CommandResponse:
         """Turn on a siren."""
         ensure_platform_entity(siren_platform_entity, Platform.SIREN)
@@ -315,9 +316,9 @@ class FanHelper:
     async def turn_on(
         self,
         fan_platform_entity: BasePlatformEntity | GroupEntity,
-        speed: Optional[str] = None,
-        percentage: Optional[int] = None,
-        preset_mode: Optional[str] = None,
+        speed: str | None = None,
+        percentage: int | None = None,
+        preset_mode: str | None = None,
     ) -> CommandResponse:
         """Turn on a fan."""
         ensure_platform_entity(fan_platform_entity, Platform.FAN)
@@ -485,7 +486,7 @@ class NumberHelper:
     async def set_value(
         self,
         number_platform_entity: BasePlatformEntity,
-        value: Union[int, float],
+        value: int | float,
     ) -> CommandResponse:
         """Set a number."""
         ensure_platform_entity(number_platform_entity, Platform.NUMBER)
@@ -507,7 +508,7 @@ class SelectHelper:
     async def select_option(
         self,
         select_platform_entity: BasePlatformEntity,
-        option: Union[str, int],
+        option: str | int,
     ) -> CommandResponse:
         """Set a select."""
         ensure_platform_entity(select_platform_entity, Platform.SELECT)
@@ -545,12 +546,13 @@ class ClimateHelper:
     async def set_temperature(
         self,
         climate_platform_entity: BasePlatformEntity,
-        hvac_mode: Optional[
+        hvac_mode: None
+        | (
             Literal["heat_cool", "heat", "cool", "auto", "dry", "fan_only", "off"]
-        ] = None,
-        temperature: Optional[float] = None,
-        target_temp_high: Optional[float] = None,
-        target_temp_low: Optional[float] = None,
+        ) = None,
+        temperature: float | None = None,
+        target_temp_high: float | None = None,
+        target_temp_low: float | None = None,
     ) -> CommandResponse:
         """Set a climate."""
         ensure_platform_entity(climate_platform_entity, Platform.CLIMATE)
@@ -730,8 +732,8 @@ class GroupHelper:
     async def create_group(
         self,
         name: str,
-        unique_id: Optional[int] = None,
-        members: Optional[list[BasePlatformEntity]] = None,
+        unique_id: int | None = None,
+        members: list[BasePlatformEntity] | None = None,
     ) -> Group:
         """Create a new group."""
         request_data: dict[str, Any] = {
@@ -823,6 +825,10 @@ class DeviceHelper:
             ReconfigureDeviceCommand(ieee=device.ieee)
         )
 
+    async def remove_device(self, device: Device) -> None:
+        """Remove a device."""
+        await self._client.async_send_command(RemoveDeviceCommand(ieee=device.ieee))
+
     async def read_cluster_attributes(
         self,
         device: Device,
@@ -830,7 +836,7 @@ class DeviceHelper:
         cluster_type: str,
         endpoint_id: int,
         attributes: list[str],
-        manufacturer_code: Optional[int] = None,
+        manufacturer_code: int | None = None,
     ) -> ReadClusterAttributesResponse:
         """Read cluster attributes."""
         response = cast(
@@ -856,7 +862,7 @@ class DeviceHelper:
         endpoint_id: int,
         attribute: str,
         value: Any,
-        manufacturer_code: Optional[int] = None,
+        manufacturer_code: int | None = None,
     ) -> WriteClusterAttributeResponse:
         """Set the value for a cluster attribute."""
         response = cast(
@@ -884,7 +890,7 @@ class NetworkHelper:
         self._client: Client = client
 
     async def permit_joining(
-        self, duration: int = 255, device: Optional[Device] = None
+        self, duration: int = 255, device: Device | None = None
     ) -> bool:
         """Permit joining for a specified duration."""
         # TODO add permit with code support
