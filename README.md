@@ -1,5 +1,7 @@
 # zha-websocket-server
 
+[![Coverage Status](https://coveralls.io/repos/github/zigpy/zha-websocket-server/badge.svg?branch=dev)](https://coveralls.io/github/zigpy/zha-websocket-server?branch=dev)
+
 ## Running the server
 
 Checkout the code and open a terminal at the root of the project. Then run the following commands:
