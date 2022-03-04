@@ -24,7 +24,7 @@ async def execute_platform_entity_command(
     """Get the platform entity and execute a method based on the command."""
     try:
         if command.ieee:
-            _LOGGER.warning("command: %s", command)
+            _LOGGER.debug("command: %s", command)
             device = server.controller.get_device(command.ieee)
             platform_entity: Any = device.get_platform_entity(command.unique_id)
         else:
@@ -46,7 +46,7 @@ async def execute_platform_entity_command(
         if action.__code__.co_argcount == 1:  # the only argument is self
             await action()
         else:
-            await action(**command.dict())
+            await action(**command.dict(exclude_none=True))
     except Exception as err:
         _LOGGER.exception("Error executing command: %s", method_name, exc_info=err)
         client.send_result_error(command, "PLATFORM_ENTITY_ACTION_ERROR", str(err))

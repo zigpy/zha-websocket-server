@@ -158,7 +158,7 @@ async def test_fan(
     entity_id = find_entity_id(Platform.FAN, zha_device)
     assert entity_id is not None
 
-    client_device: Optional[DeviceProxy] = controller.devices.get(str(zha_device.ieee))
+    client_device: Optional[DeviceProxy] = controller.devices.get(zha_device.ieee)
     assert client_device is not None
     entity = get_entity(client_device, entity_id)
     assert entity is not None

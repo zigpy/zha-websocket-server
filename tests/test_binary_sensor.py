@@ -87,9 +87,7 @@ async def test_binary_sensor(
     controller, server = connected_client_and_server
     zhaws_device = await device_joined(zigpy_device)
 
-    client_device: Optional[DeviceProxy] = controller.devices.get(
-        str(zhaws_device.ieee)
-    )
+    client_device: Optional[DeviceProxy] = controller.devices.get(zhaws_device.ieee)
     assert client_device is not None
     entity: BinarySensorEntity = find_entity(client_device, Platform.BINARY_SENSOR)  # type: ignore
     assert entity is not None

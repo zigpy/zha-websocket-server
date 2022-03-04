@@ -103,7 +103,7 @@ async def test_switch(
     entity_id = find_entity_id(Platform.SWITCH, zha_device)
     assert entity_id is not None
 
-    client_device: Optional[DeviceProxy] = controller.devices.get(str(zha_device.ieee))
+    client_device: Optional[DeviceProxy] = controller.devices.get(zha_device.ieee)
     assert client_device is not None
     entity: SwitchEntity = get_entity(client_device, entity_id)  # type: ignore
     assert entity is not None
@@ -156,8 +156,8 @@ async def test_zha_group_switch_entity(
     controller, server = connected_client_and_server
     member_ieee_addresses = [device_switch_1.ieee, device_switch_2.ieee]
     members = [
-        GroupMemberReference(device_switch_1.ieee, 1),
-        GroupMemberReference(device_switch_2.ieee, 1),
+        GroupMemberReference(ieee=device_switch_1.ieee, endpoint_id=1),
+        GroupMemberReference(ieee=device_switch_2.ieee, endpoint_id=1),
     ]
 
     # test creating a group with 2 members

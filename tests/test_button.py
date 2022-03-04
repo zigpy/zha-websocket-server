@@ -56,9 +56,7 @@ async def test_button(
     zhaws_device, cluster = contact_sensor
     controller, server = connected_client_and_server
     assert cluster is not None
-    client_device: Optional[DeviceProxy] = controller.devices.get(
-        str(zhaws_device.ieee)
-    )
+    client_device: Optional[DeviceProxy] = controller.devices.get(zhaws_device.ieee)
     assert client_device is not None
     entity: ButtonEntity = find_entity(client_device, Platform.BUTTON)  # type: ignore
     assert entity is not None

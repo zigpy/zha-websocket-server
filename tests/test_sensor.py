@@ -381,7 +381,7 @@ async def test_sensor(
     cluster.PLUGGED_ATTR_READS = read_plug or {}
     controller, server = connected_client_and_server
     zha_device = await device_joined(zigpy_device)
-    client_device: Optional[DeviceProxy] = controller.devices.get(str(zha_device.ieee))
+    client_device: Optional[DeviceProxy] = controller.devices.get(zha_device.ieee)
     assert client_device is not None
 
     entity_id = ENTITY_ID_PREFIX.format(entity_suffix)
@@ -432,7 +432,7 @@ async def test_electrical_measurement_init(
     controller, server = connected_client_and_server
     cluster = zigpy_device.endpoints[1].in_clusters[cluster_id]
     zha_device = await device_joined(zigpy_device)
-    client_device: Optional[DeviceProxy] = controller.devices.get(str(zha_device.ieee))
+    client_device: Optional[DeviceProxy] = controller.devices.get(zha_device.ieee)
     assert client_device is not None
     entity_id = find_entity_id(Platform.SENSOR, zha_device)
     assert entity_id is not None
@@ -572,7 +572,7 @@ async def test_unsupported_attributes_sensor(
     controller, server = connected_client_and_server
     zha_device = await device_joined(zigpy_device)
     await server.block_till_done()
-    client_device: Optional[DeviceProxy] = controller.devices.get(str(zha_device.ieee))
+    client_device: Optional[DeviceProxy] = controller.devices.get(zha_device.ieee)
     assert client_device is not None
 
     present_entity_ids = set(
@@ -701,7 +701,7 @@ async def test_se_summation_uom(
     }
     zha_device = await device_joined(zigpy_device)
     controller, server = connected_client_and_server
-    client_device: Optional[DeviceProxy] = controller.devices.get(str(zha_device.ieee))
+    client_device: Optional[DeviceProxy] = controller.devices.get(zha_device.ieee)
     assert client_device is not None
 
     entity = get_entity(client_device, entity_id)
@@ -739,7 +739,7 @@ async def test_elec_measurement_sensor_type(
     controller, server = connected_client_and_server
     await device_joined(zigpy_dev)
 
-    client_device: Optional[DeviceProxy] = controller.devices.get(str(zigpy_dev.ieee))
+    client_device: Optional[DeviceProxy] = controller.devices.get(zigpy_dev.ieee)
     assert client_device is not None
 
     entity = get_entity(client_device, entity_id)

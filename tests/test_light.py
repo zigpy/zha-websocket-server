@@ -302,7 +302,7 @@ async def test_light(
         zigpy_device.endpoints[1], "identify", None
     )
 
-    client_device: DeviceProxy | None = controller.devices.get(str(zha_device.ieee))
+    client_device: DeviceProxy | None = controller.devices.get(zha_device.ieee)
     assert client_device is not None
     entity = get_entity(client_device, entity_id)
     assert entity is not None
@@ -559,8 +559,8 @@ async def test_zha_group_light_entity(
     controller, server = connected_client_and_server
     member_ieee_addresses = [device_light_1.ieee, device_light_2.ieee]
     members = [
-        GroupMemberReference(device_light_1.ieee, 1),
-        GroupMemberReference(device_light_2.ieee, 1),
+        GroupMemberReference(ieee=device_light_1.ieee, endpoint_id=1),
+        GroupMemberReference(ieee=device_light_2.ieee, endpoint_id=1),
     ]
 
     # test creating a group with 2 members
@@ -582,19 +582,13 @@ async def test_zha_group_light_entity(
     group_proxy: GroupProxy | None = controller.groups.get(2)
     assert group_proxy is not None
 
-    device_1_proxy: DeviceProxy | None = controller.devices.get(
-        str(device_light_1.ieee)
-    )
+    device_1_proxy: DeviceProxy | None = controller.devices.get(device_light_1.ieee)
     assert device_1_proxy is not None
 
-    device_2_proxy: DeviceProxy | None = controller.devices.get(
-        str(device_light_2.ieee)
-    )
+    device_2_proxy: DeviceProxy | None = controller.devices.get(device_light_2.ieee)
     assert device_2_proxy is not None
 
-    device_3_proxy: DeviceProxy | None = controller.devices.get(
-        str(device_light_3.ieee)
-    )
+    device_3_proxy: DeviceProxy | None = controller.devices.get(device_light_3.ieee)
     assert device_3_proxy is not None
 
     entity: LightGroupEntity | None = get_group_entity(group_proxy, entity_id)
@@ -719,7 +713,9 @@ async def test_zha_group_light_entity(
     assert entity.state.on is False
 
     # add a new member and test that his state is also tracked
-    await zha_group.async_add_members([GroupMemberReference(device_light_3.ieee, 1)])
+    await zha_group.async_add_members(
+        [GroupMemberReference(ieee=device_light_3.ieee, endpoint_id=1)]
+    )
     await server.block_till_done()
     assert device_3_light_entity.unique_id in zha_group.all_member_entity_unique_ids
     assert len(zha_group.members) == 3
@@ -736,8 +732,8 @@ async def test_zha_group_light_entity(
     # make the group have only 1 member and now there should be no entity
     await zha_group.async_remove_members(
         [
-            GroupMemberReference(device_light_2.ieee, 1),
-            GroupMemberReference(device_light_3.ieee, 1),
+            GroupMemberReference(ieee=device_light_2.ieee, endpoint_id=1),
+            GroupMemberReference(ieee=device_light_3.ieee, endpoint_id=1),
         ]
     )
     await server.block_till_done()
@@ -750,7 +746,9 @@ async def test_zha_group_light_entity(
     assert entity is None
 
     # add a member back and ensure that the group entity was created again
-    await zha_group.async_add_members([GroupMemberReference(device_light_3.ieee, 1)])
+    await zha_group.async_add_members(
+        [GroupMemberReference(ieee=device_light_3.ieee, endpoint_id=1)]
+    )
     await server.block_till_done()
     assert len(zha_group.members) == 2
 
@@ -770,8 +768,8 @@ async def test_zha_group_light_entity(
     # this will test that _reprobe_group is used correctly
     await zha_group.async_add_members(
         [
-            GroupMemberReference(device_light_2.ieee, 1),
-            GroupMemberReference(coordinator.ieee, 1),
+            GroupMemberReference(ieee=device_light_2.ieee, endpoint_id=1),
+            GroupMemberReference(ieee=coordinator.ieee, endpoint_id=1),
         ]
     )
     await server.block_till_done()
@@ -782,7 +780,9 @@ async def test_zha_group_light_entity(
     await server.block_till_done()
     assert entity.state.on is True
 
-    await zha_group.async_remove_members([GroupMemberReference(coordinator.ieee, 1)])
+    await zha_group.async_remove_members(
+        [GroupMemberReference(ieee=coordinator.ieee, endpoint_id=1)]
+    )
     await server.block_till_done()
     entity = get_group_entity(group_proxy, group_entity_id)
     assert entity is not None
