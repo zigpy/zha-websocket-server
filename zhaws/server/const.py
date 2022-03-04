@@ -46,10 +46,10 @@ class APICommands(StrEnum):
 
     LOCK_UNLOCK = "lock_unlock"
     LOCK_LOCK = "lock_lock"
-    LOCK_SET_USER_CODE = "lock_set_user_code"
-    LOCK_ENAABLE_USER_CODE = "lock_enable_user_code"
-    LOCK_DISABLE_USER_CODE = "lock_disable_user_code"
-    LOCK_CLEAR_USER_CODE = "lock_clear_user_code"
+    LOCK_SET_USER_CODE = "lock_set_user_lock_code"
+    LOCK_ENAABLE_USER_CODE = "lock_enable_user_lock_code"
+    LOCK_DISABLE_USER_CODE = "lock_disable_user_lock_code"
+    LOCK_CLEAR_USER_CODE = "lock_clear_user_lock_code"
 
     CLIMATE_SET_TEMPERATURE = "climate_set_temperature"
     CLIMATE_SET_HVAC_MODE = "climate_set_hvac_mode"

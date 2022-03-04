@@ -73,6 +73,12 @@ class GenericState(BaseModel):
         "RSSISensor",
         "LQISensor",
         "LastSeenSensor",
+        # TODO following are temporary until we have a proper implementation
+        "Thermostat",
+        "SinopeTechnologiesThermostat",
+        "ZenWithinThermostat",
+        "MoesThermostat",
+        "BecaThermostat",
     ]
     state: Union[str, bool, int, float, None]
 
@@ -115,16 +121,23 @@ class ShadeState(BaseModel):
     """Cover state model."""
 
     class_name: Literal["Shade", "KeenVent"]
-    current_position: int
+    current_position: Optional[
+        int
+    ]  # TODO: how should we represent this when it is None?
     is_closed: bool
+    state: Optional[str]
 
 
 class FanState(BaseModel):
     """Fan state model."""
 
     class_name: Literal["Fan", "FanGroup"]
-    preset_mode: str
-    percentage: int
+    preset_mode: Optional[
+        str
+    ]  # TODO: how should we represent these when they are None?
+    percentage: Optional[int]  # TODO: how should we represent these when they are None?
+    is_on: bool
+    speed: Optional[str]
 
 
 class LockState(BaseModel):
@@ -140,7 +153,7 @@ class BatteryState(BaseModel):
     class_name: Literal["Battery"] = "Battery"
     state: Optional[Union[str, float, int]]
     battery_size: Optional[str]
-    battery_quantity: Optional[str]
+    battery_quantity: Optional[int]
     battery_voltage: Optional[float]
 
 
@@ -155,6 +168,9 @@ class ElectricalMeasurementState(BaseModel):
     ]
     state: Optional[Union[str, float, int]]
     measurement_type: Optional[str]
+    active_power_max: Optional[str]
+    rms_current_max: Optional[str]
+    rms_voltage_max: Optional[str]
 
 
 class LightState(BaseModel):
@@ -325,6 +341,8 @@ class FanEntity(BasePlatformEntity):
     preset_modes: list[str]
     supported_features: int
     speed_count: int
+    speed_list: list[str]
+    percentage_step: float
     state: FanState
 
 
@@ -343,9 +361,11 @@ class NumberEntity(BasePlatformEntity):
     """Number entity model."""
 
     class_name: Literal["Number"]
-    engineer_units: int
-    application_type: int
-    step: float
+    engineer_units: Optional[int]  # TODO: how should we represent this when it is None?
+    application_type: Optional[
+        int
+    ]  # TODO: how should we represent this when it is None?
+    step: Optional[float]  # TODO: how should we represent this when it is None?
     min_value: float
     max_value: float
     name: str
@@ -364,6 +384,19 @@ class SelectEntity(BasePlatformEntity):
     enum: str
     options: list[str]
     state: GenericState
+
+
+class ThermostatEntity(BasePlatformEntity):  # TODO fix this
+    """Thermostat entity model."""
+
+    class_name: Literal[
+        "Thermostat",
+        "SinopeTechnologiesThermostat",
+        "ZenWithinThermostat",
+        "MoesThermostat",
+        "BecaThermostat",
+    ]
+    state: GenericState  # TODO fix this
 
 
 class SirenEntity(BasePlatformEntity):
@@ -460,6 +493,7 @@ class Device(BaseDevice):
                 BatteryEntity,
                 ElectricalMeasurementEntity,
                 SmareEnergyMeteringEntity,
+                ThermostatEntity,
             ],
             Field(discriminator="class_name"),  # noqa: F821
         ],
@@ -522,6 +556,7 @@ class GroupMember(BaseModel):
                 BatteryEntity,
                 ElectricalMeasurementEntity,
                 SmareEnergyMeteringEntity,
+                ThermostatEntity,
             ],
             Field(discriminator="class_name"),  # noqa: F821
         ],

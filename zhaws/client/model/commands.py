@@ -403,7 +403,7 @@ class CommandResponse(BaseModel):
 
 
 class DefaultResponse(CommandResponse):
-    """Get devices response."""
+    """Default command response."""
 
     command: Literal[
         "start_network",
@@ -441,7 +441,7 @@ class DefaultResponse(CommandResponse):
         "select_select_option",
         "siren_turn_on",
         "siren_turn_off",
-        "numbet_set_value",
+        "number_set_value",
         "platform_entity_refresh_state",
         "client_listen",
         "client_listen_raw_zcl",

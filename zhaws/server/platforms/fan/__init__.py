@@ -4,7 +4,7 @@ from __future__ import annotations
 from abc import abstractmethod
 import functools
 import math
-from typing import TYPE_CHECKING, Any, Final, Union
+from typing import TYPE_CHECKING, Any, Final, TypeVar, Union
 
 from zigpy.exceptions import ZigbeeException
 from zigpy.zcl.clusters import hvac
@@ -50,6 +50,64 @@ DEFAULT_ON_PERCENTAGE: Final[int] = 50
 ATTR_PERCENTAGE: Final[str] = "percentage"
 ATTR_PRESET_MODE: Final[str] = "preset_mode"
 SUPPORT_SET_SPEED: Final[int] = 1
+
+SPEED_OFF: Final[str] = "off"
+SPEED_LOW: Final[str] = "low"
+SPEED_MEDIUM: Final[str] = "medium"
+SPEED_HIGH: Final[str] = "high"
+
+OFF_SPEED_VALUES: list[str | None] = [SPEED_OFF, None]
+LEGACY_SPEED_LIST: list[str] = [SPEED_LOW, SPEED_MEDIUM, SPEED_HIGH]
+T = TypeVar("T")
+
+
+def ordered_list_item_to_percentage(ordered_list: list[T], item: T) -> int:
+    """Determine the percentage of an item in an ordered list.
+
+    When using this utility for fan speeds, do not include "off"
+
+    Given the list: ["low", "medium", "high", "very_high"], this
+    function will return the following when the item is passed
+    in:
+
+        low: 25
+        medium: 50
+        high: 75
+        very_high: 100
+
+    """
+    if item not in ordered_list:
+        raise ValueError(f'The item "{item}"" is not in "{ordered_list}"')
+
+    list_len = len(ordered_list)
+    list_position = ordered_list.index(item) + 1
+    return (list_position * 100) // list_len
+
+
+def percentage_to_ordered_list_item(ordered_list: list[T], percentage: int) -> T:
+    """Find the item that most closely matches the percentage in an ordered list.
+
+    When using this utility for fan speeds, do not include "off"
+
+    Given the list: ["low", "medium", "high", "very_high"], this
+    function will return the following when when the item is passed
+    in:
+
+        1-25: low
+        26-50: medium
+        51-75: high
+        76-100: very_high
+    """
+    if not (list_len := len(ordered_list)):
+        raise ValueError("The ordered list is empty")
+
+    for offset, speed in enumerate(ordered_list):
+        list_position = offset + 1
+        upper_bound = (list_position * 100) // list_len
+        if percentage <= upper_bound:
+            return speed
+
+    return ordered_list[-1]
 
 
 def ranged_value_to_percentage(
@@ -116,6 +174,29 @@ class BaseFan(BaseEntity):
         """Return the number of speeds the fan supports."""
         return int_states_in_range(SPEED_RANGE)
 
+    @property
+    def is_on(self) -> bool:
+        """Return true if the entity is on."""
+        return self.speed not in [SPEED_OFF, None]
+
+    @property
+    def speed(self) -> str | None:
+        """Return the current speed."""
+        return None
+
+    @property
+    def percentage_step(self) -> float:
+        """Return the step size for percentage."""
+        return 100 / self.speed_count
+
+    @property
+    def speed_list(self) -> list[str]:
+        """Get the list of available speeds."""
+        speeds = [SPEED_OFF, *LEGACY_SPEED_LIST]
+        if preset_modes := self.preset_modes:
+            speeds.extend(preset_modes)
+        return speeds
+
     async def async_turn_on(
         self,
         speed: str | None = None,
@@ -124,6 +205,17 @@ class BaseFan(BaseEntity):
         **kwargs: Any,
     ) -> None:
         """Turn the entity on."""
+        if preset_mode is not None:
+            speed = preset_mode
+            percentage = None
+        elif speed is not None:
+            if self.preset_modes and speed in self.preset_modes:
+                preset_mode = speed
+                percentage = None
+            else:
+                percentage = self.speed_to_percentage(speed)
+        elif percentage is not None:
+            speed = self.percentage_to_speed(percentage)
         if percentage is None:
             percentage = DEFAULT_ON_PERCENTAGE
         await self.async_set_percentage(percentage)
@@ -132,12 +224,12 @@ class BaseFan(BaseEntity):
         """Turn the entity off."""
         await self.async_set_percentage(0)
 
-    async def async_set_percentage(self, percentage: int) -> None:
+    async def async_set_percentage(self, percentage: int, **kwargs: Any) -> None:
         """Set the speed percenage of the fan."""
         fan_mode = math.ceil(percentage_to_ranged_value(SPEED_RANGE, percentage))
         await self._async_set_fan_mode(fan_mode)
 
-    async def async_set_preset_mode(self, preset_mode: str) -> None:
+    async def async_set_preset_mode(self, preset_mode: str, **kwargs: Any) -> None:
         """Set the preset mode for the fan."""
         if preset_mode not in self.preset_modes:
             raise NotValidPresetModeError(
@@ -155,12 +247,30 @@ class BaseFan(BaseEntity):
         """Handle state update from cluster handler."""
         self.maybe_send_state_changed_event()
 
+    def speed_to_percentage(self, speed: str) -> int:  # pylint: disable=no-self-use
+        """Map a legacy speed to a percentage."""
+        if speed in OFF_SPEED_VALUES:
+            return 0
+        if speed not in LEGACY_SPEED_LIST:
+            raise ValueError(f"The speed {speed} is not a valid speed.")
+        return ordered_list_item_to_percentage(LEGACY_SPEED_LIST, speed)
+
+    def percentage_to_speed(  # pylint: disable=no-self-use
+        self, percentage: int
+    ) -> str:
+        """Map a percentage to a legacy speed."""
+        if percentage == 0:
+            return SPEED_OFF
+        return percentage_to_ordered_list_item(LEGACY_SPEED_LIST, percentage)
+
     def to_json(self) -> dict:
         """Return a JSON representation of the binary sensor."""
         json = super().to_json()
         json["preset_modes"] = self.preset_modes
         json["supported_features"] = self.supported_features
         json["speed_count"] = self.speed_count
+        json["speed_list"] = self.speed_list
+        json["percentage_step"] = self.percentage_step
         return json
 
 
@@ -203,6 +313,15 @@ class Fan(PlatformEntity, BaseFan):
         """Return the current preset mode."""
         return PRESET_MODES_TO_NAME.get(self._fan_cluster_handler.fan_mode)
 
+    @property
+    def speed(self) -> str | None:
+        """Return the current speed."""
+        if preset_mode := self.preset_mode:
+            return preset_mode
+        if (percentage := self.percentage) is None:
+            return None
+        return self.percentage_to_speed(percentage)
+
     def async_set_state(self, attr_id: int, attr_name: str, value: Any) -> None:
         """Handle state update from cluster handler."""
         self.maybe_send_state_changed_event()
@@ -219,6 +338,8 @@ class Fan(PlatformEntity, BaseFan):
             {
                 "preset_mode": self.preset_mode,
                 "percentage": self.percentage,
+                "is_on": self.is_on,
+                "speed": self.speed,
             }
         )
         return response
@@ -245,6 +366,15 @@ class FanGroup(GroupEntity, BaseFan):
         """Return the current preset mode."""
         return self._preset_mode
 
+    @property
+    def speed(self) -> str | None:
+        """Return the current speed."""
+        if preset_mode := self.preset_mode:
+            return preset_mode
+        if (percentage := self.percentage) is None:
+            return None
+        return self.percentage_to_speed(percentage)
+
     def get_state(self) -> dict:
         """Return the state of the fan."""
         response = super().get_state()
@@ -252,6 +382,8 @@ class FanGroup(GroupEntity, BaseFan):
             {
                 "preset_mode": self.preset_mode,
                 "percentage": self.percentage,
+                "is_on": self.is_on,
+                "speed": self.speed,
             }
         )
         return response

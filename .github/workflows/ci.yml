@@ -46,7 +46,7 @@ jobs:
         run: |
           python -m venv venv
           . venv/bin/activate
-          pip install -U pip setuptools pre-commit
+          pip install -U pip setuptools pre-commit pytest-xdist
           pip install -r requirements_test.txt
           pip install -e .
 
@@ -316,10 +316,14 @@ jobs:
             -qq \
             --timeout=9 \
             --durations=10 \
-            --cov zhaws \
+            --cov-report term-missing \
+            --cov zhaws tests/\
             -o console_output_style=count \
             -p no:sugar \
-            tests
+            -n 10 \
+            tests \
+            -rP \
+            -vv
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v3
         with:
@@ -367,7 +371,7 @@ jobs:
         run: |
           . venv/bin/activate
           coverage combine coverage*/.coverage*
-          coverage report --fail-under=50
+          coverage report --fail-under=75
           coverage xml
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2.1.0

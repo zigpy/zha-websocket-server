@@ -1,53 +1,9 @@
 from __future__ import annotations
 
-from asyncio import AbstractEventLoop
-import os
-import tempfile
-from typing import AsyncGenerator
-
-import aiohttp
-import pytest
-
 from zhaws.client.client import Client
+from zhaws.client.controller import Controller
 from zhaws.server.config.model import ServerConfiguration
 from zhaws.server.websocket.server import Server
-
-
-@pytest.fixture
-def server_configuration() -> ServerConfiguration:
-    port = aiohttp.test_utils.unused_port()  # type: ignore
-    with tempfile.TemporaryDirectory() as tempdir:
-        # you can e.g. create a file here:
-        config_path = os.path.join(tempdir, "configuration.json")
-        server_config = ServerConfiguration.parse_obj(
-            {
-                "zigpy_configuration": {
-                    "database_path": os.path.join(tempdir, "zigbee.db"),
-                    "enable_quirks": True,
-                },
-                "radio_configuration": {
-                    "type": "ezsp",
-                    "path": "/dev/tty.SLAB_USBtoUART",
-                    "baudrate": 115200,
-                    "flow_control": "hardware",
-                },
-                "host": "localhost",
-                "port": port,
-                "network_auto_start": False,
-            }
-        )
-        with open(config_path, "w") as tmpfile:
-            tmpfile.write(server_config.json())
-            return server_config
-
-
-@pytest.fixture
-async def connected_client_and_server(
-    loop: AbstractEventLoop, server_configuration: ServerConfiguration
-) -> AsyncGenerator[tuple[Client, Server], None]:
-    async with Server(configuration=server_configuration) as server:
-        async with Client(f"ws://localhost:{server_configuration.port}") as client:
-            yield client, server
 
 
 async def test_server_client_connect_disconnect(
@@ -78,23 +34,25 @@ async def test_server_client_connect_disconnect(
 
 
 async def test_client_message_id_uniqueness(
-    connected_client_and_server: tuple[Client, Server]
+    connected_client_and_server: tuple[Controller, Server]
 ) -> None:
     """Tests that client message IDs are unique."""
-    client, server = connected_client_and_server
+    controller, server = connected_client_and_server
 
-    ids = [client.new_message_id() for _ in range(1000)]
+    ids = [controller.client.new_message_id() for _ in range(1000)]
     assert len(ids) == len(set(ids))
 
 
 async def test_client_stop_server(
-    connected_client_and_server: tuple[Client, Server]
+    connected_client_and_server: tuple[Controller, Server]
 ) -> None:
-    """Tests that the client can stop the server"""
-    client, server = connected_client_and_server
+    # Tests that the client can stop the server
+    controller, server = connected_client_and_server
 
     assert server.is_serving
-    await client.async_send_command_no_wait({"command": "stop_server", "message_id": 1})
-    await client.disconnect()
+    await controller.client.async_send_command_no_wait(
+        {"command": "stop_server", "message_id": 1}
+    )
+    await controller.disconnect()
     await server.wait_closed()
     assert not server.is_serving

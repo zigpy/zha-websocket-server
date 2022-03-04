@@ -77,7 +77,7 @@ async def set_percentage(
 
 @decorators.websocket_command(
     platform_entity_command_schema(
-        FanAPICommands.TURN_OFF,
+        FanAPICommands.SET_PRESET_MODE,
         {
             vol.Required(ATTR_PRESET_MODE): str,
         },

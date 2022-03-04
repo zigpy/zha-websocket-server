@@ -3,3 +3,8 @@ source = zhawss
 
 omit =
     zhawss/typing.py
+
+[report]
+exclude_lines = 
+    pragma: no cover
+    if TYPE_CHECKING:

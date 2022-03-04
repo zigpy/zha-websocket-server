@@ -5,7 +5,7 @@ import asyncio
 from contextlib import suppress
 import logging
 import time
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from bellows.zigbee.application import ControllerApplication
 from serial.serialutil import SerialException
@@ -57,7 +57,7 @@ class Controller:
         """Initialize the controller."""
         self._application_controller: ControllerApplication | None = None
         self._server: Server = server
-        self.radio_description: Optional[str] = None
+        self.radio_description: str | None = None
         self._devices: dict[EUI64, Device] = {}
         self._groups: dict[int, Group] = {}
         self._device_init_tasks: dict[EUI64, asyncio.Task] = {}
@@ -154,23 +154,27 @@ class Controller:
         """Stop the Zigbee network."""
         if self._application_controller is None:
             return
-
-        for task in self._device_init_tasks.values():
+        tasks = [
+            t
+            for t in self._device_init_tasks.values()
+            if not (t.done() or t.cancelled())
+        ]
+        for task in tasks:
             _LOGGER.debug("Cancelling task: %s", task)
             task.cancel()
-            with suppress(asyncio.CancelledError):
-                await task
+        with suppress(asyncio.CancelledError):
+            await asyncio.gather(*tasks, return_exceptions=True)
 
         for device in self._devices.values():
             await device.on_remove()
 
         await self._application_controller.pre_shutdown()
         self._application_controller = None
-        await asyncio.sleep(1)  # give bellows thread callback a chance to run
+        await asyncio.sleep(0.1)  # give bellows thread callback a chance to run
         self._devices.clear()
         self._groups.clear()
 
-    def get_device(self, ieee: Union[EUI64, str]) -> Device:
+    def get_device(self, ieee: EUI64 | str) -> Device:
         """Get a device by ieee address."""
         if isinstance(ieee, str):
             ieee = EUI64.convert(ieee)
@@ -229,6 +233,12 @@ class Controller:
     def device_initialized(self, device: ZigpyDeviceType) -> None:
         """Handle device joined and basic information discovered."""
         _LOGGER.info("Device %s - %s initialized", device.ieee, f"0x{device.nwk:04x}")
+        if device.ieee in self._device_init_tasks:
+            _LOGGER.warning(
+                "Cancelling previous initialization task for device %s",
+                str(device.ieee),
+            )
+            self._device_init_tasks[device.ieee].cancel()
         self._device_init_tasks[device.ieee] = asyncio.create_task(
             self.async_device_initialized(device),
             name=f"device_initialized_task_{str(device.ieee)}:0x{device.nwk:04x}",
@@ -252,7 +262,7 @@ class Controller:
         _LOGGER.info("Removing device %s - %s", device.ieee, f"0x{device.nwk:04x}")
         device = self._devices.pop(device.ieee, None)
         if device is not None:
-            asyncio.create_task(device.on_remove())
+            self.server.track_task(asyncio.create_task(device.on_remove()))
             self.server.client_manager.broadcast(
                 {
                     DEVICE: device.zha_device_info,
@@ -266,6 +276,7 @@ class Controller:
         """Handle zigpy group member removed event."""
         # need to handle endpoint correctly on groups
         group = self.get_or_create_group(zigpy_group)
+        discovery.GROUP_PROBE.discover_group_entities(group)
         group.info("group_member_removed - endpoint: %s", endpoint)
         self._broadcast_group_event(group, ControllerEvents.GROUP_MEMBER_REMOVED)
 
@@ -273,11 +284,9 @@ class Controller:
         """Handle zigpy group member added event."""
         # need to handle endpoint correctly on groups
         group = self.get_or_create_group(zigpy_group)
+        discovery.GROUP_PROBE.discover_group_entities(group)
         group.info("group_member_added - endpoint: %s", endpoint)
         self._broadcast_group_event(group, ControllerEvents.GROUP_MEMBER_ADDED)
-        if len(group.members) > 1:
-            # we need to do this because there wasn't already a group entity to remove and re-add
-            discovery.GROUP_PROBE.discover_group_entities(group)
 
     def group_added(self, zigpy_group: ZigpyGroup) -> None:
         """Handle zigpy group added event."""

@@ -186,9 +186,14 @@ class Group(LogMixin):
                     )
         all_ids = group_entity_ids + processed_platform_entity_ids
         existing_unsub_ids = self._entity_unsubs.keys()
+        processed_unsubs = []
         for unsub_id in existing_unsub_ids:
             if unsub_id not in all_ids:
                 self._entity_unsubs[unsub_id]()
+                processed_unsubs.append(unsub_id)
+
+        for unsub_id in processed_unsubs:
+            self._entity_unsubs.pop(unsub_id)
 
     async def async_add_members(self, members: list[GroupMemberReference]) -> None:
         """Add members to this group."""
@@ -231,14 +236,14 @@ class Group(LogMixin):
         self.update_entity_subscriptions()
 
     @property
-    def member_entity_ids(self) -> list[PlatformEntity]:
-        """Return the platform entities for the members of this group."""
-        all_entities: list[PlatformEntity] = []
+    def all_member_entity_unique_ids(self) -> list[str]:
+        """Return all platform entities unique ids for the members of this group."""
+        all_entity_unique_ids: list[str] = []
         for member in self.members:
             entities = member.associated_entities
             for entity in entities:
-                all_entities.append(entity)
-        return all_entities
+                all_entity_unique_ids.append(entity.unique_id)
+        return all_entity_unique_ids
 
     def get_platform_entities(self, platform: str) -> list[PlatformEntity]:
         """Return entities belonging to the specified platform for this group."""

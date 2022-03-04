@@ -35,7 +35,6 @@ if TYPE_CHECKING:
     from zhaws.server.websocket.server import Server
     from zhaws.server.zigbee.endpoint import Endpoint
     from zhaws.server.zigbee.group import Group
-    from zhaws.server.zigbee.controller import Controller
 
 from zhaws.server.zigbee.cluster import (  # noqa: F401
     ClusterHandler,
@@ -268,14 +267,6 @@ class GroupProbe:
         """Initialize the group probe."""
         self._server = server
 
-    def _reprobe_group(self, group_id: int) -> None:
-        """Reprobe a group for entities after its members change."""
-        assert self._server is not None
-        controller: Controller = self._server.controller
-        if (group := controller.groups.get(group_id)) is None:
-            return
-        self.discover_group_entities(group)
-
     def discover_group_entities(self, group: Group) -> None:
         """Process a group and create any entities that are needed."""
         _LOGGER.info("Probing group %s for entities", group.name)
@@ -286,6 +277,7 @@ class GroupProbe:
                 group.name,
                 group.group_id,
             )
+            group.group_entities.clear()
             return
 
         assert self._server is not None

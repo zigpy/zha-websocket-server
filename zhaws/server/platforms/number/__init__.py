@@ -27,7 +27,7 @@ _LOGGER = logging.getLogger(__name__)
 class Number(PlatformEntity):
     """Representation of a zhawss number."""
 
-    PLATFORM = Platform.LOCK
+    PLATFORM = Platform.NUMBER
 
     def __init__(
         self,
@@ -85,21 +85,11 @@ class Number(PlatformEntity):
         """Handle value update from cluster handler."""
         self.maybe_send_state_changed_event()
 
-    async def async_set_value(self, value: Any) -> None:
+    async def async_set_value(self, value: Any, **kwargs: Any) -> None:
         """Update the current value from service."""
         num_value = float(value)
         if await self._analog_output_cluster_handler.async_set_present_value(num_value):
             self.maybe_send_state_changed_event()
-
-    async def async_update(self) -> None:
-        """Attempt to retrieve the state of the entity."""
-        await super().async_update()
-        _LOGGER.debug("polling current state")
-        if self._analog_output_cluster_handler:
-            value = await self._analog_output_cluster_handler.get_attribute_value(
-                "present_value", from_cache=False
-            )
-            _LOGGER.debug("read value=%s", value)
 
     def to_json(self) -> dict:
         json = super().to_json()

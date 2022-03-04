@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable
 
 import voluptuous
 from websockets.server import WebSocketServerProtocol
@@ -61,7 +61,9 @@ class Client:
 
     def disconnect(self) -> None:
         """Disconnect this client and close the websocket."""
-        asyncio.create_task(self._websocket.close())
+        self._client_manager.server.track_task(
+            asyncio.create_task(self._websocket.close())
+        )
 
     def send_event(self, message: dict[str, Any]) -> None:
         """Send event data to this client."""
@@ -69,7 +71,7 @@ class Client:
         self._send_data(message)
 
     def send_result_success(
-        self, request_message: dict[str, Any], data: Optional[dict[str, Any]] = None
+        self, request_message: dict[str, Any], data: dict[str, Any] | None = None
     ) -> None:
         """Send success result prompted by a client request."""
         message = {
@@ -119,13 +121,15 @@ class Client:
         except TypeError as exc:
             _LOGGER.error("Couldn't serialize data: %s", data, exc_info=exc)
         else:
-            asyncio.create_task(self._websocket.send(message))
+            self._client_manager.server.track_task(
+                asyncio.create_task(self._websocket.send(message))
+            )
 
-    async def _handle_incoming_message(self, message: Union[str, bytes]) -> None:
+    async def _handle_incoming_message(self, message: str | bytes) -> None:
         """Handle an incoming message."""
         _LOGGER.info("Message received: %s", message)
         handlers: dict[
-            str, Tuple[Callable, Callable]
+            str, tuple[Callable, Callable]
         ] = self._client_manager.server.data[WEBSOCKET_API]
 
         loaded_message = json.loads(message)
@@ -161,7 +165,9 @@ class Client:
 
     async def listen(self) -> None:
         async for message in self._websocket:
-            asyncio.create_task(self._handle_incoming_message(message))
+            self._client_manager.server.track_task(
+                asyncio.create_task(self._handle_incoming_message(message))
+            )
 
     def will_accept_message(self, message: dict[str, Any]) -> bool:
         """Checks if the client has registered to accept this type of message."""
