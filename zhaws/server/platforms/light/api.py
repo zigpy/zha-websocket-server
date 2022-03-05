@@ -1,6 +1,7 @@
 """WS API for the light platform entity."""
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional
 
 from pydantic import Field, validator
@@ -13,6 +14,8 @@ from zhaws.server.websocket.api import decorators, register_api_command
 if TYPE_CHECKING:
     from zhaws.server.websocket.client import Client
     from zhaws.server.websocket.server import Server
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class LightTurnOnCommand(PlatformEntityCommand):
@@ -32,7 +35,11 @@ class LightTurnOnCommand(PlatformEntityCommand):
     def check_color_setting_exclusivity(
         cls, color_temp: Optional[int], values: dict[str, Any], **kwargs: Any
     ) -> Optional[int]:
-        if "hs_color" in values and color_temp is not None:
+        if (
+            "hs_color" in values
+            and values["hs_color"] is not None
+            and color_temp is not None
+        ):
             raise ValueError('Only one of "hs_color" and "color_temp" can be set')
         return color_temp
 
