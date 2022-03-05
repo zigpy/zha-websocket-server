@@ -5,6 +5,7 @@ import logging
 from typing import Awaitable, Callable
 from unittest.mock import AsyncMock, call, patch, sentinel
 
+from pydantic import ValidationError
 import pytest
 from slugify import slugify
 from zigpy.device import Device as ZigpyDevice
@@ -20,10 +21,16 @@ from zhaws.client.proxy import DeviceProxy, GroupProxy
 from zhaws.server.platforms.light import FLASH_EFFECTS, FLASH_LONG, FLASH_SHORT
 from zhaws.server.platforms.registries import Platform
 from zhaws.server.websocket.server import Server
+from zhaws.server.zigbee.cluster.lighting import ColorClusterHandler
 from zhaws.server.zigbee.device import Device
 from zhaws.server.zigbee.group import Group, GroupMemberReference
 
-from .common import async_find_group_entity_id, find_entity_id, send_attributes_report
+from .common import (
+    async_find_group_entity_id,
+    find_entity_id,
+    send_attributes_report,
+    update_attribute_cache,
+)
 from .conftest import SIG_EP_INPUT, SIG_EP_OUTPUT, SIG_EP_PROFILE, SIG_EP_TYPE
 
 ON = 1
@@ -286,6 +293,18 @@ async def test_light(
 
     # create zigpy devices
     zigpy_device = zigpy_device_mock(device)
+    cluster_color: lighting.Color = getattr(
+        zigpy_device.endpoints[1], "light_color", None
+    )
+    if cluster_color:
+        cluster_color.PLUGGED_ATTR_READS = {
+            "color_temperature": 100,
+            "color_temp_physical_min": 0,
+            "color_temp_physical_max": 600,
+            "color_capabilities": ColorClusterHandler.CAPABILITIES_COLOR_XY
+            | ColorClusterHandler.CAPABILITIES_COLOR_TEMP,
+        }
+        update_attribute_cache(cluster_color)
     zha_device = await device_joined(zigpy_device)
     controller, server = connected_client_and_server
     entity_id = find_entity_id(Platform.LIGHT, zha_device)
@@ -294,9 +313,6 @@ async def test_light(
     cluster_on_off: general.OnOff = zigpy_device.endpoints[1].on_off
     cluster_level: general.LevelControl = getattr(
         zigpy_device.endpoints[1], "level", None
-    )
-    cluster_color: lighting.Color = getattr(
-        zigpy_device.endpoints[1], "light_color", None
     )
     cluster_identify: general.Identify = getattr(
         zigpy_device.endpoints[1], "identify", None
@@ -331,13 +347,7 @@ async def test_light(
         await async_test_on_from_light(server, cluster_on_off, entity)
         await async_test_dimmer_from_light(server, cluster_level, entity, 150, True)
 
-    # test rejoin
     await async_test_off_from_client(server, cluster_on_off, entity, controller)
-    clusters = [cluster_on_off]
-    if cluster_level:
-        clusters.append(cluster_level)
-    if cluster_color:
-        clusters.append(cluster_color)
 
     # test long flashing the lights from the client
     if cluster_identify:
@@ -347,6 +357,58 @@ async def test_light(
         await async_test_flash_from_client(
             server, cluster_identify, entity, FLASH_SHORT, controller
         )
+
+    if cluster_color:
+        # test color temperature from the client with transition
+        await controller.lights.turn_on(
+            entity, brightness=50, transition=10, color_temp=200
+        )
+        await server.block_till_done()
+        assert cluster_color.request.call_count == 1
+        assert cluster_color.request.await_count == 1
+        assert cluster_color.request.call_args == call(
+            False,
+            10,
+            (zigpy.types.basic.uint16_t, zigpy.types.basic.uint16_t),
+            200,
+            100.0,
+            expect_reply=True,
+            manufacturer=None,
+            tries=1,
+            tsn=None,
+        )
+        cluster_color.request.reset_mock()
+
+        # test color xy from the client
+        await controller.lights.turn_on(entity, brightness=50, hs_color=[200, 50])
+        await server.block_till_done()
+        assert cluster_color.request.call_count == 1
+        assert cluster_color.request.await_count == 1
+        assert cluster_color.request.call_args == call(
+            False,
+            7,
+            (
+                zigpy.types.basic.uint16_t,
+                zigpy.types.basic.uint16_t,
+                zigpy.types.basic.uint16_t,
+            ),
+            13369,
+            18087,
+            1,
+            expect_reply=True,
+            manufacturer=None,
+            tries=1,
+            tsn=None,
+        )
+
+        cluster_color.request.reset_mock()
+
+        # test error when hs_color and color_temp are both set
+        with pytest.raises(ValidationError):
+            await controller.lights.turn_on(entity, color_temp=50, hs_color=[200, 50])
+            await server.block_till_done()
+            assert cluster_color.request.call_count == 0
+            assert cluster_color.request.await_count == 0
 
 
 async def async_test_on_off_from_light(
