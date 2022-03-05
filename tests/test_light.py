@@ -360,10 +360,15 @@ async def test_light(
 
     if cluster_color:
         # test color temperature from the client with transition
+        assert entity.state.brightness != 50
+        assert entity.state.color_temp != 200
         await controller.lights.turn_on(
             entity, brightness=50, transition=10, color_temp=200
         )
         await server.block_till_done()
+        assert entity.state.brightness == 50
+        assert entity.state.color_temp == 200
+        assert entity.state.on is True
         assert cluster_color.request.call_count == 1
         assert cluster_color.request.await_count == 1
         assert cluster_color.request.call_args == call(
@@ -380,8 +385,11 @@ async def test_light(
         cluster_color.request.reset_mock()
 
         # test color xy from the client
+        assert entity.state.hs_color != (200.0, 50.0)
         await controller.lights.turn_on(entity, brightness=50, hs_color=[200, 50])
         await server.block_till_done()
+        assert entity.state.brightness == 50
+        assert entity.state.hs_color == (200.0, 50.0)
         assert cluster_color.request.call_count == 1
         assert cluster_color.request.await_count == 1
         assert cluster_color.request.call_args == call(
@@ -447,6 +455,7 @@ async def async_test_on_off_from_client(
     cluster.request.reset_mock()
     await controller.lights.turn_on(entity)
     await server.block_till_done()
+    assert entity.state.on is True
     assert cluster.request.call_count == 1
     assert cluster.request.await_count == 1
     assert cluster.request.call_args == call(
@@ -468,6 +477,7 @@ async def async_test_off_from_client(
     cluster.request.reset_mock()
     await controller.lights.turn_off(entity)
     await server.block_till_done()
+    assert entity.state.on is False
     assert cluster.request.call_count == 1
     assert cluster.request.await_count == 1
     assert cluster.request.call_args == call(
@@ -489,6 +499,7 @@ async def async_test_level_on_off_from_client(
     # turn on via UI
     await controller.lights.turn_on(entity)
     await server.block_till_done()
+    assert entity.state.on is True
     assert on_off_cluster.request.call_count == 1
     assert on_off_cluster.request.await_count == 1
     assert level_cluster.request.call_count == 0
@@ -501,6 +512,7 @@ async def async_test_level_on_off_from_client(
 
     await controller.lights.turn_on(entity, transition=10)
     await server.block_till_done()
+    assert entity.state.on is True
     assert on_off_cluster.request.call_count == 1
     assert on_off_cluster.request.await_count == 1
     assert level_cluster.request.call_count == 1
@@ -524,6 +536,7 @@ async def async_test_level_on_off_from_client(
 
     await controller.lights.turn_on(entity, brightness=10)
     await server.block_till_done()
+    assert entity.state.on is True
     # the onoff cluster is now not used when brightness is present by default
     assert on_off_cluster.request.call_count == 0
     assert on_off_cluster.request.await_count == 0
@@ -579,6 +592,7 @@ async def async_test_flash_from_client(
     cluster.request.reset_mock()
     await controller.lights.turn_on(entity, flash=flash)
     await server.block_till_done()
+    assert entity.state.on is True
     assert cluster.request.call_count == 1
     assert cluster.request.await_count == 1
     assert cluster.request.call_args == call(
