@@ -161,6 +161,7 @@ async def test_fan(
     device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
     zigpy_device: ZigpyDevice,
     connected_client_and_server: tuple[Controller, Server],
+    caplog,
 ) -> None:
     """Test zha fan platform."""
     controller, server = connected_client_and_server
@@ -224,6 +225,7 @@ async def test_fan(
         response_error.error_message
         == "The preset_mode invalid is not a valid preset_mode: ['on', 'auto', 'smart']"
     )
+    assert "Error executing command: async_set_preset_mode" in caplog.text
     assert len(cluster.write_attributes.mock_calls) == 0
 
 
