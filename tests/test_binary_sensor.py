@@ -15,7 +15,7 @@ from zhaws.server.platforms.registries import Platform
 from zhaws.server.websocket.server import Server
 from zhaws.server.zigbee.device import Device
 
-from .common import find_entity, send_attributes_report
+from .common import find_entity, send_attributes_report, update_attribute_cache
 from .conftest import SIG_EP_INPUT, SIG_EP_OUTPUT, SIG_EP_PROFILE, SIG_EP_TYPE
 
 DEVICE_IAS = {
@@ -97,3 +97,11 @@ async def test_binary_sensor(
     # test getting messages that trigger and reset the sensors
     cluster = getattr(zigpy_device.endpoints[1], cluster_name)
     await on_off_test(server, cluster, entity)
+
+    # test refresh
+    if cluster_name == "ias_zone":
+        cluster.PLUGGED_ATTR_READS = {"zone_status": 0}
+        update_attribute_cache(cluster)
+    await controller.entities.refresh_state(entity)
+    await server.block_till_done()
+    assert entity.state.state is False
