@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Literal
 
 from pydantic import ValidationError
 from websockets.server import WebSocketServerProtocol
@@ -63,7 +63,7 @@ class Client:
         self._send_data(message)
 
     def send_result_success(
-        self, command: WebSocketCommand, data: Optional[dict[str, Any]] = None
+        self, command: WebSocketCommand, data: dict[str, Any] | None = None
     ) -> None:
         """Send success result prompted by a client request."""
         message = {
@@ -81,18 +81,19 @@ class Client:
         command: WebSocketCommand,
         error_code: str,
         error_message: str,
-        data: Optional[dict[str, Any]] = None,
+        data: dict[str, Any] | None = None,
     ) -> None:
         """Send error result prompted by a client request."""
         message = {
             SUCCESS: False,
             MESSAGE_ID: command.message_id,
             MESSAGE_TYPE: MessageTypes.RESULT,
-            COMMAND: command.command,
+            COMMAND: f"error.{command.command}",
             ERROR_CODE: error_code,
             ERROR_MESSAGE: error_message,
-            **(data or {}),
         }
+        if data:
+            message.update(data)
         self._send_data(message)
 
     def send_result_zigbee_error(
@@ -124,7 +125,7 @@ class Client:
         """Handle an incoming message."""
         _LOGGER.info("Message received: %s", message)
         handlers: dict[
-            str, Tuple[Callable, WebSocketCommand]
+            str, tuple[Callable, WebSocketCommand]
         ] = self._client_manager.server.data[WEBSOCKET_API]
 
         loaded_message = json.loads(message)

@@ -6,13 +6,13 @@ import contextlib
 import logging
 import pprint
 from types import TracebackType
-from typing import Any, Optional
+from typing import Any
 
 from aiohttp import ClientSession, ClientWebSocketResponse, client_exceptions
 from aiohttp.http_websocket import WSMsgType
 from async_timeout import timeout
 
-from zhaws.client.model.commands import CommandResponse
+from zhaws.client.model.commands import CommandResponse, ErrorResponse
 from zhaws.client.model.messages import Message
 from zhaws.event import EventBase
 from zhaws.server.websocket.api.model import WebSocketCommand
@@ -44,7 +44,7 @@ class Client(EventBase):
             self._close_aiohttp_session = False
 
         # The WebSocket client
-        self._client: Optional[ClientWebSocketResponse] = None
+        self._client: ClientWebSocketResponse | None = None
         self._loop = asyncio.get_running_loop()
         self._result_futures: dict[int, asyncio.Future] = {}
         self._listen_task: asyncio.Task | None = None
@@ -88,6 +88,8 @@ class Client(EventBase):
             return CommandResponse.parse_obj(
                 {"message_id": message_id, "success": False}
             )
+        except Exception as err:
+            _LOGGER.error("Error sending command: %s", err, exc_info=err)
         finally:
             self._result_futures.pop(message_id)
 
@@ -197,7 +199,7 @@ class Client(EventBase):
                 # no listener for this result
                 return
 
-            if message.success:
+            if message.success or isinstance(message, ErrorResponse):
                 future.set_result(message)
                 return
 

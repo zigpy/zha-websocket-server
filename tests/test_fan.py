@@ -1,24 +1,35 @@
 """Test zha fan."""
 import logging
 from typing import Awaitable, Callable, Optional
-from unittest.mock import call
+from unittest.mock import AsyncMock, call, patch
 
 import pytest
 from slugify import slugify
 from zigpy.device import Device as ZigpyDevice
+from zigpy.exceptions import ZigbeeException
 import zigpy.profiles.zha as zha
 import zigpy.zcl.clusters.general as general
 import zigpy.zcl.clusters.hvac as hvac
+import zigpy.zcl.foundation as zcl_f
 
 from zhaws.client.controller import Controller
 from zhaws.client.model.types import FanEntity, FanGroupEntity
 from zhaws.client.proxy import DeviceProxy, GroupProxy
-from zhaws.server.platforms.fan import PRESET_MODE_ON, SPEED_HIGH
+from zhaws.server.platforms.fan import (
+    PRESET_MODE_AUTO,
+    PRESET_MODE_ON,
+    PRESET_MODE_SMART,
+    SPEED_HIGH,
+    SPEED_LOW,
+    SPEED_MEDIUM,
+    SPEED_OFF,
+)
 from zhaws.server.platforms.registries import Platform
 from zhaws.server.websocket.server import Server
 from zhaws.server.zigbee.device import Device
+from zhaws.server.zigbee.group import Group, GroupMemberReference
 
-from .common import find_entity_id, send_attributes_report
+from .common import async_find_group_entity_id, find_entity_id, send_attributes_report
 from .conftest import SIG_EP_INPUT, SIG_EP_OUTPUT, SIG_EP_PROFILE, SIG_EP_TYPE
 
 IEEE_GROUPABLE_DEVICE = "01:2d:6f:00:0a:90:69:e8"
@@ -150,6 +161,7 @@ async def test_fan(
     device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
     zigpy_device: ZigpyDevice,
     connected_client_and_server: tuple[Controller, Server],
+    caplog,
 ) -> None:
     """Test zha fan platform."""
     controller, server = connected_client_and_server
@@ -196,15 +208,25 @@ async def test_fan(
     assert len(cluster.write_attributes.mock_calls) == 1
     assert cluster.write_attributes.call_args == call({"fan_mode": 4})
 
-    """TODO need to return errors to client and assert against response
+    # test set percentage from client
+    cluster.write_attributes.reset_mock()
+    await controller.fans.set_fan_percentage(entity, 50)
+    await server.block_till_done()
+    assert len(cluster.write_attributes.mock_calls) == 1
+    assert cluster.write_attributes.call_args == call({"fan_mode": 2})
+    # this is converted to a ranged value
+    assert entity.state.percentage == 66
+
     # set invalid preset_mode from client
     cluster.write_attributes.reset_mock()
-    with pytest.raises(NotValidPresetModeError):
-        await async_set_preset_mode(
-            entity, controller, preset_mode="invalid does not exist"
-        )
+    response_error = await controller.fans.set_fan_preset_mode(entity, "invalid")
+    assert response_error is not None
+    assert (
+        response_error.error_message
+        == "The preset_mode invalid is not a valid preset_mode: ['on', 'auto', 'smart']"
+    )
+    assert "Error executing command: async_set_preset_mode" in caplog.text
     assert len(cluster.write_attributes.mock_calls) == 0
-    """
 
 
 async def async_turn_on(
@@ -249,28 +271,28 @@ async def async_set_preset_mode(
     await server.block_till_done()
 
 
-"""
 @patch(
     "zigpy.zcl.clusters.hvac.Fan.write_attributes",
     new=AsyncMock(return_value=zcl_f.WriteAttributesResponse.deserialize(b"\x00")[0]),
 )
-async def test_zha_group_fan_entity(device_fan_1, device_fan_2, coordinator):
-    #Test the fan entity for a ZHA group.
-    zha_gateway = get_zha_gateway(hass)
-    assert zha_gateway is not None
-    zha_gateway.coordinator_zha_device = coordinator
-    coordinator._zha_gateway = zha_gateway
-    device_fan_1._zha_gateway = zha_gateway
-    device_fan_2._zha_gateway = zha_gateway
+async def test_zha_group_fan_entity(
+    device_fan_1: Device,
+    device_fan_2: Device,
+    connected_client_and_server: tuple[Controller, Server],
+):
+    """Test the fan entity for a ZHAWS group."""
+    controller, server = connected_client_and_server
     member_ieee_addresses = [device_fan_1.ieee, device_fan_2.ieee]
     members = [
-        GroupMemberReference(device_fan_1.ieee, 1),
-        GroupMemberReference(device_fan_2.ieee, 1),
+        GroupMemberReference(ieee=device_fan_1.ieee, endpoint_id=1),
+        GroupMemberReference(ieee=device_fan_2.ieee, endpoint_id=1),
     ]
 
     # test creating a group with 2 members
-    zha_group = await zha_gateway.async_create_zigpy_group("Test Group", members)
-    asyncio.sleep(0.001)
+    zha_group: Group = await server.controller.async_create_zigpy_group(
+        "Test Group", members
+    )
+    await server.block_till_done()
 
     assert zha_group is not None
     assert len(zha_group.members) == 2
@@ -279,86 +301,84 @@ async def test_zha_group_fan_entity(device_fan_1, device_fan_2, coordinator):
         assert member.group == zha_group
         assert member.endpoint is not None
 
-    entity_domains = GROUP_PROBE.determine_entity_domains(zha_group)
-    assert len(entity_domains) == 2
-
-    assert Platform.LIGHT in entity_domains
-    assert Platform.FAN in entity_domains
-
     entity_id = async_find_group_entity_id(Platform.FAN, zha_group)
-    assert hass.states.get(entity_id) is not None
+    assert entity_id is not None
 
-    group_fan_cluster = zha_group.endpoint[hvac.Fan.cluster_id]
+    group_proxy: Optional[GroupProxy] = controller.groups.get(2)
+    assert group_proxy is not None
+
+    entity: FanGroupEntity = get_group_entity(group_proxy, entity_id)  # type: ignore
+    assert entity is not None
+
+    assert isinstance(entity, FanGroupEntity)
+
+    group_fan_cluster = zha_group.zigpy_group.endpoint[hvac.Fan.cluster_id]
 
     dev1_fan_cluster = device_fan_1.device.endpoints[1].fan
     dev2_fan_cluster = device_fan_2.device.endpoints[1].fan
 
-    await async_enable_traffic([device_fan_1, device_fan_2], enabled=False)
-    await async_wait_for_updates(hass)
-    # test that the fans were created and that they are unavailable
-    assert hass.states.get(entity_id).state == STATE_UNAVAILABLE
-
-    # allow traffic to flow through the gateway and device
-    await async_enable_traffic([device_fan_1, device_fan_2])
-    await async_wait_for_updates(hass)
     # test that the fan group entity was created and is off
-    assert hass.states.get(entity_id).state is False
+    assert entity.state.is_on is False
 
     # turn on from client
     group_fan_cluster.write_attributes.reset_mock()
-    await async_turn_on(entity_id)
-    asyncio.sleep(0.001)
+    await async_turn_on(server, entity, controller)
+    await server.block_till_done()
     assert len(group_fan_cluster.write_attributes.mock_calls) == 1
     assert group_fan_cluster.write_attributes.call_args[0][0] == {"fan_mode": 2}
 
     # turn off from client
     group_fan_cluster.write_attributes.reset_mock()
-    await async_turn_off(entity_id)
+    await async_turn_off(server, entity, controller)
     assert len(group_fan_cluster.write_attributes.mock_calls) == 1
     assert group_fan_cluster.write_attributes.call_args[0][0] == {"fan_mode": 0}
 
     # change speed from client
     group_fan_cluster.write_attributes.reset_mock()
-    await async_set_speed(entity_id, speed=fan.SPEED_HIGH)
+    await async_set_speed(server, entity, controller, speed=SPEED_HIGH)
     assert len(group_fan_cluster.write_attributes.mock_calls) == 1
     assert group_fan_cluster.write_attributes.call_args[0][0] == {"fan_mode": 3}
 
     # change preset mode from client
     group_fan_cluster.write_attributes.reset_mock()
-    await async_set_preset_mode(entity_id, preset_mode=PRESET_MODE_ON)
+    await async_set_preset_mode(server, entity, controller, preset_mode=PRESET_MODE_ON)
     assert len(group_fan_cluster.write_attributes.mock_calls) == 1
     assert group_fan_cluster.write_attributes.call_args[0][0] == {"fan_mode": 4}
 
     # change preset mode from client
     group_fan_cluster.write_attributes.reset_mock()
-    await async_set_preset_mode(entity_id, preset_mode=PRESET_MODE_AUTO)
+    await async_set_preset_mode(
+        server, entity, controller, preset_mode=PRESET_MODE_AUTO
+    )
     assert len(group_fan_cluster.write_attributes.mock_calls) == 1
     assert group_fan_cluster.write_attributes.call_args[0][0] == {"fan_mode": 5}
 
     # change preset mode from client
     group_fan_cluster.write_attributes.reset_mock()
-    await async_set_preset_mode(entity_id, preset_mode=PRESET_MODE_SMART)
+    await async_set_preset_mode(
+        server, entity, controller, preset_mode=PRESET_MODE_SMART
+    )
     assert len(group_fan_cluster.write_attributes.mock_calls) == 1
     assert group_fan_cluster.write_attributes.call_args[0][0] == {"fan_mode": 6}
 
     # test some of the group logic to make sure we key off states correctly
-    await send_attributes_report(dev1_fan_cluster, {0: 0})
-    await send_attributes_report(dev2_fan_cluster, {0: 0})
+    await send_attributes_report(server, dev1_fan_cluster, {0: 0})
+    await send_attributes_report(server, dev2_fan_cluster, {0: 0})
 
     # test that group fan is off
-    assert hass.states.get(entity_id).state is False
+    assert entity.state.is_on is False
 
-    await send_attributes_report(dev2_fan_cluster, {0: 2})
-    await async_wait_for_updates(hass)
+    await send_attributes_report(server, dev2_fan_cluster, {0: 2})
+    await server.block_till_done()
 
     # test that group fan is speed medium
-    assert hass.states.get(entity_id).state is True
+    assert entity.state.is_on is True
 
-    await send_attributes_report(dev2_fan_cluster, {0: 0})
-    await async_wait_for_updates(hass)
+    await send_attributes_report(server, dev2_fan_cluster, {0: 0})
+    await server.block_till_done()
 
     # test that group fan is now off
-    assert hass.states.get(entity_id).state is False
+    assert entity.state.is_on is False
 
 
 @patch(
@@ -366,24 +386,24 @@ async def test_zha_group_fan_entity(device_fan_1, device_fan_2, coordinator):
     new=AsyncMock(side_effect=ZigbeeException),
 )
 async def test_zha_group_fan_entity_failure_state(
-    device_fan_1, device_fan_2, coordinator, caplog
+    device_fan_1: Device,
+    device_fan_2: Device,
+    connected_client_and_server: tuple[Controller, Server],
+    caplog,
 ):
-    #Test the fan entity for a ZHA group when writing attributes generates an exception.
-    zha_gateway = get_zha_gateway(hass)
-    assert zha_gateway is not None
-    zha_gateway.coordinator_zha_device = coordinator
-    coordinator._zha_gateway = zha_gateway
-    device_fan_1._zha_gateway = zha_gateway
-    device_fan_2._zha_gateway = zha_gateway
+    """Test the fan entity for a ZHA group when writing attributes generates an exception."""
+    controller, server = connected_client_and_server
     member_ieee_addresses = [device_fan_1.ieee, device_fan_2.ieee]
     members = [
-        GroupMemberReference(device_fan_1.ieee, 1),
-        GroupMemberReference(device_fan_2.ieee, 1),
+        GroupMemberReference(ieee=device_fan_1.ieee, endpoint_id=1),
+        GroupMemberReference(ieee=device_fan_2.ieee, endpoint_id=1),
     ]
 
     # test creating a group with 2 members
-    zha_group = await zha_gateway.async_create_zigpy_group("Test Group", members)
-    asyncio.sleep(0.001)
+    zha_group: Group = await server.controller.async_create_zigpy_group(
+        "Test Group", members
+    )
+    await server.block_till_done()
 
     assert zha_group is not None
     assert len(zha_group.members) == 2
@@ -392,32 +412,26 @@ async def test_zha_group_fan_entity_failure_state(
         assert member.group == zha_group
         assert member.endpoint is not None
 
-    entity_domains = GROUP_PROBE.determine_entity_domains(zha_group)
-    assert len(entity_domains) == 2
-
-    assert Platform.LIGHT in entity_domains
-    assert Platform.FAN in entity_domains
-
     entity_id = async_find_group_entity_id(Platform.FAN, zha_group)
-    assert hass.states.get(entity_id) is not None
+    assert entity_id is not None
 
-    group_fan_cluster = zha_group.endpoint[hvac.Fan.cluster_id]
+    group_proxy: Optional[GroupProxy] = controller.groups.get(2)
+    assert group_proxy is not None
 
-    await async_enable_traffic([device_fan_1, device_fan_2], enabled=False)
-    await async_wait_for_updates(hass)
-    # test that the fans were created and that they are unavailable
-    assert hass.states.get(entity_id).state == STATE_UNAVAILABLE
+    entity: FanGroupEntity = get_group_entity(group_proxy, entity_id)  # type: ignore
+    assert entity is not None
 
-    # allow traffic to flow through the gateway and device
-    await async_enable_traffic([device_fan_1, device_fan_2])
-    await async_wait_for_updates(hass)
+    assert isinstance(entity, FanGroupEntity)
+
+    group_fan_cluster = zha_group.zigpy_group.endpoint[hvac.Fan.cluster_id]
+
     # test that the fan group entity was created and is off
-    assert hass.states.get(entity_id).state is False
+    assert entity.state.is_on is False
 
     # turn on from client
     group_fan_cluster.write_attributes.reset_mock()
-    await async_turn_on(entity_id)
-    asyncio.sleep(0.001)
+    await async_turn_on(server, entity, controller)
+    await server.block_till_done()
     assert len(group_fan_cluster.write_attributes.mock_calls) == 1
     assert group_fan_cluster.write_attributes.call_args[0][0] == {"fan_mode": 2}
 
@@ -427,74 +441,78 @@ async def test_zha_group_fan_entity_failure_state(
 @pytest.mark.parametrize(
     "plug_read, expected_state, expected_speed, expected_percentage",
     (
-        (None, STATE_OFF, None, None),
-        ({"fan_mode": 0}, STATE_OFF, SPEED_OFF, 0),
-        ({"fan_mode": 1}, STATE_ON, SPEED_LOW, 33),
-        ({"fan_mode": 2}, STATE_ON, SPEED_MEDIUM, 66),
-        ({"fan_mode": 3}, STATE_ON, SPEED_HIGH, 100),
+        ({"fan_mode": None}, False, None, None),
+        ({"fan_mode": 0}, False, SPEED_OFF, 0),
+        ({"fan_mode": 1}, True, SPEED_LOW, 33),
+        ({"fan_mode": 2}, True, SPEED_MEDIUM, 66),
+        ({"fan_mode": 3}, True, SPEED_HIGH, 100),
     ),
 )
 async def test_fan_init(
-    hass,
-    device_joined,
-    zigpy_device,
-    plug_read,
-    expected_state,
-    expected_speed,
-    expected_percentage,
+    device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
+    zigpy_device: ZigpyDevice,
+    connected_client_and_server: tuple[Controller, Server],
+    plug_read: dict,
+    expected_state: bool,
+    expected_speed: Optional[str],
+    expected_percentage: Optional[int],
 ):
-    #Test zha fan platform.
-
+    """Test zha fan platform."""
+    controller, server = connected_client_and_server
     cluster = zigpy_device.endpoints.get(1).fan
     cluster.PLUGGED_ATTR_READS = plug_read
-
     zha_device = await device_joined(zigpy_device)
-    entity_id = await find_entity_id(Platform.FAN, zha_device)
+    entity_id = find_entity_id(Platform.FAN, zha_device)
     assert entity_id is not None
-    assert hass.states.get(entity_id).state == expected_state
-    assert hass.states.get(entity_id).attributes[ATTR_SPEED] == expected_speed
-    assert hass.states.get(entity_id).attributes[ATTR_PERCENTAGE] == expected_percentage
-    assert hass.states.get(entity_id).attributes[ATTR_PRESET_MODE] is None
+
+    client_device: Optional[DeviceProxy] = controller.devices.get(zha_device.ieee)
+    assert client_device is not None
+    entity = get_entity(client_device, entity_id)
+    assert entity is not None
+
+    assert entity.state.is_on == expected_state
+    assert entity.state.speed == expected_speed
+    assert entity.state.percentage == expected_percentage
+    assert entity.state.preset_mode is None
 
 
 async def test_fan_update_entity(
-    hass,
-    device_joined,
-    zigpy_device,
+    device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
+    zigpy_device: ZigpyDevice,
+    connected_client_and_server: tuple[Controller, Server],
 ):
-    #Test zha fan platform.
-
+    """Test zha fan refresh state."""
+    controller, server = connected_client_and_server
     cluster = zigpy_device.endpoints.get(1).fan
     cluster.PLUGGED_ATTR_READS = {"fan_mode": 0}
-
     zha_device = await device_joined(zigpy_device)
-    entity_id = await find_entity_id(Platform.FAN, zha_device)
+    entity_id = find_entity_id(Platform.FAN, zha_device)
     assert entity_id is not None
-    assert hass.states.get(entity_id).state is False
-    assert hass.states.get(entity_id).attributes[ATTR_SPEED] == SPEED_OFF
-    assert hass.states.get(entity_id).attributes[ATTR_PERCENTAGE] == 0
-    assert hass.states.get(entity_id).attributes[ATTR_PRESET_MODE] is None
-    assert hass.states.get(entity_id).attributes[ATTR_PERCENTAGE_STEP] == 100 / 3
+
+    client_device: Optional[DeviceProxy] = controller.devices.get(zha_device.ieee)
+    assert client_device is not None
+    entity = get_entity(client_device, entity_id)
+    assert entity is not None
+
+    assert entity.state.is_on is False
+    assert entity.state.speed == SPEED_OFF
+    assert entity.state.percentage == 0
+    assert entity.state.preset_mode is None
+    assert entity.percentage_step == 100 / 3
     assert cluster.read_attributes.await_count == 2
 
-    await async_setup_component("homeassistant", {})
-    asyncio.sleep(0.001)
-
-    await hass.services.async_call(
-        "homeassistant", "update_entity", {"entity_id": entity_id}, blocking=True
-    )
-    assert hass.states.get(entity_id).state is False
-    assert hass.states.get(entity_id).attributes[ATTR_SPEED] == SPEED_OFF
+    await controller.entities.refresh_state(entity)
+    await server.block_till_done()
+    assert entity.state.is_on is False
+    assert entity.state.speed == SPEED_OFF
     assert cluster.read_attributes.await_count == 3
 
     cluster.PLUGGED_ATTR_READS = {"fan_mode": 1}
-    await hass.services.async_call(
-        "homeassistant", "update_entity", {"entity_id": entity_id}, blocking=True
-    )
-    assert hass.states.get(entity_id).state is True
-    assert hass.states.get(entity_id).attributes[ATTR_PERCENTAGE] == 33
-    assert hass.states.get(entity_id).attributes[ATTR_SPEED] == SPEED_LOW
-    assert hass.states.get(entity_id).attributes[ATTR_PRESET_MODE] is None
-    assert hass.states.get(entity_id).attributes[ATTR_PERCENTAGE_STEP] == 100 / 3
+    await controller.entities.refresh_state(entity)
+    await server.block_till_done()
+    assert entity.state.is_on is True
+    assert entity.state.percentage == 33
+    assert entity.state.speed == SPEED_LOW
+    assert entity.state.preset_mode is None
+    assert entity.percentage_step == 100 / 3
     assert cluster.read_attributes.await_count == 4
-    """
