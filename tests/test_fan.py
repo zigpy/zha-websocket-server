@@ -164,24 +164,30 @@ async def test_fan(
     await async_turn_on(server, entity, controller)
     assert len(cluster.write_attributes.mock_calls) == 1
     assert cluster.write_attributes.call_args == call({"fan_mode": 2})
+    assert entity.state.is_on is True
 
     # turn off from client
     cluster.write_attributes.reset_mock()
     await async_turn_off(server, entity, controller)
     assert len(cluster.write_attributes.mock_calls) == 1
     assert cluster.write_attributes.call_args == call({"fan_mode": 0})
+    assert entity.state.is_on is False
 
     # change speed from client
     cluster.write_attributes.reset_mock()
     await async_set_speed(server, entity, controller, speed=SPEED_HIGH)
     assert len(cluster.write_attributes.mock_calls) == 1
     assert cluster.write_attributes.call_args == call({"fan_mode": 3})
+    assert entity.state.is_on is True
+    assert entity.state.speed == SPEED_HIGH
 
     # change preset_mode from client
     cluster.write_attributes.reset_mock()
     await async_set_preset_mode(server, entity, controller, preset_mode=PRESET_MODE_ON)
     assert len(cluster.write_attributes.mock_calls) == 1
     assert cluster.write_attributes.call_args == call({"fan_mode": 4})
+    assert entity.state.is_on is True
+    assert entity.state.preset_mode == PRESET_MODE_ON
 
     # test set percentage from client
     cluster.write_attributes.reset_mock()
@@ -191,6 +197,7 @@ async def test_fan(
     assert cluster.write_attributes.call_args == call({"fan_mode": 2})
     # this is converted to a ranged value
     assert entity.state.percentage == 66
+    assert entity.state.is_on is True
 
     # set invalid preset_mode from client
     cluster.write_attributes.reset_mock()
@@ -205,6 +212,18 @@ async def test_fan(
     assert response_error.command == "error.fan_set_preset_mode"
     assert "Error executing command: async_set_preset_mode" in caplog.text
     assert len(cluster.write_attributes.mock_calls) == 0
+
+    # test percentage in turn on command
+    await controller.fans.turn_on(entity, percentage=25)
+    await server.block_till_done()
+    assert entity.state.percentage == 33  # this is converted to a ranged value
+    assert entity.state.speed == SPEED_LOW
+
+    # test speed in turn on command
+    await controller.fans.turn_on(entity, speed=SPEED_HIGH)
+    await server.block_till_done()
+    assert entity.state.percentage == 100
+    assert entity.state.speed == SPEED_HIGH
 
 
 async def async_turn_on(
