@@ -19,6 +19,59 @@ class CommandResponse(BaseModel):
     success: bool
 
 
+class ErrorResponse(CommandResponse):
+    """Error response model."""
+
+    success: bool = False
+    error_code: str
+    error_message: str
+    zigbee_error_code: Optional[str]
+    command: Literal[
+        "error.start_network",
+        "error.stop_network",
+        "error.remove_device",
+        "error.stop_server",
+        "error.light_turn_on",
+        "error.light_turn_off",
+        "error.switch_turn_on",
+        "error.switch_turn_off",
+        "error.lock_lock",
+        "error.lock_unlock",
+        "error.lock_set_user_lock_code",
+        "error.lock_clear_user_lock_code",
+        "error.lock_disable_user_lock_code",
+        "error.lock_enable_user_lock_code",
+        "error.fan_turn_on",
+        "error.fan_turn_off",
+        "error.fan_set_percentage",
+        "error.fan_set_preset_mode",
+        "error.cover_open",
+        "error.cover_close",
+        "error.cover_set_position",
+        "error.cover_stop",
+        "error.climate_set_fan_mode",
+        "error.climate_set_hvac_mode",
+        "error.climate_set_preset_mode",
+        "error.climate_set_temperature",
+        "error.button_press",
+        "error.alarm_control_panel_disarm",
+        "error.alarm_control_panel_arm_home",
+        "error.alarm_control_panel_arm_away",
+        "error.alarm_control_panel_arm_night",
+        "error.alarm_control_panel_trigger",
+        "error.select_select_option",
+        "error.siren_turn_on",
+        "error.siren_turn_off",
+        "error.number_set_value",
+        "error.platform_entity_refresh_state",
+        "error.client_listen",
+        "error.client_listen_raw_zcl",
+        "error.client_disconnect",
+        "error.reconfigure_device",
+        "error.UpdateNetworkTopologyCommand",
+    ]
+
+
 class DefaultResponse(CommandResponse):
     """Default command response."""
 
@@ -133,6 +186,7 @@ class UpdateGroupResponse(CommandResponse):
 CommandResponses = Annotated[
     Union[
         DefaultResponse,
+        ErrorResponse,
         GetDevicesResponse,
         GroupsResponse,
         PermitJoiningResponse,
