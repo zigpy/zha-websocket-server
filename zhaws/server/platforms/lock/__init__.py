@@ -67,6 +67,7 @@ class Lock(PlatformEntity):
         if not isinstance(result, list) or result[0] is not Status.SUCCESS:
             self.error("Error with lock_door: %s", result)
             return
+        self._state = STATE_LOCKED
         self.maybe_send_state_changed_event()
 
     async def async_unlock(self, **kwargs: Any) -> None:
@@ -75,6 +76,7 @@ class Lock(PlatformEntity):
         if not isinstance(result, list) or result[0] is not Status.SUCCESS:
             self.error("Error with unlock_door: %s", result)
             return
+        self._state = STATE_UNLOCKED
         self.maybe_send_state_changed_event()
 
     async def async_update(self) -> None:
