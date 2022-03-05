@@ -1,7 +1,7 @@
 """WS API for the light platform entity."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional
 
 from pydantic import Field, validator
 
@@ -19,19 +19,19 @@ class LightTurnOnCommand(PlatformEntityCommand):
     """Light turn on command."""
 
     command: Literal[APICommands.LIGHT_TURN_ON] = APICommands.LIGHT_TURN_ON
-    brightness: Annotated[int, Field(ge=0, le=255)] | None
-    transition: Annotated[float, Field(ge=0, le=6553)] | None
-    flash: Literal["short", "long"] | None
-    effect: str | None
-    hs_color: None | (
+    brightness: Optional[Annotated[int, Field(ge=0, le=255)]]
+    transition: Optional[Annotated[float, Field(ge=0, le=6553)]]
+    flash: Optional[Literal["short", "long"]]
+    effect: Optional[str]
+    hs_color: Optional[
         tuple[Annotated[int, Field(ge=0, le=360)], Annotated[int, Field(ge=0, le=100)]]
-    )
-    color_temp: int | None
+    ]
+    color_temp: Optional[int]
 
     @validator("color_temp", pre=True, always=True, each_item=False)
     def check_color_setting_exclusivity(
-        cls, color_temp: int | None, values: dict[str, Any], **kwargs: Any
-    ) -> int | None:
+        cls, color_temp: Optional[int], values: dict[str, Any], **kwargs: Any
+    ) -> Optional[int]:
         if "hs_color" in values and color_temp is not None:
             raise ValueError('Only one of "hs_color" and "color_temp" can be set')
         return color_temp
@@ -48,8 +48,8 @@ class LightTurnOffCommand(PlatformEntityCommand):
     """Light turn off command."""
 
     command: Literal[APICommands.LIGHT_TURN_OFF] = APICommands.LIGHT_TURN_OFF
-    transition: Annotated[float, Field(ge=0, le=6553)] | None
-    flash: Literal["short", "long"] | None
+    transition: Optional[Annotated[float, Field(ge=0, le=6553)]]
+    flash: Optional[Literal["short", "long"]]
 
 
 @decorators.websocket_command(LightTurnOffCommand)
