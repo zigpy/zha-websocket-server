@@ -305,8 +305,13 @@ class ClusterHandler(LogMixin, EventBase):
 
         self.debug("initializing cluster handler: from_cache: %s", from_cache)
         cached = [a for a, cached in self.ZCL_INIT_ATTRS.items() if cached]
+        self.debug("initializing cluster handler: cached attrs: %s", cached)
         uncached = [a for a, cached in self.ZCL_INIT_ATTRS.items() if not cached]
+        self.debug("initializing cluster handler: uncached attrs: %s", uncached)
         uncached.extend([cfg["attr"] for cfg in self.REPORT_CONFIG])  # type: ignore #TODO see if this can be fixed
+        self.debug(
+            "initializing cluster handler: uncached attrs extended: %s", uncached
+        )
 
         if cached:
             await self._get_attributes(True, cached, from_cache=True)
