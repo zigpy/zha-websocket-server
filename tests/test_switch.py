@@ -19,7 +19,12 @@ from zhaws.server.websocket.server import Server
 from zhaws.server.zigbee.device import Device
 from zhaws.server.zigbee.group import Group, GroupMemberReference
 
-from .common import async_find_group_entity_id, find_entity_id, send_attributes_report
+from .common import (
+    async_find_group_entity_id,
+    find_entity_id,
+    send_attributes_report,
+    update_attribute_cache,
+)
 from .conftest import SIG_EP_INPUT, SIG_EP_OUTPUT, SIG_EP_PROFILE, SIG_EP_TYPE
 
 from tests.common import mock_coro
@@ -125,12 +130,25 @@ async def test_switch(
         "zigpy.zcl.Cluster.request",
         return_value=mock_coro([0x00, zcl_f.Status.SUCCESS]),
     ):
-        # turn on via UI
         await controller.switches.turn_on(entity)
         await server.block_till_done()
+        assert entity.state.state is True
         assert len(cluster.request.mock_calls) == 1
         assert cluster.request.call_args == call(
             False, ON, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
+        )
+
+    # Fail turn off from client
+    with patch(
+        "zigpy.zcl.Cluster.request",
+        return_value=mock_coro([0x01, zcl_f.Status.FAILURE]),
+    ):
+        await controller.switches.turn_off(entity)
+        await server.block_till_done()
+        assert entity.state.state is True
+        assert len(cluster.request.mock_calls) == 1
+        assert cluster.request.call_args == call(
+            False, OFF, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
         )
 
     # turn off from client
@@ -138,13 +156,34 @@ async def test_switch(
         "zigpy.zcl.Cluster.request",
         return_value=mock_coro([0x01, zcl_f.Status.SUCCESS]),
     ):
-        # turn off via UI
         await controller.switches.turn_off(entity)
         await server.block_till_done()
+        assert entity.state.state is False
         assert len(cluster.request.mock_calls) == 1
         assert cluster.request.call_args == call(
             False, OFF, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
         )
+
+    # Fail turn on from client
+    with patch(
+        "zigpy.zcl.Cluster.request",
+        return_value=mock_coro([0x01, zcl_f.Status.FAILURE]),
+    ):
+        await controller.switches.turn_on(entity)
+        await server.block_till_done()
+        assert entity.state.state is False
+        assert len(cluster.request.mock_calls) == 1
+        assert cluster.request.call_args == call(
+            False, ON, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
+        )
+
+    # test updating entity state from client
+    assert entity.state.state is False
+    cluster.PLUGGED_ATTR_READS = {"on_off": True}
+    update_attribute_cache(cluster)
+    await controller.entities.refresh_state(entity)
+    await server.block_till_done()
+    assert entity.state.state is True
 
 
 async def test_zha_group_switch_entity(
