@@ -1,7 +1,7 @@
 """Test zha fan."""
 import logging
 from typing import Awaitable, Callable, Optional
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, call, patch
 
 import pytest
 from slugify import slugify
@@ -132,14 +132,13 @@ def get_group_entity(
     return entities.get(entity_id)  # type: ignore
 
 
-"""
 async def test_fan(
     device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
     zigpy_device: ZigpyDevice,
     connected_client_and_server: tuple[Controller, Server],
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    #Test zha fan platform.
+    """Test zha fan platform."""
     controller, server = connected_client_and_server
     zha_device = await device_joined(zigpy_device)
     cluster = zigpy_device.endpoints.get(1).fan
@@ -201,9 +200,11 @@ async def test_fan(
         response_error.error_message
         == "The preset_mode invalid is not a valid preset_mode: ['on', 'auto', 'smart']"
     )
+    assert response_error.error_code == "PLATFORM_ENTITY_ACTION_ERROR"
+    assert response_error.zigbee_error_code is None
+    assert response_error.command == "error.fan_set_preset_mode"
     assert "Error executing command: async_set_preset_mode" in caplog.text
     assert len(cluster.write_attributes.mock_calls) == 0
-"""
 
 
 async def async_turn_on(

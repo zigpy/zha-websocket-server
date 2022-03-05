@@ -50,6 +50,7 @@ async def execute_platform_entity_command(
     except Exception as err:
         _LOGGER.exception("Error executing command: %s", method_name, exc_info=err)
         client.send_result_error(command, "PLATFORM_ENTITY_ACTION_ERROR", str(err))
+        return
 
     result: dict[str, Any] = {}
     if command.ieee:
