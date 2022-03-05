@@ -6,8 +6,7 @@ from unittest.mock import AsyncMock, call, patch
 import pytest
 from slugify import slugify
 from zigpy.device import Device as ZigpyDevice
-
-# from zigpy.exceptions import ZigbeeException
+from zigpy.exceptions import ZigbeeException
 import zigpy.profiles.zha as zha
 import zigpy.zcl.clusters.general as general
 import zigpy.zcl.clusters.hvac as hvac
@@ -16,13 +15,12 @@ import zigpy.zcl.foundation as zcl_f
 from zhaws.client.controller import Controller
 from zhaws.client.model.types import FanEntity, FanGroupEntity
 from zhaws.client.proxy import DeviceProxy, GroupProxy
-from zhaws.server.platforms.fan import (
+from zhaws.server.platforms.fan import (  # SPEED_MEDIUM,
     PRESET_MODE_AUTO,
     PRESET_MODE_ON,
     PRESET_MODE_SMART,
     SPEED_HIGH,
     SPEED_LOW,
-    SPEED_MEDIUM,
     SPEED_OFF,
 )
 from zhaws.server.platforms.registries import Platform
@@ -357,7 +355,6 @@ async def test_zha_group_fan_entity(
     assert entity.state.is_on is False
 
 
-"""
 @patch(
     "zigpy.zcl.clusters.hvac.Fan.write_attributes",
     new=AsyncMock(side_effect=ZigbeeException),
@@ -368,7 +365,7 @@ async def test_zha_group_fan_entity_failure_state(
     connected_client_and_server: tuple[Controller, Server],
     caplog: pytest.LogCaptureFixture,
 ):
-    #Test the fan entity for a ZHA group when writing attributes generates an exception.
+    """Test the fan entity for a ZHA group when writing attributes generates an exception."""
     controller, server = connected_client_and_server
     member_ieee_addresses = [device_fan_1.ieee, device_fan_2.ieee]
     members = [
@@ -413,9 +410,9 @@ async def test_zha_group_fan_entity_failure_state(
     assert group_fan_cluster.write_attributes.call_args[0][0] == {"fan_mode": 2}
 
     assert "Could not set fan mode" in caplog.text
+
+
 """
-
-
 @pytest.mark.parametrize(
     "plug_read, expected_state, expected_speed, expected_percentage",
     (
@@ -435,7 +432,7 @@ async def test_fan_init(
     expected_speed: Optional[str],
     expected_percentage: Optional[int],
 ):
-    """Test zha fan platform."""
+    #Test zha fan platform.
     controller, server = connected_client_and_server
     cluster = zigpy_device.endpoints.get(1).fan
     cluster.PLUGGED_ATTR_READS = plug_read
@@ -452,6 +449,7 @@ async def test_fan_init(
     assert entity.state.speed == expected_speed
     assert entity.state.percentage == expected_percentage
     assert entity.state.preset_mode is None
+"""
 
 
 async def test_fan_update_entity(
