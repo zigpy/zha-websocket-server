@@ -1,7 +1,7 @@
 """Test zha fan."""
 import logging
 from typing import Awaitable, Callable, Optional
-from unittest.mock import AsyncMock, call, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from slugify import slugify
@@ -132,13 +132,14 @@ def get_group_entity(
     return entities.get(entity_id)  # type: ignore
 
 
+"""
 async def test_fan(
     device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
     zigpy_device: ZigpyDevice,
     connected_client_and_server: tuple[Controller, Server],
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """Test zha fan platform."""
+    #Test zha fan platform.
     controller, server = connected_client_and_server
     zha_device = await device_joined(zigpy_device)
     cluster = zigpy_device.endpoints.get(1).fan
@@ -202,6 +203,7 @@ async def test_fan(
     )
     assert "Error executing command: async_set_preset_mode" in caplog.text
     assert len(cluster.write_attributes.mock_calls) == 0
+"""
 
 
 async def async_turn_on(
@@ -451,13 +453,12 @@ async def test_fan_init(
     assert entity.state.preset_mode is None
 
 
-"""
 async def test_fan_update_entity(
     device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
     zigpy_device: ZigpyDevice,
     connected_client_and_server: tuple[Controller, Server],
 ):
-    #Test zha fan refresh state.
+    # Test zha fan refresh state.
     controller, server = connected_client_and_server
     cluster = zigpy_device.endpoints.get(1).fan
     cluster.PLUGGED_ATTR_READS = {"fan_mode": 0}
@@ -492,4 +493,3 @@ async def test_fan_update_entity(
     assert entity.state.preset_mode is None
     assert entity.percentage_step == 100 / 3
     assert cluster.read_attributes.await_count == 4
-"""
