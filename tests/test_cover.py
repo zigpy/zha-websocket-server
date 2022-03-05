@@ -20,7 +20,7 @@ from zhaws.server.platforms.registries import Platform
 from zhaws.server.websocket.server import Server
 from zhaws.server.zigbee.device import Device
 
-from .common import find_entity_id, send_attributes_report
+from .common import find_entity_id, send_attributes_report, update_attribute_cache
 from .conftest import SIG_EP_INPUT, SIG_EP_OUTPUT, SIG_EP_PROFILE, SIG_EP_TYPE
 
 from tests.common import mock_coro
@@ -121,6 +121,12 @@ async def test_cover(
     await send_attributes_report(server, cluster, {0: 1, 8: 0, 1: 100})
     assert entity.state.state == STATE_OPEN
 
+    cluster.PLUGGED_ATTR_READS = {1: 100}
+    update_attribute_cache(cluster)
+    await controller.entities.refresh_state(entity)
+    await server.block_till_done()
+    assert entity.state.state == STATE_OPEN
+
     # close from client
     with patch(
         "zigpy.zcl.Cluster.request", return_value=mock_coro([0x1, zcl_f.Status.SUCCESS])
@@ -195,6 +201,10 @@ async def test_shade(
 
     # test to see if it opens
     await send_attributes_report(server, cluster_on_off, {8: 0, 0: True, 1: 1})
+    assert entity.state.state == STATE_OPEN
+
+    await controller.entities.refresh_state(entity)
+    await server.block_till_done()
     assert entity.state.state == STATE_OPEN
 
     # close from client command fails
@@ -292,6 +302,10 @@ async def test_keen_vent(
 
     # test that the state has changed from unavailable to off
     await send_attributes_report(server, cluster_on_off, {8: 0, 0: False, 1: 1})
+    assert entity.state.state == STATE_CLOSED
+
+    await controller.entities.refresh_state(entity)
+    await server.block_till_done()
     assert entity.state.state == STATE_CLOSED
 
     # open from client command fails
