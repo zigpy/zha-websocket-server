@@ -18,7 +18,7 @@ class SirenTurnOnCommand(PlatformEntityCommand):
 
     command: Literal[APICommands.SIREN_TURN_ON] = APICommands.SIREN_TURN_ON
     duration: Optional[int]
-    tone: Optional[str]
+    tone: Optional[int]
     volume_level: Optional[int]
 
 
