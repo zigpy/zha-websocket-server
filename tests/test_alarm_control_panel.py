@@ -216,6 +216,15 @@ async def test_alarm_control_panel(
 
     # reset the panel
     await reset_alarm_panel(server, controller, cluster, alarm_entity)
+    assert alarm_entity.state.state == "disarmed"
+
+    await controller.alarm_control_panels.trigger(alarm_entity)
+    await server.block_till_done()
+    assert alarm_entity.state.state == "triggered"
+
+    # reset the panel
+    await reset_alarm_panel(server, controller, cluster, alarm_entity)
+    assert alarm_entity.state.state == "disarmed"
 
 
 async def reset_alarm_panel(

@@ -88,7 +88,7 @@ class IasAce(ClusterHandler):
             IAS_ACE_BYPASS: self._bypass,
             IAS_ACE_EMERGENCY: self._emergency,
             IAS_ACE_FIRE: self._fire,
-            IAS_ACE_PANIC: self._panic,
+            IAS_ACE_PANIC: self.panic,
             IAS_ACE_GET_ZONE_ID_MAP: self._get_zone_id_map,
             IAS_ACE_GET_ZONE_INFO: self._get_zone_info,
             IAS_ACE_GET_PANEL_STATUS: self._send_panel_status_response,
@@ -232,7 +232,7 @@ class IasAce(ClusterHandler):
         """Handle the IAS ACE fire command."""
         self._set_alarm(AceCluster.AlarmStatus.Fire)
 
-    def _panic(self) -> asyncio.Future:
+    def panic(self) -> asyncio.Future:
         """Handle the IAS ACE panic command."""
         self._set_alarm(AceCluster.AlarmStatus.Emergency_Panic)
 

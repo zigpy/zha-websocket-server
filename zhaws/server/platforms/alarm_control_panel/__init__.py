@@ -133,6 +133,7 @@ class ZHAAlarmControlPanel(PlatformEntity):
 
     async def async_alarm_trigger(self, code: str | None = None, **kwargs: Any) -> None:
         """Send alarm trigger command."""
+        self._cluster_handler.panic()
         self.maybe_send_state_changed_event()
 
     @property
