@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
-from typing import TYPE_CHECKING, Any, Final, Union
+from typing import TYPE_CHECKING, Any, Final
 
 import zigpy.types as t
 from zigpy.zcl.clusters.security import IasWd as WD
@@ -84,9 +84,7 @@ class Siren(PlatformEntity):
             | SUPPORT_VOLUME_SET
             | SUPPORT_TONES
         )
-        self._attr_available_tones: Union[
-            list[Union[int, str]], dict[int, str], None
-        ] = {
+        self._attr_available_tones: (list[int | str] | dict[int, str] | None) = {
             WARNING_DEVICE_MODE_BURGLAR: "Burglar",
             WARNING_DEVICE_MODE_FIRE: "Fire",
             WARNING_DEVICE_MODE_EMERGENCY: "Emergency",
@@ -99,7 +97,7 @@ class Siren(PlatformEntity):
         self._attr_is_on: bool = False
         self._off_listener: asyncio.TimerHandle | None = None
 
-    async def async_turn_on(self, **kwargs: Any) -> None:
+    async def async_turn_on(self, duration: int | None = None, **kwargs: Any) -> None:
         """Turn on siren."""
         if self._off_listener:
             self._off_listener.cancel()
@@ -131,7 +129,7 @@ class Siren(PlatformEntity):
             if strobe_level_cache is not None
             else WARNING_DEVICE_STROBE_HIGH
         )
-        if (duration := kwargs.get(ATTR_DURATION)) is not None:
+        if duration is not None:
             siren_duration = duration
         if (tone := kwargs.get(ATTR_TONE)) is not None:
             siren_tone = tone

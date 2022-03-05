@@ -207,7 +207,7 @@ class SirenHelper:
         siren_platform_entity: BasePlatformEntity,
         duration: int | None = None,
         volume_level: int | None = None,
-        tone: str | None = None,
+        tone: int | None = None,
     ) -> CommandResponse:
         """Turn on a siren."""
         ensure_platform_entity(siren_platform_entity, Platform.SIREN)
