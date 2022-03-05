@@ -18,7 +18,7 @@ class BaseModel(PydanticBaseModel):
         arbitrary_types_allowed = True
         extra = "allow"
 
-    @validator("ieee", pre=True, always=True, whole=True, check_fields=False)
+    @validator("ieee", pre=True, always=True, each_item=False, check_fields=False)
     def convert_ieee(
         cls, ieee: Optional[Union[str, EUI64]], values: dict[str, Any], **kwargs: Any
     ) -> Optional[EUI64]:
@@ -28,7 +28,9 @@ class BaseModel(PydanticBaseModel):
             return EUI64.convert(ieee)
         return ieee
 
-    @validator("device_ieee", pre=True, always=True, whole=True, check_fields=False)
+    @validator(
+        "device_ieee", pre=True, always=True, each_item=False, check_fields=False
+    )
     def convert_device_ieee(
         cls,
         device_ieee: Optional[Union[str, EUI64]],

@@ -81,7 +81,7 @@ class GetDevicesResponse(CommandResponse):
     command: Literal["get_devices"] = "get_devices"
     devices: dict[EUI64, Device]
 
-    @validator("devices", pre=True, always=True, whole=True, check_fields=False)
+    @validator("devices", pre=True, always=True, each_item=False, check_fields=False)
     def convert_device_ieee(
         cls, devices: dict[str, dict], values: dict[str, Any], **kwargs: Any
     ) -> dict[EUI64, Device]:
