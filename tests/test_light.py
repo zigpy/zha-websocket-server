@@ -1,6 +1,7 @@
 """Test zha light."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Awaitable, Callable
 from unittest.mock import AsyncMock, call, patch, sentinel
@@ -221,45 +222,50 @@ def get_group_entity(
     return entities.get(entity_id)  # type: ignore
 
 
-"""TODO figure out time changed tests
-async def test_light_refresh(zigpy_device_mock: Callable[..., ZigpyDevice],
-    device_joined: Callable[[ZigpyDevice], Awaitable[Device]],_restored):
-    #Test zha light platform refresh.
-
-    # create zigpy devices
+@pytest.mark.looptime
+async def test_light_refresh(
+    zigpy_device_mock: Callable[..., ZigpyDevice],
+    device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
+    connected_client_and_server: tuple[Controller, Server],
+):
+    """Test zha light platform refresh."""
     zigpy_device = zigpy_device_mock(LIGHT_ON_OFF)
     on_off_cluster = zigpy_device.endpoints[1].on_off
     on_off_cluster.PLUGGED_ATTR_READS = {"on_off": 0}
     zha_device = await device_joined(zigpy_device)
-    entity_id = await find_entity_id(Platform.LIGHT, zha_device, hass)
+    controller, server = connected_client_and_server
+    entity_id = find_entity_id(Platform.LIGHT, zha_device)
+    assert entity_id is not None
+    client_device: DeviceProxy | None = controller.devices.get(zha_device.ieee)
+    assert client_device is not None
+    entity = get_entity(client_device, entity_id)
+    assert entity is not None
+    assert entity.state.on is False
 
-    # allow traffic to flow through the gateway and device
-    await async_enable_traffic([zha_device])
     on_off_cluster.read_attributes.reset_mock()
 
     # not enough time passed
-    async_fire_time_changed(dt_util.utcnow() + timedelta(minutes=20))
-    await hass.async_block_till_done()
+    await asyncio.sleep(60)  # 1 minute
+    await server.block_till_done()
     assert on_off_cluster.read_attributes.call_count == 0
     assert on_off_cluster.read_attributes.await_count == 0
-    assert hass.states.get(entity_id).state == False
+    assert entity.state.on is False
 
-    # 1 interval - 1 call
+    # 1 interval - at least 1 call
     on_off_cluster.PLUGGED_ATTR_READS = {"on_off": 1}
-    async_fire_time_changed(dt_util.utcnow() + timedelta(minutes=80))
-    await hass.async_block_till_done()
-    assert on_off_cluster.read_attributes.call_count == 1
-    assert on_off_cluster.read_attributes.await_count == 1
-    assert hass.states.get(entity_id).state == True
+    await asyncio.sleep(4800)  # 80 minutes
+    await server.block_till_done()
+    assert on_off_cluster.read_attributes.call_count >= 1
+    assert on_off_cluster.read_attributes.await_count >= 1
+    assert entity.state.on is True
 
-    # 2 intervals - 2 calls
+    # 2 intervals - at least 2 calls
     on_off_cluster.PLUGGED_ATTR_READS = {"on_off": 0}
-    async_fire_time_changed(dt_util.utcnow() + timedelta(minutes=80))
-    await hass.async_block_till_done()
-    assert on_off_cluster.read_attributes.call_count == 2
-    assert on_off_cluster.read_attributes.await_count == 2
-    assert hass.states.get(entity_id).state == False
-"""
+    await asyncio.sleep(4800)  # 80 minutes
+    await server.block_till_done()
+    assert on_off_cluster.read_attributes.call_count >= 2
+    assert on_off_cluster.read_attributes.await_count >= 2
+    assert entity.state.on is False
 
 
 @patch(
