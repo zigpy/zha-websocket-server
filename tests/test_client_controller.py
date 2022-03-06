@@ -1,7 +1,7 @@
 """Test zha switch."""
 import logging
 from typing import Awaitable, Callable, Optional
-from unittest.mock import call
+from unittest.mock import MagicMock, call
 
 import pytest
 from slugify import slugify
@@ -12,10 +12,17 @@ from zigpy.types.named import EUI64
 import zigpy.zcl.clusters.general as general
 
 from zhaws.client.controller import Controller
+from zhaws.client.model.events import (
+    DeviceJoinedEvent,
+    DeviceLeftEvent,
+    RawDeviceInitializedEvent,
+)
 from zhaws.client.model.types import BasePlatformEntity, SwitchEntity, SwitchGroupEntity
 from zhaws.client.proxy import DeviceProxy, GroupProxy
+from zhaws.server.const import ControllerEvents
 from zhaws.server.platforms.registries import Platform
 from zhaws.server.websocket.server import Server
+from zhaws.server.zigbee.controller import DevicePairingStatus
 from zhaws.server.zigbee.device import Device
 from zhaws.server.zigbee.group import Group, GroupMemberReference
 
@@ -146,6 +153,61 @@ async def test_controller_devices(
     server.controller.device_removed(zigpy_device)
     await server.block_till_done()
     assert len(controller.devices) == 0
+
+    # rejoin the device
+    zha_device = await device_joined(zigpy_device)
+    await server.block_till_done()
+    assert len(controller.devices) == 1
+
+    # test rejoining the same device
+    zha_device = await device_joined(zigpy_device)
+    await server.block_till_done()
+    assert len(controller.devices) == 1
+
+    # test controller events
+    listener = MagicMock()
+
+    # test device joined
+    controller.on_event(ControllerEvents.DEVICE_JOINED, listener)
+    device_joined_event = DeviceJoinedEvent(
+        pairing_status=DevicePairingStatus.PAIRED,
+        ieee=zigpy_device.ieee,
+        nwk=str(zigpy_device.nwk).lower(),
+    )
+    server.controller.device_joined(zigpy_device)
+    await server.block_till_done()
+    assert listener.call_count == 1
+    assert listener.call_args == call(device_joined_event)
+
+    # test device left
+    listener.reset_mock()
+    controller.on_event(ControllerEvents.DEVICE_LEFT, listener)
+    server.controller.device_left(zigpy_device)
+    await server.block_till_done()
+    assert listener.call_count == 1
+    assert listener.call_args == call(
+        DeviceLeftEvent(
+            ieee=zigpy_device.ieee,
+            nwk=str(zigpy_device.nwk).lower(),
+        )
+    )
+
+    # test raw  device initialized
+    listener.reset_mock()
+    controller.on_event(ControllerEvents.RAW_DEVICE_INITIALIZED, listener)
+    server.controller.raw_device_initialized(zigpy_device)
+    await server.block_till_done()
+    assert listener.call_count == 1
+    assert listener.call_args == call(
+        RawDeviceInitializedEvent(
+            pairing_status=DevicePairingStatus.INTERVIEW_COMPLETE,
+            ieee=zigpy_device.ieee,
+            nwk=str(zigpy_device.nwk).lower(),
+            manufacturer=client_device.device_model.manufacturer,
+            model=client_device.device_model.model,
+            signature=client_device.device_model.signature,
+        )
+    )
 
 
 async def test_controller_groups(

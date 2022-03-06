@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from bellows.zigbee.application import ControllerApplication
 from serial.serialutil import SerialException
 from zhaquirks import setup as setup_quirks
+from zigpy.const import SIG_ENDPOINTS, SIG_MANUFACTURER, SIG_MODEL, SIG_NODE_DESC
 from zigpy.endpoint import Endpoint
 from zigpy.group import Group as ZigpyGroup
 from zigpy.types.named import EUI64
@@ -35,7 +36,14 @@ from zhaws.server.zigbee.group import Group, GroupMemberReference
 if TYPE_CHECKING:
     from zhaws.server.websocket.server import Server
 
-from zhaws.server.zigbee.device import Device, DeviceStatus
+from zhaws.server.zigbee.device import (
+    ATTR_DEVICE_TYPE,
+    ATTR_IN_CLUSTERS,
+    ATTR_OUT_CLUSTERS,
+    ATTR_PROFILE_ID,
+    Device,
+    DeviceStatus,
+)
 from zhaws.server.zigbee.radio import RadioType
 
 _LOGGER = logging.getLogger(__name__)
@@ -214,6 +222,7 @@ class Controller:
             "Device %s - %s raw device initialized", device.ieee, f"0x{device.nwk:04x}"
         )
 
+        signature = device.get_signature()
         self.server.client_manager.broadcast(
             {
                 MESSAGE_TYPE: MessageTypes.EVENT,
@@ -226,7 +235,28 @@ class Controller:
                 "manufacturer": device.manufacturer
                 if device.manufacturer
                 else "unknown_manufacturer",
-                "signature": device.get_signature(),
+                "signature": {
+                    "node_descriptor": signature[SIG_NODE_DESC],
+                    SIG_MODEL: signature[SIG_MODEL],
+                    SIG_MANUFACTURER: signature[SIG_MANUFACTURER],
+                    SIG_ENDPOINTS: {
+                        id: {
+                            ATTR_PROFILE_ID: f"0x{ep['profile_id']:04x}",
+                            ATTR_DEVICE_TYPE: f"0x{ep['device_type']:04x}"
+                            if ep["device_type"] is not None
+                            else "",
+                            ATTR_IN_CLUSTERS: [
+                                f"0x{cluster_id:04x}"
+                                for cluster_id in sorted(ep[ATTR_IN_CLUSTERS])
+                            ],
+                            ATTR_OUT_CLUSTERS: [
+                                f"0x{cluster_id:04x}"
+                                for cluster_id in sorted(ep[ATTR_OUT_CLUSTERS])
+                            ],
+                        }
+                        for id, ep in signature[SIG_ENDPOINTS].items()
+                    },
+                },
             }
         )
 
