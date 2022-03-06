@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable
 
 if TYPE_CHECKING:
     from zhaws.model import BaseEvent
@@ -45,7 +45,7 @@ class EventBase:
 
         return unsub
 
-    def emit(self, event_name: str, data: Optional[BaseEvent] = None) -> None:
+    def emit(self, event_name: str, data: BaseEvent | None = None) -> None:
         """Run all callbacks for an event."""
         for listener in self._listeners.get(event_name, []):
             if inspect.iscoroutinefunction(listener):
@@ -66,4 +66,7 @@ class EventBase:
         if handler is None:
             _LOGGER.warning("Received unknown event: %s", event)
             return
-        handler(event)
+        if inspect.iscoroutinefunction(handler):
+            asyncio.create_task(handler(event))
+        else:
+            handler(event)
