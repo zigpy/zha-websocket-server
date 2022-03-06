@@ -339,7 +339,7 @@ class CreateGroupCommand(WebSocketCommand):
     command: Literal[APICommands.CREATE_GROUP] = APICommands.CREATE_GROUP
     group_name: str
     members: list[GroupMemberReference]
-    group_id: int
+    group_id: Optional[int]
 
 
 @decorators.websocket_command(CreateGroupCommand)
@@ -452,6 +452,7 @@ def load_api(server: Server) -> None:
     register_api_command(server, start_network)
     register_api_command(server, stop_network)
     register_api_command(server, get_devices)
+    register_api_command(server, reconfigure_device)
     register_api_command(server, get_groups)
     register_api_command(server, create_group)
     register_api_command(server, remove_groups)

@@ -1,8 +1,4 @@
 repos:
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v2.31.0
-    hooks:
-      - id: pyupgrade
 
   - repo: https://github.com/fsouza/autoflake8
     rev: v0.3.1
