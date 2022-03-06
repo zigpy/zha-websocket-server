@@ -5,6 +5,7 @@ Types are representations of the objects that exist in zhawss.
 
 from typing import Annotated, Any, Literal, Optional, Union
 
+from pydantic import validator
 from pydantic.fields import Field
 from zigpy.types.named import EUI64
 
@@ -568,7 +569,7 @@ class Group(BaseModel):
 
     name: str
     id: int
-    members: dict[str, GroupMember]
+    members: dict[EUI64, GroupMember]
     entities: dict[
         str,
         Annotated[
@@ -576,6 +577,12 @@ class Group(BaseModel):
             Field(discriminator="class_name"),  # noqa: F821
         ],
     ]
+
+    @validator("members", pre=True, always=True, each_item=False, check_fields=False)
+    def convert_member_ieee(
+        cls, members: dict[str, dict], values: dict[str, Any], **kwargs: Any
+    ) -> dict[EUI64, Device]:
+        return {EUI64.convert(k): GroupMember(**v) for k, v in members.items()}
 
 
 class GroupMemberReference(BaseModel):
