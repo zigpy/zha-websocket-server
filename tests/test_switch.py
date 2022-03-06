@@ -284,6 +284,11 @@ async def test_zha_group_switch_entity(
     # test that group light is now back on
     assert entity.state.state is True
 
+    # test value error calling client api with wrong entity type
+    with pytest.raises(ValueError):
+        await controller.sirens.turn_on(entity)
+        await server.block_till_done()
+
 
 def get_entity(zha_dev: DeviceProxy, entity_id: str) -> BasePlatformEntity:
     """Get entity."""
