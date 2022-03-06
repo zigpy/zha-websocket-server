@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
+import datetime as dt
 import functools
 import logging
-from typing import TYPE_CHECKING, Any, Final, Optional, Union
+from typing import TYPE_CHECKING, Any, Final
 
 from zigpy.zcl.clusters.hvac import Fan as FanCluster, Thermostat as ThermostatCluster
 
@@ -163,9 +163,6 @@ ZCL_TEMP: Final[int] = 100
 _LOGGER = logging.getLogger(__name__)
 
 
-"""TODO implement to_json and get_state methods"""
-
-
 @MULTI_MATCH(
     cluster_handler_names=CLUSTER_HANDLER_THERMOSTAT,
     aux_cluster_handlers=CLUSTER_HANDLER_FAN,
@@ -194,7 +191,7 @@ class Thermostat(PlatformEntity):
         self._preset: Preset = Preset.NONE
         self._presets: list[Preset] = []
         self._supported_flags = SUPPORT_TARGET_TEMPERATURE
-        self._fan_cluster_handler: Optional[ClusterHandler] = self.cluster_handlers.get(
+        self._fan_cluster_handler: ClusterHandler | None = self.cluster_handlers.get(
             CLUSTER_HANDLER_FAN
         )
         self._thermostat_cluster_handler.on_event(
@@ -202,7 +199,7 @@ class Thermostat(PlatformEntity):
         )
 
     @property
-    def current_temperature(self) -> Union[float, None]:
+    def current_temperature(self) -> float | None:
         """Return the current temperature."""
         if self._thermostat_cluster_handler.local_temp is None:
             return None
@@ -252,7 +249,7 @@ class Thermostat(PlatformEntity):
         return data
 
     @property
-    def fan_mode(self) -> Union[str, None]:
+    def fan_mode(self) -> str | None:
         """Return current FAN mode."""
         if self._thermostat_cluster_handler.running_state is None:
             return FanState.AUTO
@@ -266,14 +263,14 @@ class Thermostat(PlatformEntity):
         return FanState.AUTO
 
     @property
-    def fan_modes(self) -> Union[list[str], None]:
+    def fan_modes(self) -> list[str] | None:
         """Return supported FAN modes."""
         if not self._fan_cluster_handler:
             return None
         return [FanState.AUTO, FanState.ON]
 
     @property
-    def hvac_action(self) -> Union[str, None]:
+    def hvac_action(self) -> str | None:
         """Return the current HVAC action."""
         if (
             self._thermostat_cluster_handler.pi_heating_demand is None
@@ -283,7 +280,7 @@ class Thermostat(PlatformEntity):
         return self._pi_demand_action
 
     @property
-    def _rm_rs_action(self) -> Union[str, None]:
+    def _rm_rs_action(self) -> str | None:
         """Return the current HVAC action based on running mode and running state."""
 
         if (running_state := self._thermostat_cluster_handler.running_state) is None:
@@ -311,7 +308,7 @@ class Thermostat(PlatformEntity):
         return CurrentHVAC.OFF
 
     @property
-    def _pi_demand_action(self) -> Union[str, None]:
+    def _pi_demand_action(self) -> str | None:
         """Return the current HVAC action based on pi_demands."""
 
         heating_demand = self._thermostat_cluster_handler.pi_heating_demand
@@ -326,7 +323,7 @@ class Thermostat(PlatformEntity):
         return CurrentHVAC.OFF
 
     @property
-    def hvac_mode(self) -> Union[str, None]:
+    def hvac_mode(self) -> str | None:
         """Return HVAC operation mode."""
         return SYSTEM_MODE_2_HVAC.get(self._thermostat_cluster_handler.system_mode)
 
@@ -343,12 +340,12 @@ class Thermostat(PlatformEntity):
         return PRECISION_TENTHS
 
     @property
-    def preset_mode(self) -> Union[str, None]:
+    def preset_mode(self) -> str | None:
         """Return current preset mode."""
         return self._preset
 
     @property
-    def preset_modes(self) -> Union[list[str], None]:
+    def preset_modes(self) -> list[str] | None:
         """Return supported preset modes."""
         return self._presets
 
@@ -363,7 +360,7 @@ class Thermostat(PlatformEntity):
         return features
 
     @property
-    def target_temperature(self) -> Union[float, None]:
+    def target_temperature(self) -> float | None:
         """Return the temperature we try to reach."""
         temp = None
         if self.hvac_mode == HVACMode.COOL:
@@ -381,7 +378,7 @@ class Thermostat(PlatformEntity):
         return round(temp / ZCL_TEMP, 1)
 
     @property
-    def target_temperature_high(self) -> Union[float, None]:
+    def target_temperature_high(self) -> float | None:
         """Return the upper bound temperature we try to reach."""
         if self.hvac_mode != HVACMode.HEAT_COOL:
             return None
@@ -396,7 +393,7 @@ class Thermostat(PlatformEntity):
         return round(temp / ZCL_TEMP, 1)
 
     @property
-    def target_temperature_low(self) -> Union[float, None]:
+    def target_temperature_low(self) -> float | None:
         """Return the lower bound temperature we try to reach."""
         if self.hvac_mode != HVACMode.HEAT_COOL:
             return None
@@ -457,7 +454,7 @@ class Thermostat(PlatformEntity):
         self.debug("Attribute '%s' = %s update", event.name, event.value)
         self.maybe_send_state_changed_event()
 
-    async def async_set_fan_mode(self, fan_mode: str) -> None:
+    async def async_set_fan_mode(self, fan_mode: str = None, **kwargs: Any) -> None:
         """Set fan mode."""
         if fan_mode not in self.fan_modes:
             self.warning("Unsupported '%s' fan mode", fan_mode)
@@ -470,7 +467,7 @@ class Thermostat(PlatformEntity):
 
         await self._fan_cluster_handler.async_set_speed(mode)
 
-    async def async_set_hvac_mode(self, hvac_mode: str) -> None:
+    async def async_set_hvac_mode(self, hvac_mode: str, **kwargs: Any) -> None:
         """Set new target operation mode."""
         if hvac_mode not in self.hvac_modes:
             self.warning(
@@ -485,7 +482,7 @@ class Thermostat(PlatformEntity):
         ):
             self.maybe_send_state_changed_event()
 
-    async def async_set_preset_mode(self, preset_mode: str) -> None:
+    async def async_set_preset_mode(self, preset_mode: str, **kwargs: Any) -> None:
         """Set new preset mode."""
         if preset_mode not in self.preset_modes:
             self.debug("preset mode '%s' is not supported", preset_mode)
@@ -510,11 +507,12 @@ class Thermostat(PlatformEntity):
         self._preset = preset_mode
         self.maybe_send_state_changed_event()
 
-    async def async_set_temperature(self, **kwargs: Any) -> None:
+    async def async_set_temperature(
+        self, temperature: float = None, **kwargs: Any
+    ) -> None:
         """Set new target temperature."""
         low_temp = kwargs.get(ATTR_TARGET_TEMP_LOW)
         high_temp = kwargs.get(ATTR_TARGET_TEMP_HIGH)
-        temp = kwargs.get(ATTR_TEMPERATURE)
         hvac_mode = kwargs.get(ATTR_HVAC_MODE)
 
         if hvac_mode is not None:
@@ -535,15 +533,15 @@ class Thermostat(PlatformEntity):
                     high_temp, self.preset_mode == Preset.AWAY
                 )
                 self.debug("Setting cooling %s setpoint: %s", low_temp, success)
-        elif temp is not None:
-            temp = int(temp * ZCL_TEMP)
+        elif temperature is not None:
+            temperature = int(temperature * ZCL_TEMP)
             if self.hvac_mode == HVACMode.COOL:
                 success = await thrm.async_set_cooling_setpoint(
-                    temp, self.preset_mode == Preset.AWAY
+                    temperature, self.preset_mode == Preset.AWAY
                 )
             elif self.hvac_mode == HVACMode.HEAT:
                 success = await thrm.async_set_heating_setpoint(
-                    temp, self.preset_mode == Preset.AWAY
+                    temperature, self.preset_mode == Preset.AWAY
                 )
             else:
                 self.debug("Not setting temperature for '%s' mode", self.hvac_mode)
@@ -560,6 +558,27 @@ class Thermostat(PlatformEntity):
 
         handler = getattr(self, f"async_preset_handler_{preset}")
         return await handler(enable)
+
+    def to_json(self) -> dict:
+        """Return a JSON representation of the thermostat."""
+        json = super().to_json()
+        json["hvac_modes"] = self.hvac_modes
+        json["fan_modes"] = self.fan_modes
+        json["preset_modes"] = self.preset_modes
+        return json
+
+    def get_state(self) -> dict:
+        """Get the state of the lock."""
+        response = super().get_state()
+        response["current_temperature"] = self.current_temperature
+        response["target_temperature"] = self.target_temperature
+        response["target_temperature_high"] = self.target_temperature_high
+        response["target_temperature_low"] = self.target_temperature_low
+        response["hvac_action"] = self.hvac_action
+        response["hvac_mode"] = self.hvac_mode
+        response["preset_mode"] = self.preset_mode
+        response["fan_mode"] = self.fan_mode
+        return response
 
 
 @MULTI_MATCH(
@@ -599,7 +618,7 @@ class SinopeTechnologiesThermostat(Thermostat):
         )
 
     @property
-    def _rm_rs_action(self) -> Union[str, None]:
+    def _rm_rs_action(self) -> str | None:
         """Return the current HVAC action based on running mode and running state."""
 
         running_mode = self._thermostat_cluster_handler.running_mode
@@ -626,8 +645,8 @@ class SinopeTechnologiesThermostat(Thermostat):
         """Update thermostat's time display."""
 
         secs_2k = (
-            datetime.now(datetime.timezone.utc).replace(tzinfo=None)
-            - datetime(2000, 1, 1, 0, 0, 0, 0)
+            dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
+            - dt.datetime(2000, 1, 1, 0, 0, 0, 0)
         ).total_seconds()
 
         self.debug("Updating time: %s", secs_2k)

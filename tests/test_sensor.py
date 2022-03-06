@@ -17,7 +17,7 @@ from zhaws.client.model.types import (
     BatteryEntity,
     ElectricalMeasurementEntity,
     SensorEntity,
-    SmareEnergyMeteringEntity,
+    SmartEnergyMeteringEntity,
 )
 from zhaws.client.proxy import DeviceProxy
 from zhaws.server.platforms.registries import Platform
@@ -112,7 +112,7 @@ async def async_test_illuminance(
 
 
 async def async_test_metering(
-    server: Server, cluster: Cluster, entity: SmareEnergyMeteringEntity
+    server: Server, cluster: Cluster, entity: SmartEnergyMeteringEntity
 ) -> None:
     """Test Smart Energy metering sensor."""
     await send_attributes_report(server, cluster, {1025: 1, 1024: 12345, 1026: 100})
@@ -132,7 +132,7 @@ async def async_test_metering(
 
 
 async def async_test_smart_energy_summation(
-    server: Server, cluster: Cluster, entity: SmareEnergyMeteringEntity
+    server: Server, cluster: Cluster, entity: SmartEnergyMeteringEntity
 ) -> None:
     """Test SmartEnergy Summation delivered sensro."""
 
