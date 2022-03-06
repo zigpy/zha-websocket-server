@@ -25,6 +25,7 @@ from zhaws.client.model.types import (
     ShadeState,
     SmareEnergyMeteringState,
     SwitchState,
+    ThermostatState,
 )
 from zhaws.model import BaseEvent, BaseModel
 
@@ -103,6 +104,7 @@ class PlatformEntityStateChangedEvent(BaseEvent):
             SmareEnergyMeteringState,
             GenericState,
             BooleanState,
+            ThermostatState,
         ],
         Field(discriminator="class_name"),  # noqa: F821
     ]

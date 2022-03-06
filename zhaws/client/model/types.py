@@ -74,12 +74,6 @@ class GenericState(BaseModel):
         "RSSISensor",
         "LQISensor",
         "LastSeenSensor",
-        # TODO following are temporary until we have a proper implementation
-        "Thermostat",
-        "SinopeTechnologiesThermostat",
-        "ZenWithinThermostat",
-        "MoesThermostat",
-        "BecaThermostat",
     ]
     state: Union[str, bool, int, float, None]
 
@@ -184,6 +178,26 @@ class LightState(BaseModel):
     color_temp: Optional[int]
     effect: Optional[str]
     off_brightness: Optional[int]
+
+
+class ThermostatState(BaseModel):
+    """Thermostat state model."""
+
+    class_name: Literal[
+        "Thermostat",
+        "SinopeTechnologiesThermostat",
+        "ZenWithinThermostat",
+        "MoesThermostat",
+        "BecaThermostat",
+    ]
+    current_temperature: Optional[float]
+    target_temperature: Optional[float]
+    target_temperature_low: Optional[float]
+    target_temperature_high: Optional[float]
+    hvac_action: Optional[str]
+    hvac_mode: Optional[str]
+    preset_mode: Optional[str]
+    fan_mode: Optional[str]
 
 
 class SwitchState(BaseModel):
@@ -311,7 +325,7 @@ class ElectricalMeasurementEntity(BaseSensorEntity):
     state: ElectricalMeasurementState
 
 
-class SmareEnergyMeteringEntity(BaseSensorEntity):
+class SmartEnergyMeteringEntity(BaseSensorEntity):
     """Smare energy metering entity model."""
 
     class_name: Literal["SmartEnergyMetering", "SmartEnergySummation"]
@@ -387,7 +401,7 @@ class SelectEntity(BasePlatformEntity):
     state: GenericState
 
 
-class ThermostatEntity(BasePlatformEntity):  # TODO fix this
+class ThermostatEntity(BasePlatformEntity):
     """Thermostat entity model."""
 
     class_name: Literal[
@@ -397,7 +411,10 @@ class ThermostatEntity(BasePlatformEntity):  # TODO fix this
         "MoesThermostat",
         "BecaThermostat",
     ]
-    state: GenericState  # TODO fix this
+    state: ThermostatState
+    hvac_modes: tuple[str, ...]
+    fan_modes: Optional[list[str]]
+    preset_modes: Optional[list[str]]
 
 
 class SirenEntity(BasePlatformEntity):
@@ -493,7 +510,7 @@ class Device(BaseDevice):
                 SwitchEntity,
                 BatteryEntity,
                 ElectricalMeasurementEntity,
-                SmareEnergyMeteringEntity,
+                SmartEnergyMeteringEntity,
                 ThermostatEntity,
             ],
             Field(discriminator="class_name"),  # noqa: F821
@@ -556,7 +573,7 @@ class GroupMember(BaseModel):
                 SwitchEntity,
                 BatteryEntity,
                 ElectricalMeasurementEntity,
-                SmareEnergyMeteringEntity,
+                SmartEnergyMeteringEntity,
                 ThermostatEntity,
             ],
             Field(discriminator="class_name"),  # noqa: F821
