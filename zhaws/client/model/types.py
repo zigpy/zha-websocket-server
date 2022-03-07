@@ -2,11 +2,12 @@
 
 Types are representations of the objects that exist in zhawss.
 """
-from __future__ import annotations
 
 from typing import Annotated, Any, Literal, Optional, Union
 
+from pydantic import validator
 from pydantic.fields import Field
+from zigpy.types.named import EUI64
 
 from zhaws.event import EventBase
 from zhaws.model import BaseModel
@@ -73,12 +74,6 @@ class GenericState(BaseModel):
         "RSSISensor",
         "LQISensor",
         "LastSeenSensor",
-        # TODO following are temporary until we have a proper implementation
-        "Thermostat",
-        "SinopeTechnologiesThermostat",
-        "ZenWithinThermostat",
-        "MoesThermostat",
-        "BecaThermostat",
     ]
     state: Union[str, bool, int, float, None]
 
@@ -185,6 +180,26 @@ class LightState(BaseModel):
     off_brightness: Optional[int]
 
 
+class ThermostatState(BaseModel):
+    """Thermostat state model."""
+
+    class_name: Literal[
+        "Thermostat",
+        "SinopeTechnologiesThermostat",
+        "ZenWithinThermostat",
+        "MoesThermostat",
+        "BecaThermostat",
+    ]
+    current_temperature: Optional[float]
+    target_temperature: Optional[float]
+    target_temperature_low: Optional[float]
+    target_temperature_high: Optional[float]
+    hvac_action: Optional[str]
+    hvac_mode: Optional[str]
+    preset_mode: Optional[str]
+    fan_mode: Optional[str]
+
+
 class SwitchState(BaseModel):
     """Switch state model."""
 
@@ -213,7 +228,7 @@ class BaseEntity(BaseEventedModel):
 class BasePlatformEntity(BaseEntity):
     """Base platform entity model."""
 
-    device_ieee: str
+    device_ieee: EUI64
     endpoint_id: int
 
 
@@ -310,7 +325,7 @@ class ElectricalMeasurementEntity(BaseSensorEntity):
     state: ElectricalMeasurementState
 
 
-class SmareEnergyMeteringEntity(BaseSensorEntity):
+class SmartEnergyMeteringEntity(BaseSensorEntity):
     """Smare energy metering entity model."""
 
     class_name: Literal["SmartEnergyMetering", "SmartEnergySummation"]
@@ -386,7 +401,7 @@ class SelectEntity(BasePlatformEntity):
     state: GenericState
 
 
-class ThermostatEntity(BasePlatformEntity):  # TODO fix this
+class ThermostatEntity(BasePlatformEntity):
     """Thermostat entity model."""
 
     class_name: Literal[
@@ -396,7 +411,10 @@ class ThermostatEntity(BasePlatformEntity):  # TODO fix this
         "MoesThermostat",
         "BecaThermostat",
     ]
-    state: GenericState  # TODO fix this
+    state: ThermostatState
+    hvac_modes: tuple[str, ...]
+    fan_modes: Optional[list[str]]
+    preset_modes: Optional[list[str]]
 
 
 class SirenEntity(BasePlatformEntity):
@@ -452,7 +470,7 @@ class DeviceSignature(BaseModel):
 class BaseDevice(BaseModel):
     """Base device model."""
 
-    ieee: str
+    ieee: EUI64
     nwk: str
     manufacturer: str
     model: str
@@ -492,7 +510,7 @@ class Device(BaseDevice):
                 SwitchEntity,
                 BatteryEntity,
                 ElectricalMeasurementEntity,
-                SmareEnergyMeteringEntity,
+                SmartEnergyMeteringEntity,
                 ThermostatEntity,
             ],
             Field(discriminator="class_name"),  # noqa: F821
@@ -555,7 +573,7 @@ class GroupMember(BaseModel):
                 SwitchEntity,
                 BatteryEntity,
                 ElectricalMeasurementEntity,
-                SmareEnergyMeteringEntity,
+                SmartEnergyMeteringEntity,
                 ThermostatEntity,
             ],
             Field(discriminator="class_name"),  # noqa: F821
@@ -568,7 +586,7 @@ class Group(BaseModel):
 
     name: str
     id: int
-    members: dict[str, GroupMember]
+    members: dict[EUI64, GroupMember]
     entities: dict[
         str,
         Annotated[
@@ -577,9 +595,15 @@ class Group(BaseModel):
         ],
     ]
 
+    @validator("members", pre=True, always=True, each_item=False, check_fields=False)
+    def convert_member_ieee(
+        cls, members: dict[str, dict], values: dict[str, Any], **kwargs: Any
+    ) -> dict[EUI64, Device]:
+        return {EUI64.convert(k): GroupMember(**v) for k, v in members.items()}
+
 
 class GroupMemberReference(BaseModel):
     """Group member reference model."""
 
-    ieee: str
+    ieee: EUI64
     endpoint_id: int

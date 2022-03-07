@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import logging
-from typing import TYPE_CHECKING, Any, Final, Union, final
+from typing import TYPE_CHECKING, Any, Final, final
 
 from zigpy.zcl.foundation import Status
 
@@ -155,8 +155,8 @@ class Cover(PlatformEntity):
 
     async def async_update(self) -> None:
         """Attempt to retrieve the open/close state of the cover."""
-        await super().async_update()
         await self.async_get_state()
+        await super().async_update()
 
     async def async_get_state(self, from_cache: bool = True) -> None:
         """Fetch the current state."""
@@ -233,7 +233,7 @@ class Shade(PlatformEntity):
         if position is not None:
             position = max(0, min(255, position))
             position = int(position * 100 / 255)
-        self._position: Union[int, None] = position
+        self._position: int | None = position
         self._on_off_cluster_handler.on_event(
             CLUSTER_HANDLER_EVENT, self._handle_event_protocol
         )
@@ -249,7 +249,7 @@ class Shade(PlatformEntity):
         return self._position
 
     @property
-    def is_closed(self) -> Union[bool, None]:
+    def is_closed(self) -> bool | None:
         """Return True if shade is closed."""
         return not self._is_open
 
@@ -337,7 +337,7 @@ class Shade(PlatformEntity):
         response = super().get_state()
         response.update(
             {
-                ATTR_CURRENT_POSITION: self._position,
+                ATTR_CURRENT_POSITION: self.current_cover_position,
                 "is_closed": self.is_closed,
                 "state": self.state,
             }

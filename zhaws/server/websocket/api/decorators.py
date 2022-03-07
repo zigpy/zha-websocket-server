@@ -5,21 +5,19 @@ import asyncio
 from collections.abc import Callable
 from functools import wraps
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-import voluptuous as vol
-
-from zhaws.server.const import COMMAND, MINIMAL_MESSAGE_SCHEMA
+from zhaws.server.websocket.api.model import WebSocketCommand
 
 if TYPE_CHECKING:
     from zhaws.server.websocket.api.types import (
         AsyncWebSocketCommandHandler,
+        T_WebSocketCommand,
         WebSocketCommandHandler,
     )
     from zhaws.server.websocket.client import Client
     from zhaws.server.websocket.server import Server
 
-POSITIVE_INT = vol.All(vol.Coerce(int), vol.Range(min=0))
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -27,7 +25,7 @@ async def _handle_async_response(
     func: AsyncWebSocketCommandHandler,
     server: Server,
     client: Client,
-    msg: dict[str, Any],
+    msg: T_WebSocketCommand,
 ) -> None:
     """Create a response and handle exception."""
     try:
@@ -44,7 +42,9 @@ def async_response(
     """Decorate an async function to handle WebSocket API messages."""
 
     @wraps(func)
-    def schedule_handler(server: Server, client: Client, msg: dict[str, Any]) -> None:
+    def schedule_handler(
+        server: Server, client: Client, msg: T_WebSocketCommand
+    ) -> None:
         """Schedule the handler."""
         # As the webserver is now started before the start
         # event we do not want to block for websocket responders
@@ -56,15 +56,15 @@ def async_response(
 
 
 def websocket_command(
-    schema: dict[vol.Marker, Any],
+    ws_command: type[WebSocketCommand],
 ) -> Callable[[WebSocketCommandHandler], WebSocketCommandHandler]:
     """Tag a function as a websocket command."""
-    command = schema[COMMAND]
+    command = ws_command.__fields__["command"].default
 
     def decorate(func: WebSocketCommandHandler) -> WebSocketCommandHandler:
         """Decorate ws command function."""
         # pylint: disable=protected-access
-        func._ws_schema = MINIMAL_MESSAGE_SCHEMA.extend(schema)  # type: ignore[attr-defined]
+        func._ws_command_model = ws_command  # type: ignore[attr-defined]
         func._ws_command = command  # type: ignore[attr-defined]
         return func
 

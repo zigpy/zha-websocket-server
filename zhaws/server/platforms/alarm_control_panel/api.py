@@ -1,15 +1,11 @@
 """WS api for the alarm control panel platform entity."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Literal, Optional
 
-import voluptuous as vol
-
-from zhaws.backports.enum import StrEnum
-from zhaws.server.platforms.api import (
-    execute_platform_entity_command,
-    platform_entity_command_schema,
-)
+from zhaws.server.const import APICommands
+from zhaws.server.platforms import PlatformEntityCommand
+from zhaws.server.platforms.api import execute_platform_entity_command
 from zhaws.server.websocket.api import decorators, register_api_command
 
 if TYPE_CHECKING:
@@ -17,94 +13,91 @@ if TYPE_CHECKING:
     from zhaws.server.websocket.server import Server
 
 
-class AlarmControlPanelCommands(StrEnum):
-    """Alarm control panel commands."""
+class DisarmCommand(PlatformEntityCommand):
+    """Disarm command."""
 
-    DISARM = "alarm_control_panel_disarm"
-    ARM_HOME = "alarm_control_panel_arm_home"
-    ARM_AWAY = "alarm_control_panel_arm_away"
-    ARM_NIGHT = "alarm_control_panel_arm_night"
-    TRIGGER = "alarm_control_panel_trigger"
-
-
-ATTR_CODE: Final[str] = "code"
+    command: Literal[
+        APICommands.ALARM_CONTROL_PANEL_DISARM
+    ] = APICommands.ALARM_CONTROL_PANEL_DISARM
+    code: Optional[str]
 
 
-@decorators.websocket_command(
-    platform_entity_command_schema(
-        AlarmControlPanelCommands.DISARM,
-        {
-            vol.Optional(ATTR_CODE): str,
-        },
-    )
-)
+@decorators.websocket_command(DisarmCommand)
 @decorators.async_response
-async def disarm(server: Server, client: Client, message: dict[str, Any]) -> None:
+async def disarm(server: Server, client: Client, command: DisarmCommand) -> None:
     """Disarm the alarm control panel."""
-    await execute_platform_entity_command(server, client, message, "async_alarm_disarm")
+    await execute_platform_entity_command(server, client, command, "async_alarm_disarm")
 
 
-@decorators.websocket_command(
-    platform_entity_command_schema(
-        AlarmControlPanelCommands.ARM_HOME,
-        {
-            vol.Optional(ATTR_CODE): str,
-        },
-    )
-)
+class ArmHomeCommand(PlatformEntityCommand):
+    """Arm home command."""
+
+    command: Literal[
+        APICommands.ALARM_CONTROL_PANEL_ARM_HOME
+    ] = APICommands.ALARM_CONTROL_PANEL_ARM_HOME
+    code: Optional[str]
+
+
+@decorators.websocket_command(ArmHomeCommand)
 @decorators.async_response
-async def arm_home(server: Server, client: Client, message: dict[str, Any]) -> None:
+async def arm_home(server: Server, client: Client, command: ArmHomeCommand) -> None:
     """Arm the alarm control panel in home mode."""
     await execute_platform_entity_command(
-        server, client, message, "async_alarm_arm_home"
+        server, client, command, "async_alarm_arm_home"
     )
 
 
-@decorators.websocket_command(
-    platform_entity_command_schema(
-        AlarmControlPanelCommands.ARM_AWAY,
-        {
-            vol.Optional(ATTR_CODE): str,
-        },
-    )
-)
+class ArmAwayCommand(PlatformEntityCommand):
+    """Arm away command."""
+
+    command: Literal[
+        APICommands.ALARM_CONTROL_PANEL_ARM_AWAY
+    ] = APICommands.ALARM_CONTROL_PANEL_ARM_AWAY
+    code: Optional[str]
+
+
+@decorators.websocket_command(ArmAwayCommand)
 @decorators.async_response
-async def arm_away(server: Server, client: Client, message: dict[str, Any]) -> None:
+async def arm_away(server: Server, client: Client, command: ArmAwayCommand) -> None:
     """Arm the alarm control panel in away mode."""
     await execute_platform_entity_command(
-        server, client, message, "async_alarm_arm_away"
+        server, client, command, "async_alarm_arm_away"
     )
 
 
-@decorators.websocket_command(
-    platform_entity_command_schema(
-        AlarmControlPanelCommands.ARM_NIGHT,
-        {
-            vol.Optional(ATTR_CODE): str,
-        },
-    )
-)
+class ArmNightCommand(PlatformEntityCommand):
+    """Arm night command."""
+
+    command: Literal[
+        APICommands.ALARM_CONTROL_PANEL_ARM_NIGHT
+    ] = APICommands.ALARM_CONTROL_PANEL_ARM_NIGHT
+    code: Optional[str]
+
+
+@decorators.websocket_command(ArmNightCommand)
 @decorators.async_response
-async def arm_night(server: Server, client: Client, message: dict[str, Any]) -> None:
+async def arm_night(server: Server, client: Client, command: ArmNightCommand) -> None:
     """Arm the alarm control panel in night mode."""
     await execute_platform_entity_command(
-        server, client, message, "async_alarm_arm_night"
+        server, client, command, "async_alarm_arm_night"
     )
 
 
-@decorators.websocket_command(
-    platform_entity_command_schema(
-        AlarmControlPanelCommands.TRIGGER,
-        {
-            vol.Optional(ATTR_CODE): str,
-        },
-    )
-)
+class TriggerAlarmCommand(PlatformEntityCommand):
+    """Trigger alarm command."""
+
+    command: Literal[
+        APICommands.ALARM_CONTROL_PANEL_TRIGGER
+    ] = APICommands.ALARM_CONTROL_PANEL_TRIGGER
+    code: Optional[str]
+
+
+@decorators.websocket_command(TriggerAlarmCommand)
 @decorators.async_response
-async def trigger(server: Server, client: Client, message: dict[str, Any]) -> None:
+async def trigger(server: Server, client: Client, command: TriggerAlarmCommand) -> None:
     """Trigger the alarm control panel."""
     await execute_platform_entity_command(
-        server, client, message, "async_alarm_trigger"
+        server, client, command, "async_alarm_trigger"
     )
 
 

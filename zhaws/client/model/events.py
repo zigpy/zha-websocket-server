@@ -2,11 +2,11 @@
 
 Events are unprompted messages from the server -> client and they contain only the data that is necessary to handle the event.
 """
-from __future__ import annotations
 
 from typing import Annotated, Any, Literal, Optional, Union
 
 from pydantic.fields import Field
+from zigpy.types.named import EUI64
 
 from zhaws.client.model.types import (
     BaseDevice,
@@ -25,6 +25,7 @@ from zhaws.client.model.types import (
     ShadeState,
     SmareEnergyMeteringState,
     SwitchState,
+    ThermostatState,
 )
 from zhaws.model import BaseEvent, BaseModel
 
@@ -47,7 +48,7 @@ class MinimalEndpoint(BaseModel):
 class MinimalDevice(BaseModel):
     """Minimal device model."""
 
-    ieee: str
+    ieee: EUI64
 
 
 class Attribute(BaseModel):
@@ -103,6 +104,7 @@ class PlatformEntityStateChangedEvent(BaseEvent):
             SmareEnergyMeteringState,
             GenericState,
             BooleanState,
+            ThermostatState,
         ],
         Field(discriminator="class_name"),  # noqa: F821
     ]
@@ -135,7 +137,7 @@ class DeviceJoinedEvent(DevicePairingEvent):
     """Device joined event."""
 
     event: Literal["device_joined"] = "device_joined"
-    ieee: str
+    ieee: EUI64
     nwk: str
 
 
@@ -143,7 +145,7 @@ class RawDeviceInitializedEvent(DevicePairingEvent):
     """Raw device initialized event."""
 
     event: Literal["raw_device_initialized"] = "raw_device_initialized"
-    ieee: str
+    ieee: EUI64
     nwk: str
     manufacturer: str
     model: str
@@ -169,7 +171,7 @@ class DeviceLeftEvent(ControllerEvent):
     """Device left event."""
 
     event: Literal["device_left"] = "device_left"
-    ieee: str
+    ieee: EUI64
     nwk: str
 
 

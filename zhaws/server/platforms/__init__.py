@@ -5,12 +5,15 @@ import abc
 import asyncio
 from contextlib import suppress
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
+
+from zigpy.types.named import EUI64
 
 from zhaws.event import EventBase
 from zhaws.server.const import EVENT, EVENT_TYPE, EventTypes, PlatformEntityEvents
 from zhaws.server.platforms.model import STATE_CHANGED, EntityStateChangedEvent
 from zhaws.server.platforms.registries import Platform
+from zhaws.server.websocket.api.model import WebSocketCommand
 
 if TYPE_CHECKING:
     from zhaws.server.zigbee.cluster import ClusterHandler
@@ -186,7 +189,7 @@ class PlatformEntity(BaseEntity):
         return {
             "unique_id": self.unique_id,
             "platform": self.PLATFORM,
-            "device_ieee": str(self.device.ieee),
+            "device_ieee": self.device.ieee,
             "endpoint_id": self.endpoint.id,
         }
 
@@ -286,3 +289,11 @@ class GroupEntity(BaseEntity):
         json["name"] = self._name
         json["group_id"] = self.group_id
         return json
+
+
+class PlatformEntityCommand(WebSocketCommand):
+    """Base class for platform entity commands."""
+
+    ieee: Optional[EUI64]
+    group_id: Optional[int]
+    unique_id: str

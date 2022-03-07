@@ -49,9 +49,7 @@ async def test_alarm_control_panel(
     controller, server = connected_client_and_server
     zhaws_device: Device = await device_joined(zigpy_device)
     cluster: security.IasAce = zigpy_device.endpoints.get(1).ias_ace
-    client_device: Optional[DeviceProxy] = controller.devices.get(
-        str(zhaws_device.ieee)
-    )
+    client_device: Optional[DeviceProxy] = controller.devices.get(zhaws_device.ieee)
     assert client_device is not None
     alarm_entity: AlarmControlPanelEntity = client_device.device_model.entities.get(
         "00:0d:6f:00:0a:90:69:e7-1"
@@ -218,6 +216,15 @@ async def test_alarm_control_panel(
 
     # reset the panel
     await reset_alarm_panel(server, controller, cluster, alarm_entity)
+    assert alarm_entity.state.state == "disarmed"
+
+    await controller.alarm_control_panels.trigger(alarm_entity)
+    await server.block_till_done()
+    assert alarm_entity.state.state == "triggered"
+
+    # reset the panel
+    await reset_alarm_panel(server, controller, cluster, alarm_entity)
+    assert alarm_entity.state.state == "disarmed"
 
 
 async def reset_alarm_panel(

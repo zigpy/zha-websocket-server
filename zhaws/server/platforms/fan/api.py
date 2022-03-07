@@ -1,95 +1,82 @@
 """WS API for the fan platform entity."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Annotated, Literal, Optional
 
-import voluptuous as vol
+from pydantic import Field
 
-from zhaws.backports.enum import StrEnum
-from zhaws.server.platforms.api import (
-    execute_platform_entity_command,
-    platform_entity_command_schema,
-)
+from zhaws.server.const import APICommands
+from zhaws.server.platforms import PlatformEntityCommand
+from zhaws.server.platforms.api import execute_platform_entity_command
 from zhaws.server.websocket.api import decorators, register_api_command
 
 if TYPE_CHECKING:
     from zhaws.server.websocket.client import Client
     from zhaws.server.websocket.server import Server
 
-ATTR_SPEED = "speed"
-ATTR_PERCENTAGE = "percentage"
-ATTR_PRESET_MODE = "preset_mode"
+
+class FanTurnOnCommand(PlatformEntityCommand):
+    """Fan turn on command."""
+
+    command: Literal[APICommands.FAN_TURN_ON] = APICommands.FAN_TURN_ON
+    speed: Optional[str]
+    percentage: Optional[Annotated[int, Field(ge=0, le=100)]]
+    preset_mode: Optional[str]
 
 
-class FanAPICommands(StrEnum):
-    """Light API commands."""
-
-    TURN_ON = "fan_turn_on"
-    TURN_OFF = "fan_turn_off"
-    SET_PERCENTAGE = "fan_set_percentage"
-    SET_PRESET_MODE = "fan_set_preset_mode"
-
-
-@decorators.websocket_command(
-    platform_entity_command_schema(
-        FanAPICommands.TURN_ON,
-        {
-            vol.Optional(ATTR_SPEED): str,
-            vol.Optional(ATTR_PERCENTAGE): vol.All(
-                vol.Coerce(int), vol.Range(min=0, max=100)
-            ),
-            vol.Optional(ATTR_PRESET_MODE): str,
-        },
-    )
-)
+@decorators.websocket_command(FanTurnOnCommand)
 @decorators.async_response
-async def turn_on(server: Server, client: Client, message: dict[str, Any]) -> None:
+async def turn_on(server: Server, client: Client, command: FanTurnOnCommand) -> None:
     """Turn fan on."""
-    await execute_platform_entity_command(server, client, message, "async_turn_on")
+    await execute_platform_entity_command(server, client, command, "async_turn_on")
 
 
-@decorators.websocket_command(platform_entity_command_schema(FanAPICommands.TURN_OFF))
+class FanTurnOffCommand(PlatformEntityCommand):
+    """Fan turn off command."""
+
+    command: Literal[APICommands.FAN_TURN_OFF] = APICommands.FAN_TURN_OFF
+
+
+@decorators.websocket_command(FanTurnOffCommand)
 @decorators.async_response
-async def turn_off(server: Server, client: Client, message: dict[str, Any]) -> None:
+async def turn_off(server: Server, client: Client, command: FanTurnOffCommand) -> None:
     """Turn fan off."""
-    await execute_platform_entity_command(server, client, message, "async_turn_off")
+    await execute_platform_entity_command(server, client, command, "async_turn_off")
 
 
-@decorators.websocket_command(
-    platform_entity_command_schema(
-        FanAPICommands.SET_PERCENTAGE,
-        {
-            vol.Required(ATTR_PERCENTAGE): vol.All(
-                vol.Coerce(int), vol.Range(min=0, max=100)
-            ),
-        },
-    )
-)
+class FanSetPercentageCommand(PlatformEntityCommand):
+    """Fan set percentage command."""
+
+    command: Literal[APICommands.FAN_SET_PERCENTAGE] = APICommands.FAN_SET_PERCENTAGE
+    percentage: Annotated[int, Field(ge=0, le=100)]
+
+
+@decorators.websocket_command(FanSetPercentageCommand)
 @decorators.async_response
 async def set_percentage(
-    server: Server, client: Client, message: dict[str, Any]
+    server: Server, client: Client, command: FanSetPercentageCommand
 ) -> None:
     """Set the fan speed percentage."""
     await execute_platform_entity_command(
-        server, client, message, "async_set_percentage"
+        server, client, command, "async_set_percentage"
     )
 
 
-@decorators.websocket_command(
-    platform_entity_command_schema(
-        FanAPICommands.SET_PRESET_MODE,
-        {
-            vol.Required(ATTR_PRESET_MODE): str,
-        },
-    )
-)
+class FanSetPresetModeCommand(PlatformEntityCommand):
+    """Fan set preset mode command."""
+
+    command: Literal[APICommands.FAN_SET_PRESET_MODE] = APICommands.FAN_SET_PRESET_MODE
+    preset_mode: str
+
+
+@decorators.websocket_command(FanSetPresetModeCommand)
 @decorators.async_response
 async def set_preset_mode(
-    server: Server, client: Client, message: dict[str, Any]
+    server: Server, client: Client, command: FanSetPresetModeCommand
 ) -> None:
     """Set the fan preset mode."""
     await execute_platform_entity_command(
-        server, client, message, "async_set_preset_mode"
+        server, client, command, "async_set_preset_mode"
     )
 
 

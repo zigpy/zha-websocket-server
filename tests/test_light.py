@@ -1,10 +1,12 @@
 """Test zha light."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Awaitable, Callable
 from unittest.mock import AsyncMock, call, patch, sentinel
 
+from pydantic import ValidationError
 import pytest
 from slugify import slugify
 from zigpy.device import Device as ZigpyDevice
@@ -20,10 +22,16 @@ from zhaws.client.proxy import DeviceProxy, GroupProxy
 from zhaws.server.platforms.light import FLASH_EFFECTS, FLASH_LONG, FLASH_SHORT
 from zhaws.server.platforms.registries import Platform
 from zhaws.server.websocket.server import Server
+from zhaws.server.zigbee.cluster.lighting import ColorClusterHandler
 from zhaws.server.zigbee.device import Device
 from zhaws.server.zigbee.group import Group, GroupMemberReference
 
-from .common import async_find_group_entity_id, find_entity_id, send_attributes_report
+from .common import (
+    async_find_group_entity_id,
+    find_entity_id,
+    send_attributes_report,
+    update_attribute_cache,
+)
 from .conftest import SIG_EP_INPUT, SIG_EP_OUTPUT, SIG_EP_PROFILE, SIG_EP_TYPE
 
 ON = 1
@@ -214,45 +222,50 @@ def get_group_entity(
     return entities.get(entity_id)  # type: ignore
 
 
-"""TODO figure out time changed tests
-async def test_light_refresh(zigpy_device_mock: Callable[..., ZigpyDevice],
-    device_joined: Callable[[ZigpyDevice], Awaitable[Device]],_restored):
-    #Test zha light platform refresh.
-
-    # create zigpy devices
+@pytest.mark.looptime
+async def test_light_refresh(
+    zigpy_device_mock: Callable[..., ZigpyDevice],
+    device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
+    connected_client_and_server: tuple[Controller, Server],
+):
+    """Test zha light platform refresh."""
     zigpy_device = zigpy_device_mock(LIGHT_ON_OFF)
     on_off_cluster = zigpy_device.endpoints[1].on_off
     on_off_cluster.PLUGGED_ATTR_READS = {"on_off": 0}
     zha_device = await device_joined(zigpy_device)
-    entity_id = await find_entity_id(Platform.LIGHT, zha_device, hass)
+    controller, server = connected_client_and_server
+    entity_id = find_entity_id(Platform.LIGHT, zha_device)
+    assert entity_id is not None
+    client_device: DeviceProxy | None = controller.devices.get(zha_device.ieee)
+    assert client_device is not None
+    entity = get_entity(client_device, entity_id)
+    assert entity is not None
+    assert entity.state.on is False
 
-    # allow traffic to flow through the gateway and device
-    await async_enable_traffic([zha_device])
     on_off_cluster.read_attributes.reset_mock()
 
     # not enough time passed
-    async_fire_time_changed(dt_util.utcnow() + timedelta(minutes=20))
-    await hass.async_block_till_done()
+    await asyncio.sleep(60)  # 1 minute
+    await server.block_till_done()
     assert on_off_cluster.read_attributes.call_count == 0
     assert on_off_cluster.read_attributes.await_count == 0
-    assert hass.states.get(entity_id).state == False
+    assert entity.state.on is False
 
-    # 1 interval - 1 call
+    # 1 interval - at least 1 call
     on_off_cluster.PLUGGED_ATTR_READS = {"on_off": 1}
-    async_fire_time_changed(dt_util.utcnow() + timedelta(minutes=80))
-    await hass.async_block_till_done()
-    assert on_off_cluster.read_attributes.call_count == 1
-    assert on_off_cluster.read_attributes.await_count == 1
-    assert hass.states.get(entity_id).state == True
+    await asyncio.sleep(4800)  # 80 minutes
+    await server.block_till_done()
+    assert on_off_cluster.read_attributes.call_count >= 1
+    assert on_off_cluster.read_attributes.await_count >= 1
+    assert entity.state.on is True
 
-    # 2 intervals - 2 calls
+    # 2 intervals - at least 2 calls
     on_off_cluster.PLUGGED_ATTR_READS = {"on_off": 0}
-    async_fire_time_changed(dt_util.utcnow() + timedelta(minutes=80))
-    await hass.async_block_till_done()
-    assert on_off_cluster.read_attributes.call_count == 2
-    assert on_off_cluster.read_attributes.await_count == 2
-    assert hass.states.get(entity_id).state == False
-"""
+    await asyncio.sleep(4800)  # 80 minutes
+    await server.block_till_done()
+    assert on_off_cluster.read_attributes.call_count >= 2
+    assert on_off_cluster.read_attributes.await_count >= 2
+    assert entity.state.on is False
 
 
 @patch(
@@ -286,6 +299,18 @@ async def test_light(
 
     # create zigpy devices
     zigpy_device = zigpy_device_mock(device)
+    cluster_color: lighting.Color = getattr(
+        zigpy_device.endpoints[1], "light_color", None
+    )
+    if cluster_color:
+        cluster_color.PLUGGED_ATTR_READS = {
+            "color_temperature": 100,
+            "color_temp_physical_min": 0,
+            "color_temp_physical_max": 600,
+            "color_capabilities": ColorClusterHandler.CAPABILITIES_COLOR_XY
+            | ColorClusterHandler.CAPABILITIES_COLOR_TEMP,
+        }
+        update_attribute_cache(cluster_color)
     zha_device = await device_joined(zigpy_device)
     controller, server = connected_client_and_server
     entity_id = find_entity_id(Platform.LIGHT, zha_device)
@@ -295,14 +320,11 @@ async def test_light(
     cluster_level: general.LevelControl = getattr(
         zigpy_device.endpoints[1], "level", None
     )
-    cluster_color: lighting.Color = getattr(
-        zigpy_device.endpoints[1], "light_color", None
-    )
     cluster_identify: general.Identify = getattr(
         zigpy_device.endpoints[1], "identify", None
     )
 
-    client_device: DeviceProxy | None = controller.devices.get(str(zha_device.ieee))
+    client_device: DeviceProxy | None = controller.devices.get(zha_device.ieee)
     assert client_device is not None
     entity = get_entity(client_device, entity_id)
     assert entity is not None
@@ -331,13 +353,7 @@ async def test_light(
         await async_test_on_from_light(server, cluster_on_off, entity)
         await async_test_dimmer_from_light(server, cluster_level, entity, 150, True)
 
-    # test rejoin
     await async_test_off_from_client(server, cluster_on_off, entity, controller)
-    clusters = [cluster_on_off]
-    if cluster_level:
-        clusters.append(cluster_level)
-    if cluster_color:
-        clusters.append(cluster_color)
 
     # test long flashing the lights from the client
     if cluster_identify:
@@ -347,6 +363,66 @@ async def test_light(
         await async_test_flash_from_client(
             server, cluster_identify, entity, FLASH_SHORT, controller
         )
+
+    if cluster_color:
+        # test color temperature from the client with transition
+        assert entity.state.brightness != 50
+        assert entity.state.color_temp != 200
+        await controller.lights.turn_on(
+            entity, brightness=50, transition=10, color_temp=200
+        )
+        await server.block_till_done()
+        assert entity.state.brightness == 50
+        assert entity.state.color_temp == 200
+        assert entity.state.on is True
+        assert cluster_color.request.call_count == 1
+        assert cluster_color.request.await_count == 1
+        assert cluster_color.request.call_args == call(
+            False,
+            10,
+            (zigpy.types.basic.uint16_t, zigpy.types.basic.uint16_t),
+            200,
+            100.0,
+            expect_reply=True,
+            manufacturer=None,
+            tries=1,
+            tsn=None,
+        )
+        cluster_color.request.reset_mock()
+
+        # test color xy from the client
+        assert entity.state.hs_color != (200.0, 50.0)
+        await controller.lights.turn_on(entity, brightness=50, hs_color=[200, 50])
+        await server.block_till_done()
+        assert entity.state.brightness == 50
+        assert entity.state.hs_color == (200.0, 50.0)
+        assert cluster_color.request.call_count == 1
+        assert cluster_color.request.await_count == 1
+        assert cluster_color.request.call_args == call(
+            False,
+            7,
+            (
+                zigpy.types.basic.uint16_t,
+                zigpy.types.basic.uint16_t,
+                zigpy.types.basic.uint16_t,
+            ),
+            13369,
+            18087,
+            1,
+            expect_reply=True,
+            manufacturer=None,
+            tries=1,
+            tsn=None,
+        )
+
+        cluster_color.request.reset_mock()
+
+        # test error when hs_color and color_temp are both set
+        with pytest.raises(ValidationError):
+            await controller.lights.turn_on(entity, color_temp=50, hs_color=[200, 50])
+            await server.block_till_done()
+            assert cluster_color.request.call_count == 0
+            assert cluster_color.request.await_count == 0
 
 
 async def async_test_on_off_from_light(
@@ -385,6 +461,7 @@ async def async_test_on_off_from_client(
     cluster.request.reset_mock()
     await controller.lights.turn_on(entity)
     await server.block_till_done()
+    assert entity.state.on is True
     assert cluster.request.call_count == 1
     assert cluster.request.await_count == 1
     assert cluster.request.call_args == call(
@@ -406,6 +483,7 @@ async def async_test_off_from_client(
     cluster.request.reset_mock()
     await controller.lights.turn_off(entity)
     await server.block_till_done()
+    assert entity.state.on is False
     assert cluster.request.call_count == 1
     assert cluster.request.await_count == 1
     assert cluster.request.call_args == call(
@@ -427,6 +505,7 @@ async def async_test_level_on_off_from_client(
     # turn on via UI
     await controller.lights.turn_on(entity)
     await server.block_till_done()
+    assert entity.state.on is True
     assert on_off_cluster.request.call_count == 1
     assert on_off_cluster.request.await_count == 1
     assert level_cluster.request.call_count == 0
@@ -439,6 +518,7 @@ async def async_test_level_on_off_from_client(
 
     await controller.lights.turn_on(entity, transition=10)
     await server.block_till_done()
+    assert entity.state.on is True
     assert on_off_cluster.request.call_count == 1
     assert on_off_cluster.request.await_count == 1
     assert level_cluster.request.call_count == 1
@@ -462,6 +542,7 @@ async def async_test_level_on_off_from_client(
 
     await controller.lights.turn_on(entity, brightness=10)
     await server.block_till_done()
+    assert entity.state.on is True
     # the onoff cluster is now not used when brightness is present by default
     assert on_off_cluster.request.call_count == 0
     assert on_off_cluster.request.await_count == 0
@@ -517,6 +598,7 @@ async def async_test_flash_from_client(
     cluster.request.reset_mock()
     await controller.lights.turn_on(entity, flash=flash)
     await server.block_till_done()
+    assert entity.state.on is True
     assert cluster.request.call_count == 1
     assert cluster.request.await_count == 1
     assert cluster.request.call_args == call(
@@ -559,8 +641,8 @@ async def test_zha_group_light_entity(
     controller, server = connected_client_and_server
     member_ieee_addresses = [device_light_1.ieee, device_light_2.ieee]
     members = [
-        GroupMemberReference(device_light_1.ieee, 1),
-        GroupMemberReference(device_light_2.ieee, 1),
+        GroupMemberReference(ieee=device_light_1.ieee, endpoint_id=1),
+        GroupMemberReference(ieee=device_light_2.ieee, endpoint_id=1),
     ]
 
     # test creating a group with 2 members
@@ -582,19 +664,13 @@ async def test_zha_group_light_entity(
     group_proxy: GroupProxy | None = controller.groups.get(2)
     assert group_proxy is not None
 
-    device_1_proxy: DeviceProxy | None = controller.devices.get(
-        str(device_light_1.ieee)
-    )
+    device_1_proxy: DeviceProxy | None = controller.devices.get(device_light_1.ieee)
     assert device_1_proxy is not None
 
-    device_2_proxy: DeviceProxy | None = controller.devices.get(
-        str(device_light_2.ieee)
-    )
+    device_2_proxy: DeviceProxy | None = controller.devices.get(device_light_2.ieee)
     assert device_2_proxy is not None
 
-    device_3_proxy: DeviceProxy | None = controller.devices.get(
-        str(device_light_3.ieee)
-    )
+    device_3_proxy: DeviceProxy | None = controller.devices.get(device_light_3.ieee)
     assert device_3_proxy is not None
 
     entity: LightGroupEntity | None = get_group_entity(group_proxy, entity_id)
@@ -719,7 +795,9 @@ async def test_zha_group_light_entity(
     assert entity.state.on is False
 
     # add a new member and test that his state is also tracked
-    await zha_group.async_add_members([GroupMemberReference(device_light_3.ieee, 1)])
+    await zha_group.async_add_members(
+        [GroupMemberReference(ieee=device_light_3.ieee, endpoint_id=1)]
+    )
     await server.block_till_done()
     assert device_3_light_entity.unique_id in zha_group.all_member_entity_unique_ids
     assert len(zha_group.members) == 3
@@ -736,8 +814,8 @@ async def test_zha_group_light_entity(
     # make the group have only 1 member and now there should be no entity
     await zha_group.async_remove_members(
         [
-            GroupMemberReference(device_light_2.ieee, 1),
-            GroupMemberReference(device_light_3.ieee, 1),
+            GroupMemberReference(ieee=device_light_2.ieee, endpoint_id=1),
+            GroupMemberReference(ieee=device_light_3.ieee, endpoint_id=1),
         ]
     )
     await server.block_till_done()
@@ -750,7 +828,9 @@ async def test_zha_group_light_entity(
     assert entity is None
 
     # add a member back and ensure that the group entity was created again
-    await zha_group.async_add_members([GroupMemberReference(device_light_3.ieee, 1)])
+    await zha_group.async_add_members(
+        [GroupMemberReference(ieee=device_light_3.ieee, endpoint_id=1)]
+    )
     await server.block_till_done()
     assert len(zha_group.members) == 2
 
@@ -770,8 +850,8 @@ async def test_zha_group_light_entity(
     # this will test that _reprobe_group is used correctly
     await zha_group.async_add_members(
         [
-            GroupMemberReference(device_light_2.ieee, 1),
-            GroupMemberReference(coordinator.ieee, 1),
+            GroupMemberReference(ieee=device_light_2.ieee, endpoint_id=1),
+            GroupMemberReference(ieee=coordinator.ieee, endpoint_id=1),
         ]
     )
     await server.block_till_done()
@@ -782,7 +862,9 @@ async def test_zha_group_light_entity(
     await server.block_till_done()
     assert entity.state.on is True
 
-    await zha_group.async_remove_members([GroupMemberReference(coordinator.ieee, 1)])
+    await zha_group.async_remove_members(
+        [GroupMemberReference(ieee=coordinator.ieee, endpoint_id=1)]
+    )
     await server.block_till_done()
     entity = get_group_entity(group_proxy, group_entity_id)
     assert entity is not None

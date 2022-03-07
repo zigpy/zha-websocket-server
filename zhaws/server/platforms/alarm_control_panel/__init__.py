@@ -133,6 +133,7 @@ class ZHAAlarmControlPanel(PlatformEntity):
 
     async def async_alarm_trigger(self, code: str | None = None, **kwargs: Any) -> None:
         """Send alarm trigger command."""
+        self._cluster_handler.panic()
         self.maybe_send_state_changed_event()
 
     @property
@@ -162,8 +163,6 @@ class ZHAAlarmControlPanel(PlatformEntity):
         """Return a JSON representation of the alarm control panel."""
         json = super().to_json()
         json["supported_features"] = self.supported_features
-        json[
-            "code_required_arm_actions"
-        ] = self._cluster_handler.code_required_arm_actions
+        json["code_required_arm_actions"] = self.code_arm_required
         json["max_invalid_tries"] = self._cluster_handler.max_invalid_tries
         return json

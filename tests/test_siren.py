@@ -1,4 +1,5 @@
 """Test zha siren."""
+import asyncio
 from typing import Awaitable, Callable, Optional
 from unittest.mock import patch
 
@@ -65,7 +66,7 @@ async def test_siren(
     entity_id = find_entity_id(Platform.SIREN, zha_device)
     assert entity_id is not None
 
-    client_device: Optional[DeviceProxy] = controller.devices.get(str(zha_device.ieee))
+    client_device: Optional[DeviceProxy] = controller.devices.get(zha_device.ieee)
     assert client_device is not None
     entity = get_entity(client_device, entity_id)
     assert entity is not None
@@ -86,6 +87,7 @@ async def test_siren(
         assert cluster.request.call_args[0][4] == 5  # duration in seconds
         assert cluster.request.call_args[0][5] == 0
         assert cluster.request.call_args[0][6] == 2
+        cluster.request.reset_mock()
 
     # test that the state has changed to on
     assert entity.state.state is True
@@ -104,42 +106,70 @@ async def test_siren(
         assert cluster.request.call_args[0][4] == 5  # duration in seconds
         assert cluster.request.call_args[0][5] == 0
         assert cluster.request.call_args[0][6] == 2
+        cluster.request.reset_mock()
 
     # test that the state has changed to off
     assert entity.state.state is False
 
-    """ TODO figure out time changing in tests
+    # turn on from client with options
+    with patch(
+        "zigpy.zcl.Cluster.request",
+        return_value=mock_coro([0x00, zcl_f.Status.SUCCESS]),
+    ):
+        await controller.sirens.turn_on(entity, duration=100, volume_level=3, tone=3)
+        await server.block_till_done()
+        assert len(cluster.request.mock_calls) == 1
+        assert cluster.request.call_args[0][0] is False
+        assert cluster.request.call_args[0][1] == 0
+        assert cluster.request.call_args[0][3] == 51  # bitmask for specified args
+        assert cluster.request.call_args[0][4] == 100  # duration in seconds
+        assert cluster.request.call_args[0][5] == 0
+        assert cluster.request.call_args[0][6] == 2
+        cluster.request.reset_mock()
+
+    # test that the state has changed to on
+    assert entity.state.state is True
+
+
+@pytest.mark.looptime
+async def test_siren_timed_off(
+    siren: tuple[Device, security.IasWd],
+    connected_client_and_server: tuple[Controller, Server],
+) -> None:
+    """Test zha siren platform."""
+    zha_device, cluster = siren
+    assert cluster is not None
+    controller, server = connected_client_and_server
+    entity_id = find_entity_id(Platform.SIREN, zha_device)
+    assert entity_id is not None
+
+    client_device: Optional[DeviceProxy] = controller.devices.get(zha_device.ieee)
+    assert client_device is not None
+    entity = get_entity(client_device, entity_id)
+    assert entity is not None
+
+    assert entity.state.state is False
+
     # turn on from client
     with patch(
         "zigpy.zcl.Cluster.request",
         return_value=mock_coro([0x00, zcl_f.Status.SUCCESS]),
     ):
-        # turn on via UI
-        await hass.services.async_call(
-            SIREN_DOMAIN,
-            "turn_on",
-            {
-                "entity_id": entity_id,
-                ATTR_DURATION: 10,
-                ATTR_TONE: WARNING_DEVICE_MODE_EMERGENCY_PANIC,
-                ATTR_VOLUME_LEVEL: WARNING_DEVICE_SOUND_MEDIUM,
-            },
-            blocking=True,
-        )
+        await controller.sirens.turn_on(entity)
+        await server.block_till_done()
         assert len(cluster.request.mock_calls) == 1
         assert cluster.request.call_args[0][0] is False
         assert cluster.request.call_args[0][1] == 0
-        assert cluster.request.call_args[0][3] == 97  # bitmask for passed args
-        assert cluster.request.call_args[0][4] == 10  # duration in seconds
+        assert cluster.request.call_args[0][3] == 50  # bitmask for default args
+        assert cluster.request.call_args[0][4] == 5  # duration in seconds
         assert cluster.request.call_args[0][5] == 0
         assert cluster.request.call_args[0][6] == 2
+        cluster.request.reset_mock()
 
-        # test that the state has changed to on
-    assert hass.states.get(entity_id).state is True
+    # test that the state has changed to on
+    assert entity.state.state is True
 
-    now = dt_util.utcnow() + timedelta(seconds=15)
-    async_fire_time_changed(hass, now)
-    await hass.async_block_till_done()
+    await asyncio.sleep(6)
 
-    assert hass.states.get(entity_id).state is False
-    """
+    # test that the state has changed to off from the timer
+    assert entity.state.state is False

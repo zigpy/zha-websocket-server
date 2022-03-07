@@ -4,12 +4,11 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Literal
 
-import voluptuous
+from pydantic import ValidationError
 from websockets.server import WebSocketServerProtocol
 
-from zhaws.backports.enum import StrEnum
 from zhaws.server.const import (
     COMMAND,
     ERROR_CODE,
@@ -17,27 +16,20 @@ from zhaws.server.const import (
     EVENT_TYPE,
     MESSAGE_ID,
     MESSAGE_TYPE,
-    MINIMAL_MESSAGE_SCHEMA,
     SUCCESS,
     WEBSOCKET_API,
     ZIGBEE_ERROR_CODE,
+    APICommands,
     EventTypes,
     MessageTypes,
 )
 from zhaws.server.websocket.api import decorators, register_api_command
+from zhaws.server.websocket.api.model import WebSocketCommand
 
 if TYPE_CHECKING:
     from zhaws.server.websocket.server import Server
 
 _LOGGER = logging.getLogger(__name__)
-
-
-class ClientAPICommands(StrEnum):
-    """Enum for all client API commands."""
-
-    LISTEN_RAW_ZCL = "client_listen_raw_zcl"
-    LISTEN = "client_listen"
-    DISCONNECT = "client_disconnect"
 
 
 class Client:
@@ -71,47 +63,51 @@ class Client:
         self._send_data(message)
 
     def send_result_success(
-        self, request_message: dict[str, Any], data: dict[str, Any] | None = None
+        self, command: WebSocketCommand, data: dict[str, Any] | None = None
     ) -> None:
         """Send success result prompted by a client request."""
         message = {
             SUCCESS: True,
-            MESSAGE_ID: request_message[MESSAGE_ID],
+            MESSAGE_ID: command.message_id,
             MESSAGE_TYPE: MessageTypes.RESULT,
-            COMMAND: request_message[COMMAND],
+            COMMAND: command.command,
         }
         if data:
             message.update(data)
         self._send_data(message)
 
     def send_result_error(
-        self, request_message: dict[str, Any], error_code: str, error_message: str
+        self,
+        command: WebSocketCommand,
+        error_code: str,
+        error_message: str,
+        data: dict[str, Any] | None = None,
     ) -> None:
         """Send error result prompted by a client request."""
         message = {
             SUCCESS: False,
-            MESSAGE_ID: request_message[MESSAGE_ID],
+            MESSAGE_ID: command.message_id,
             MESSAGE_TYPE: MessageTypes.RESULT,
-            COMMAND: request_message[COMMAND],
+            COMMAND: f"error.{command.command}",
             ERROR_CODE: error_code,
             ERROR_MESSAGE: error_message,
         }
+        if data:
+            message.update(data)
         self._send_data(message)
 
     def send_result_zigbee_error(
         self,
-        request_message: dict[str, Any],
+        command: WebSocketCommand,
         error_message: str,
         zigbee_error_code: str,
     ) -> None:
         """Send zigbee error result prompted by a client zigbee request."""
         self.send_result_error(
-            request_message={
-                **request_message,
-                ZIGBEE_ERROR_CODE: zigbee_error_code,
-            },
+            command,
             error_code="zigbee_error",
             error_message=error_message,
+            data={ZIGBEE_ERROR_CODE: zigbee_error_code},
         )
 
     def _send_data(self, data: dict[str, Any]) -> None:
@@ -129,7 +125,7 @@ class Client:
         """Handle an incoming message."""
         _LOGGER.info("Message received: %s", message)
         handlers: dict[
-            str, tuple[Callable, Callable]
+            str, tuple[Callable, WebSocketCommand]
         ] = self._client_manager.server.data[WEBSOCKET_API]
 
         loaded_message = json.loads(message)
@@ -138,27 +134,27 @@ class Client:
         )
 
         try:
-            msg = MINIMAL_MESSAGE_SCHEMA(loaded_message)
-        except voluptuous.Invalid as exception:
+            msg = WebSocketCommand.parse_obj(loaded_message)
+        except ValidationError as exception:
             _LOGGER.error(
                 f"Received invalid command[unable to parse command]: {loaded_message}",
                 exc_info=exception,
             )
             return
 
-        if msg[COMMAND] not in handlers:
+        if msg.command not in handlers:
             _LOGGER.error(
-                f"Received invalid command[command not registered]: {msg[COMMAND]}"
+                f"Received invalid command[command not registered]: {msg.command}"
             )
             return
 
-        handler, schema = handlers[msg[COMMAND]]
+        handler, model = handlers[msg.command]
 
         try:
-            handler(self._client_manager.server, self, schema(msg))
+            handler(self._client_manager.server, self, model.parse_obj(loaded_message))
         except Exception as err:  # pylint: disable=broad-except
             # TODO Fix this - make real error codes with error messages
-            _LOGGER.error("Error handling message: %s", msg, exc_info=err)
+            _LOGGER.error("Error handling message: %s", loaded_message, exc_info=err)
             self.send_result_error(
                 loaded_message, "INTERNAL_ERROR", f"Internal error: {err}"
             )
@@ -188,39 +184,47 @@ class Client:
         return True
 
 
-@decorators.websocket_command(
-    {
-        COMMAND: str(ClientAPICommands.LISTEN_RAW_ZCL),
-    }
-)
+class ClientListenRawZCLCommand(WebSocketCommand):
+    """Listen to raw ZCL data."""
+
+    command: Literal[
+        APICommands.CLIENT_LISTEN_RAW_ZCL
+    ] = APICommands.CLIENT_LISTEN_RAW_ZCL
+
+
+class ClientListenCommand(WebSocketCommand):
+    """Listen for zhawss messages."""
+
+    command: Literal[APICommands.CLIENT_LISTEN] = APICommands.CLIENT_LISTEN
+
+
+class ClientDisconnectCommand(WebSocketCommand):
+    """Disconnect this client."""
+
+    command: Literal[APICommands.CLIENT_DISCONNECT] = APICommands.CLIENT_DISCONNECT
+
+
+@decorators.websocket_command(ClientListenRawZCLCommand)
 @decorators.async_response
 async def listen_raw_zcl(
-    server: Server, client: Client, message: dict[str, Any]
+    server: Server, client: Client, command: WebSocketCommand
 ) -> None:
     """Listen for raw ZCL events."""
     client.receive_raw_zcl_events = True
-    client.send_result_success(message)
+    client.send_result_success(command)
 
 
-@decorators.websocket_command(
-    {
-        COMMAND: str(ClientAPICommands.LISTEN),
-    }
-)
+@decorators.websocket_command(ClientListenCommand)
 @decorators.async_response
-async def listen(server: Server, client: Client, message: dict[str, Any]) -> None:
+async def listen(server: Server, client: Client, command: WebSocketCommand) -> None:
     """Listen for events."""
     client.receive_events = True
-    client.send_result_success(message)
+    client.send_result_success(command)
 
 
-@decorators.websocket_command(
-    {
-        COMMAND: str(ClientAPICommands.DISCONNECT),
-    }
-)
+@decorators.websocket_command(ClientDisconnectCommand)
 @decorators.async_response
-async def disconnect(server: Server, client: Client, message: dict[str, Any]) -> None:
+async def disconnect(server: Server, client: Client, command: WebSocketCommand) -> None:
     """Disconnect the client."""
     client.disconnect()
     server.client_manager.remove_client(client)

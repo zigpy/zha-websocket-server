@@ -335,6 +335,8 @@ class Device(LogMixin):
                     endpoint.zigbee_signature for endpoint in self._endpoints.values()
                 ]
             },
+            ATTR_MANUFACTURER: self.manufacturer,
+            ATTR_MODEL: self.model,
         }
 
     @property

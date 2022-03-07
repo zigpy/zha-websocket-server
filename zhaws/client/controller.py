@@ -7,6 +7,7 @@ from types import TracebackType
 
 from aiohttp import ClientSession
 from async_timeout import timeout
+from zigpy.types.named import EUI64
 
 from zhaws.client.client import Client
 from zhaws.client.helpers import (
@@ -28,7 +29,7 @@ from zhaws.client.helpers import (
     SirenHelper,
     SwitchHelper,
 )
-from zhaws.client.model.commands import Command, CommandResponse
+from zhaws.client.model.commands import CommandResponse
 from zhaws.client.model.events import (
     DeviceConfiguredEvent,
     DeviceFullyInitializedEvent,
@@ -46,6 +47,7 @@ from zhaws.client.model.events import (
 from zhaws.client.proxy import DeviceProxy, GroupProxy
 from zhaws.event import EventBase
 from zhaws.server.const import ControllerEvents, EventTypes
+from zhaws.server.websocket.api.model import WebSocketCommand
 
 CONNECT_TIMEOUT = 10
 
@@ -61,7 +63,7 @@ class Controller(EventBase):
         super().__init__()
         self._ws_server_url: str = ws_server_url
         self._client: Client = Client(ws_server_url, aiohttp_session)
-        self._devices: dict[str, DeviceProxy] = {}
+        self._devices: dict[EUI64, DeviceProxy] = {}
         self._groups: dict[int, GroupProxy] = {}
 
         # set up all of the helper objects
@@ -98,7 +100,7 @@ class Controller(EventBase):
         return self._client
 
     @property
-    def devices(self) -> dict[str, DeviceProxy]:
+    def devices(self) -> dict[EUI64, DeviceProxy]:
         """Return the devices."""
         return self._devices
 
@@ -134,9 +136,9 @@ class Controller(EventBase):
         """Disconnect from the websocket server."""
         await self.disconnect()
 
-    async def send_command(self, command: Command) -> CommandResponse:
+    async def send_command(self, command: WebSocketCommand) -> CommandResponse:
         """Send a command and get a response."""
-        return await self._client.async_send_command(command.dict(exclude_none=True))
+        return await self._client.async_send_command(command)
 
     async def load_devices(self) -> None:
         """Load devices from the websocket server."""
@@ -248,5 +250,5 @@ class Controller(EventBase):
     def handle_group_removed(self, event: GroupRemovedEvent) -> None:
         """Handle group removed event."""
         if event.group.id in self.groups:
-            self.groups[event.group.id].group_model = event.group
+            self.groups.pop(event.group.id)
         self.emit(ControllerEvents.GROUP_REMOVED, event)

@@ -4,7 +4,7 @@ from __future__ import annotations
 from abc import abstractmethod
 import functools
 import math
-from typing import TYPE_CHECKING, Any, Final, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Final, TypeVar
 
 from zigpy.exceptions import ZigbeeException
 from zigpy.zcl.clusters import hvac
@@ -180,11 +180,6 @@ class BaseFan(BaseEntity):
         return self.speed not in [SPEED_OFF, None]
 
     @property
-    def speed(self) -> str | None:
-        """Return the current speed."""
-        return None
-
-    @property
     def percentage_step(self) -> float:
         """Return the step size for percentage."""
         return 100 / self.speed_count
@@ -206,19 +201,14 @@ class BaseFan(BaseEntity):
     ) -> None:
         """Turn the entity on."""
         if preset_mode is not None:
-            speed = preset_mode
-            percentage = None
+            self.async_set_preset_mode(preset_mode)
         elif speed is not None:
-            if self.preset_modes and speed in self.preset_modes:
-                preset_mode = speed
-                percentage = None
-            else:
-                percentage = self.speed_to_percentage(speed)
+            await self.async_set_percentage(self.speed_to_percentage(speed))
         elif percentage is not None:
-            speed = self.percentage_to_speed(percentage)
-        if percentage is None:
+            await self.async_set_percentage(percentage)
+        else:
             percentage = DEFAULT_ON_PERCENTAGE
-        await self.async_set_percentage(percentage)
+            await self.async_set_percentage(percentage)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the entity off."""
@@ -295,7 +285,7 @@ class Fan(PlatformEntity, BaseFan):
         )
 
     @property
-    def percentage(self) -> Union[int, None]:
+    def percentage(self) -> int | None:
         """Return the current speed percentage."""
         if (
             self._fan_cluster_handler.fan_mode is None
@@ -309,7 +299,7 @@ class Fan(PlatformEntity, BaseFan):
         )
 
     @property
-    def preset_mode(self) -> Union[str, None]:
+    def preset_mode(self) -> str | None:
         """Return the current preset mode."""
         return PRESET_MODES_TO_NAME.get(self._fan_cluster_handler.fan_mode)
 

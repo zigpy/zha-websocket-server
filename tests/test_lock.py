@@ -17,7 +17,7 @@ from zhaws.server.platforms.registries import Platform
 from zhaws.server.websocket.server import Server
 from zhaws.server.zigbee.device import Device
 
-from .common import find_entity_id, send_attributes_report
+from .common import find_entity_id, send_attributes_report, update_attribute_cache
 from .conftest import SIG_EP_INPUT, SIG_EP_OUTPUT, SIG_EP_PROFILE, SIG_EP_TYPE
 
 from tests.common import mock_coro
@@ -71,7 +71,7 @@ async def test_lock(
     entity_id = find_entity_id(Platform.LOCK, zha_device)
     assert entity_id is not None
 
-    client_device: Optional[DeviceProxy] = controller.devices.get(str(zha_device.ieee))
+    client_device: Optional[DeviceProxy] = controller.devices.get(zha_device.ieee)
     assert client_device is not None
     entity = get_entity(client_device, entity_id)
     assert entity is not None
@@ -104,6 +104,14 @@ async def test_lock(
     # disable user code
     await async_disable_user_code(server, cluster, entity, controller)
 
+    # test updating entity state from client
+    assert entity.state.is_locked is False
+    cluster.PLUGGED_ATTR_READS = {"lock_state": 1}
+    update_attribute_cache(cluster)
+    await controller.entities.refresh_state(entity)
+    await server.block_till_done()
+    assert entity.state.is_locked is True
+
 
 async def async_lock(
     server: Server,
@@ -117,9 +125,23 @@ async def async_lock(
     ):
         await controller.locks.lock(entity)
         await server.block_till_done()
+        assert entity.state.is_locked is True
         assert cluster.request.call_count == 1
         assert cluster.request.call_args[0][0] is False
         assert cluster.request.call_args[0][1] == LOCK_DOOR
+        cluster.request.reset_mock()
+
+    # test unlock failure
+    with patch(
+        "zigpy.zcl.Cluster.request", return_value=mock_coro([zcl_f.Status.FAILURE])
+    ):
+        await controller.locks.unlock(entity)
+        await server.block_till_done()
+        assert entity.state.is_locked is True
+        assert cluster.request.call_count == 1
+        assert cluster.request.call_args[0][0] is False
+        assert cluster.request.call_args[0][1] == UNLOCK_DOOR
+        cluster.request.reset_mock()
 
 
 async def async_unlock(
@@ -134,9 +156,23 @@ async def async_unlock(
     ):
         await controller.locks.unlock(entity)
         await server.block_till_done()
+        assert entity.state.is_locked is False
         assert cluster.request.call_count == 1
         assert cluster.request.call_args[0][0] is False
         assert cluster.request.call_args[0][1] == UNLOCK_DOOR
+        cluster.request.reset_mock()
+
+    # test lock failure
+    with patch(
+        "zigpy.zcl.Cluster.request", return_value=mock_coro([zcl_f.Status.FAILURE])
+    ):
+        await controller.locks.lock(entity)
+        await server.block_till_done()
+        assert entity.state.is_locked is False
+        assert cluster.request.call_count == 1
+        assert cluster.request.call_args[0][0] is False
+        assert cluster.request.call_args[0][1] == LOCK_DOOR
+        cluster.request.reset_mock()
 
 
 async def async_set_user_code(

@@ -8,3 +8,4 @@ pytest-aiohttp
 pytest-cov
 pytest-timeout
 python-slugify
+looptime

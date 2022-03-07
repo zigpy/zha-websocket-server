@@ -72,7 +72,7 @@ async def test_number(
     assert "engineering_units" in attr_reads
     assert "application_type" in attr_reads
 
-    client_device: Optional[DeviceProxy] = controller.devices.get(str(zha_device.ieee))
+    client_device: Optional[DeviceProxy] = controller.devices.get(zha_device.ieee)
     assert client_device is not None
     entity: NumberEntity = find_entity(client_device, Platform.NUMBER)  # type: ignore
     assert entity is not None

@@ -6,18 +6,18 @@ import contextlib
 import logging
 from time import monotonic
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Awaitable, Final, Iterable
+from typing import TYPE_CHECKING, Any, Awaitable, Final, Iterable, Literal
 
-import voluptuous
 import websockets
 
 from zhaws.server.config.model import ServerConfiguration
-from zhaws.server.const import COMMAND, APICommands
+from zhaws.server.const import APICommands
 from zhaws.server.decorators import periodic
 from zhaws.server.platforms import discovery
 from zhaws.server.platforms.api import load_platform_entity_apis
 from zhaws.server.platforms.discovery import PLATFORMS
 from zhaws.server.websocket.api import decorators, register_api_command
+from zhaws.server.websocket.api.model import WebSocketCommand
 from zhaws.server.websocket.client import ClientManager
 from zhaws.server.zigbee.api import load_api as load_zigbee_controller_api
 from zhaws.server.zigbee.controller import Controller
@@ -201,13 +201,17 @@ class Server:
         load_client_api(self)
 
 
-@decorators.websocket_command(
-    {
-        voluptuous.Required(COMMAND): str(APICommands.STOP_SERVER),
-    }
-)
+class StopServerCommand(WebSocketCommand):
+    """Stop the server."""
+
+    command: Literal[APICommands.STOP_SERVER] = APICommands.STOP_SERVER
+
+
+@decorators.websocket_command(StopServerCommand)
 @decorators.async_response
-async def stop_server(server: Server, client: Client, message: dict[str, Any]) -> None:
+async def stop_server(
+    server: Server, client: Client, command: WebSocketCommand
+) -> None:
     """Stop the Zigbee network."""
-    client.send_result_success(message)
+    client.send_result_success(command)
     await server.stop_server()

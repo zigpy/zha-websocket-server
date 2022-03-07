@@ -3,7 +3,7 @@ from __future__ import annotations
 from zhaws.client.client import Client
 from zhaws.client.controller import Controller
 from zhaws.server.config.model import ServerConfiguration
-from zhaws.server.websocket.server import Server
+from zhaws.server.websocket.server import Server, StopServerCommand
 
 
 async def test_server_client_connect_disconnect(
@@ -50,9 +50,7 @@ async def test_client_stop_server(
     controller, server = connected_client_and_server
 
     assert server.is_serving
-    await controller.client.async_send_command_no_wait(
-        {"command": "stop_server", "message_id": 1}
-    )
+    await controller.client.async_send_command_no_wait(StopServerCommand())
     await controller.disconnect()
     await server.wait_closed()
     assert not server.is_serving

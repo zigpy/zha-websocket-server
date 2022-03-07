@@ -6,15 +6,16 @@ import contextlib
 import logging
 import pprint
 from types import TracebackType
-from typing import Any, Optional
+from typing import Any
 
 from aiohttp import ClientSession, ClientWebSocketResponse, client_exceptions
 from aiohttp.http_websocket import WSMsgType
 from async_timeout import timeout
 
-from zhaws.client.model.commands import CommandResponse
+from zhaws.client.model.commands import CommandResponse, ErrorResponse
 from zhaws.client.model.messages import Message
 from zhaws.event import EventBase
+from zhaws.server.websocket.api.model import WebSocketCommand
 
 SIZE_PARSE_JSON_EXECUTOR = 8192
 _LOGGER = logging.getLogger(__package__)
@@ -43,7 +44,7 @@ class Client(EventBase):
             self._close_aiohttp_session = False
 
         # The WebSocket client
-        self._client: Optional[ClientWebSocketResponse] = None
+        self._client: ClientWebSocketResponse | None = None
         self._loop = asyncio.get_running_loop()
         self._result_futures: dict[int, asyncio.Future] = {}
         self._listen_task: asyncio.Task | None = None
@@ -71,29 +72,31 @@ class Client(EventBase):
 
     async def async_send_command(
         self,
-        message: dict[str, Any],
+        command: WebSocketCommand,
     ) -> CommandResponse:
         """Send a command and get a response."""
         future: asyncio.Future[CommandResponse] = self._loop.create_future()
-        message_id = message["message_id"] = self.new_message_id()
+        message_id = command.message_id = self.new_message_id()
         self._result_futures[message_id] = future
 
         try:
             async with timeout(20):
-                await self._send_json_message(message)
+                await self._send_json_message(command.json(exclude_none=True))
                 return await future
         except asyncio.TimeoutError:
             _LOGGER.error("Timeout waiting for response")
             return CommandResponse.parse_obj(
                 {"message_id": message_id, "success": False}
             )
+        except Exception as err:
+            _LOGGER.error("Error sending command: %s", err, exc_info=err)
         finally:
             self._result_futures.pop(message_id)
 
-    async def async_send_command_no_wait(self, message: dict[str, Any]) -> None:
+    async def async_send_command_no_wait(self, command: WebSocketCommand) -> None:
         """Send a command without waiting for the response."""
-        message["message_id"] = self.new_message_id()
-        await self._send_json_message(message)
+        command.message_id = self.new_message_id()
+        await self._send_json_message(command.json(exclude_none=True))
 
     async def connect(self) -> None:
         """Connect to the websocket server."""
@@ -196,7 +199,7 @@ class Client(EventBase):
                 # no listener for this result
                 return
 
-            if message.success:
+            if message.success or isinstance(message, ErrorResponse):
                 future.set_result(message)
                 return
 
@@ -226,7 +229,7 @@ class Client(EventBase):
         except Exception as err:
             _LOGGER.error("Error handling event: %s", err, exc_info=err)
 
-    async def _send_json_message(self, message: dict[str, Any]) -> None:
+    async def _send_json_message(self, message: str) -> None:
         """Send a message.
 
         Raises NotConnected if client not connected.
@@ -239,7 +242,7 @@ class Client(EventBase):
         assert self._client
         assert "message_id" in message
 
-        await self._client.send_json(message)
+        await self._client.send_str(message)
 
     async def __aenter__(self) -> Client:
         """Connect to the websocket."""

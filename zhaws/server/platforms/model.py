@@ -2,6 +2,8 @@
 
 from typing import Final, Literal, Optional
 
+from zigpy.types.named import EUI64
+
 from zhaws.model import BaseEvent
 
 STATE_CHANGED: Final[Literal["state_changed"]] = "state_changed"
@@ -14,6 +16,6 @@ class EntityStateChangedEvent(BaseEvent):
     event: Literal["state_changed"] = STATE_CHANGED
     platform: str
     unique_id: str
-    device_ieee: Optional[str]
+    device_ieee: Optional[EUI64]
     endpoint_id: Optional[int]
     group_id: Optional[int]

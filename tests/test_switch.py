@@ -19,7 +19,12 @@ from zhaws.server.websocket.server import Server
 from zhaws.server.zigbee.device import Device
 from zhaws.server.zigbee.group import Group, GroupMemberReference
 
-from .common import async_find_group_entity_id, find_entity_id, send_attributes_report
+from .common import (
+    async_find_group_entity_id,
+    find_entity_id,
+    send_attributes_report,
+    update_attribute_cache,
+)
 from .conftest import SIG_EP_INPUT, SIG_EP_OUTPUT, SIG_EP_PROFILE, SIG_EP_TYPE
 
 from tests.common import mock_coro
@@ -103,7 +108,7 @@ async def test_switch(
     entity_id = find_entity_id(Platform.SWITCH, zha_device)
     assert entity_id is not None
 
-    client_device: Optional[DeviceProxy] = controller.devices.get(str(zha_device.ieee))
+    client_device: Optional[DeviceProxy] = controller.devices.get(zha_device.ieee)
     assert client_device is not None
     entity: SwitchEntity = get_entity(client_device, entity_id)  # type: ignore
     assert entity is not None
@@ -125,12 +130,25 @@ async def test_switch(
         "zigpy.zcl.Cluster.request",
         return_value=mock_coro([0x00, zcl_f.Status.SUCCESS]),
     ):
-        # turn on via UI
         await controller.switches.turn_on(entity)
         await server.block_till_done()
+        assert entity.state.state is True
         assert len(cluster.request.mock_calls) == 1
         assert cluster.request.call_args == call(
             False, ON, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
+        )
+
+    # Fail turn off from client
+    with patch(
+        "zigpy.zcl.Cluster.request",
+        return_value=mock_coro([0x01, zcl_f.Status.FAILURE]),
+    ):
+        await controller.switches.turn_off(entity)
+        await server.block_till_done()
+        assert entity.state.state is True
+        assert len(cluster.request.mock_calls) == 1
+        assert cluster.request.call_args == call(
+            False, OFF, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
         )
 
     # turn off from client
@@ -138,13 +156,34 @@ async def test_switch(
         "zigpy.zcl.Cluster.request",
         return_value=mock_coro([0x01, zcl_f.Status.SUCCESS]),
     ):
-        # turn off via UI
         await controller.switches.turn_off(entity)
         await server.block_till_done()
+        assert entity.state.state is False
         assert len(cluster.request.mock_calls) == 1
         assert cluster.request.call_args == call(
             False, OFF, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
         )
+
+    # Fail turn on from client
+    with patch(
+        "zigpy.zcl.Cluster.request",
+        return_value=mock_coro([0x01, zcl_f.Status.FAILURE]),
+    ):
+        await controller.switches.turn_on(entity)
+        await server.block_till_done()
+        assert entity.state.state is False
+        assert len(cluster.request.mock_calls) == 1
+        assert cluster.request.call_args == call(
+            False, ON, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
+        )
+
+    # test updating entity state from client
+    assert entity.state.state is False
+    cluster.PLUGGED_ATTR_READS = {"on_off": True}
+    update_attribute_cache(cluster)
+    await controller.entities.refresh_state(entity)
+    await server.block_till_done()
+    assert entity.state.state is True
 
 
 async def test_zha_group_switch_entity(
@@ -156,8 +195,8 @@ async def test_zha_group_switch_entity(
     controller, server = connected_client_and_server
     member_ieee_addresses = [device_switch_1.ieee, device_switch_2.ieee]
     members = [
-        GroupMemberReference(device_switch_1.ieee, 1),
-        GroupMemberReference(device_switch_2.ieee, 1),
+        GroupMemberReference(ieee=device_switch_1.ieee, endpoint_id=1),
+        GroupMemberReference(ieee=device_switch_2.ieee, endpoint_id=1),
     ]
 
     # test creating a group with 2 members
@@ -183,8 +222,6 @@ async def test_zha_group_switch_entity(
     assert entity is not None
 
     assert isinstance(entity, SwitchGroupEntity)
-
-    assert entity is not None
 
     group_cluster_on_off = zha_group.zigpy_group.endpoint[general.OnOff.cluster_id]
     dev1_cluster_on_off = device_switch_1.device.endpoints[1].on_off
@@ -246,6 +283,11 @@ async def test_zha_group_switch_entity(
 
     # test that group light is now back on
     assert entity.state.state is True
+
+    # test value error calling client api with wrong entity type
+    with pytest.raises(ValueError):
+        await controller.sirens.turn_on(entity)
+        await server.block_till_done()
 
 
 def get_entity(zha_dev: DeviceProxy, entity_id: str) -> BasePlatformEntity:

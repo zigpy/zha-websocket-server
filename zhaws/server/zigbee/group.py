@@ -2,19 +2,19 @@
 from __future__ import annotations
 
 import asyncio
-import collections
 import logging
 from typing import TYPE_CHECKING, Any, Callable
 
 import zigpy.exceptions
+from zigpy.types.named import EUI64
 
+from zhaws.model import BaseModel
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.model import STATE_CHANGED, EntityStateChangedEvent
 from zhaws.server.util import LogMixin
 
 if TYPE_CHECKING:
     from zigpy.group import Endpoint as ZigpyEndpoint, Group as ZigpyGroup
-    from zigpy.types.named import EUI64
 
     from zhaws.server.platforms import GroupEntity
     from zhaws.server.websocket.server import Server
@@ -23,9 +23,11 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-GroupMemberReference = collections.namedtuple(
-    "GroupMemberReference", "ieee endpoint_id"
-)
+class GroupMemberReference(BaseModel):
+    """Group member reference."""
+
+    ieee: EUI64
+    endpoint_id: int
 
 
 class GroupMember(LogMixin):

@@ -1,26 +1,29 @@
 """WS API for the button platform entity."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Literal
 
-from zhaws.server.platforms.api import (
-    execute_platform_entity_command,
-    platform_entity_command_schema,
-)
+from zhaws.server.const import APICommands
+from zhaws.server.platforms import PlatformEntityCommand
+from zhaws.server.platforms.api import execute_platform_entity_command
 from zhaws.server.websocket.api import decorators, register_api_command
 
 if TYPE_CHECKING:
     from zhaws.server.websocket.client import Client
     from zhaws.server.websocket.server import Server
 
-COMMAND_PRESS = "button_press"
+
+class ButtonPressCommand(PlatformEntityCommand):
+    """Button press command."""
+
+    command: Literal[APICommands.BUTTON_PRESS] = APICommands.BUTTON_PRESS
 
 
-@decorators.websocket_command(platform_entity_command_schema(COMMAND_PRESS))
+@decorators.websocket_command(ButtonPressCommand)
 @decorators.async_response
-async def press(server: Server, client: Client, message: dict[str, Any]) -> None:
+async def press(server: Server, client: Client, command: PlatformEntityCommand) -> None:
     """Turn on the button."""
-    await execute_platform_entity_command(server, client, message, "async_press")
+    await execute_platform_entity_command(server, client, command, "async_press")
 
 
 def load_api(server: Server) -> None:
