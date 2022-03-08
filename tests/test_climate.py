@@ -1,5 +1,5 @@
 """Test zha climate."""
-
+import logging
 from typing import Awaitable, Callable, Optional
 from unittest.mock import patch
 
@@ -22,11 +22,14 @@ from zhaws.server.platforms.climate import (
     FanState,
 )
 from zhaws.server.platforms.registries import Platform
+from zhaws.server.platforms.sensor import SinopeHVACAction, ThermostatHVACAction
 from zhaws.server.websocket.server import Server
 from zhaws.server.zigbee.device import Device
 
 from .common import find_entity_id, send_attributes_report
 from .conftest import SIG_EP_INPUT, SIG_EP_OUTPUT, SIG_EP_PROFILE, SIG_EP_TYPE
+
+_LOGGER = logging.getLogger(__name__)
 
 CLIMATE = {
     1: {
@@ -276,6 +279,7 @@ async def test_climate_hvac_action_running_state(
     sensor_entity: SensorEntity = get_entity(client_device, sensor_entity_id)
     assert sensor_entity is not None
     assert isinstance(sensor_entity, SensorEntity)
+    assert sensor_entity.class_name == SinopeHVACAction.__name__
 
     assert entity.state.hvac_action == "off"
     assert sensor_entity.state.state == "off"
@@ -296,13 +300,13 @@ async def test_climate_hvac_action_running_state(
         server, thrm_cluster, {0x001E: Thermostat.RunningMode.Cool}
     )
     assert entity.state.hvac_action == "cooling"
-    # assert sensor_entity.state.state == "cooling"
+    assert sensor_entity.state.state == "cooling"
 
     await send_attributes_report(
         server, thrm_cluster, {0x001E: Thermostat.RunningMode.Heat}
     )
     assert entity.state.hvac_action == "heating"
-    # assert sensor_entity.state.state == "heating"
+    assert sensor_entity.state.state == "heating"
 
     await send_attributes_report(
         server, thrm_cluster, {0x001E: Thermostat.RunningMode.Off}
@@ -314,7 +318,7 @@ async def test_climate_hvac_action_running_state(
         server, thrm_cluster, {0x0029: Thermostat.RunningState.Fan_State_On}
     )
     assert entity.state.hvac_action == "fan"
-    # assert sensor_entity.state.state == "fan"
+    assert sensor_entity.state.state == "fan"
 
 
 async def test_climate_hvac_action_running_state_zen(
@@ -326,7 +330,7 @@ async def test_climate_hvac_action_running_state_zen(
     controller, server = connected_client_and_server
     thrm_cluster = device_climate_zen.device.endpoints[1].thermostat
     entity_id = find_entity_id(Platform.CLIMATE, device_climate_zen)
-    sensor_entity_id = find_entity_id(Platform.SENSOR, device_climate_zen)
+    sensor_entity_id = find_entity_id(Platform.SENSOR, device_climate_zen, "hvac")
     assert entity_id is not None
     assert sensor_entity_id is not None
 
@@ -341,6 +345,7 @@ async def test_climate_hvac_action_running_state_zen(
     sensor_entity: SensorEntity = get_entity(client_device, sensor_entity_id)
     assert sensor_entity is not None
     assert isinstance(sensor_entity, SensorEntity)
+    assert sensor_entity.class_name == ThermostatHVACAction.__name__
 
     assert entity.state.hvac_action is None
     assert sensor_entity.state.state is None
@@ -349,55 +354,55 @@ async def test_climate_hvac_action_running_state_zen(
         server, thrm_cluster, {0x0029: Thermostat.RunningState.Cool_2nd_Stage_On}
     )
     assert entity.state.hvac_action == "cooling"
-    # assert sensor_entity.state.state == "cooling"
+    assert sensor_entity.state.state == "cooling"
 
     await send_attributes_report(
         server, thrm_cluster, {0x0029: Thermostat.RunningState.Fan_State_On}
     )
     assert entity.state.hvac_action == "fan"
-    # assert sensor_entity.state.state == "fan"
+    assert sensor_entity.state.state == "fan"
 
     await send_attributes_report(
         server, thrm_cluster, {0x0029: Thermostat.RunningState.Heat_2nd_Stage_On}
     )
     assert entity.state.hvac_action == "heating"
-    # assert sensor_entity.state.state == "heating"
+    assert sensor_entity.state.state == "heating"
 
     await send_attributes_report(
         server, thrm_cluster, {0x0029: Thermostat.RunningState.Fan_2nd_Stage_On}
     )
     assert entity.state.hvac_action == "fan"
-    # assert sensor_entity.state.state == "fan"
+    assert sensor_entity.state.state == "fan"
 
     await send_attributes_report(
         server, thrm_cluster, {0x0029: Thermostat.RunningState.Cool_State_On}
     )
     assert entity.state.hvac_action == "cooling"
-    # assert sensor_entity.state.state == "cooling"
+    assert sensor_entity.state.state == "cooling"
 
     await send_attributes_report(
         server, thrm_cluster, {0x0029: Thermostat.RunningState.Fan_3rd_Stage_On}
     )
     assert entity.state.hvac_action == "fan"
-    # assert sensor_entity.state.state == "fan"
+    assert sensor_entity.state.state == "fan"
 
     await send_attributes_report(
         server, thrm_cluster, {0x0029: Thermostat.RunningState.Heat_State_On}
     )
     assert entity.state.hvac_action == "heating"
-    # assert sensor_entity.state.state == "heating"
+    assert sensor_entity.state.state == "heating"
 
     await send_attributes_report(
         server, thrm_cluster, {0x0029: Thermostat.RunningState.Idle}
     )
     assert entity.state.hvac_action == "off"
-    # assert sensor_entity.state.state == "off"
+    assert sensor_entity.state.state == "off"
 
     await send_attributes_report(
         server, thrm_cluster, {0x001C: Thermostat.SystemMode.Heat}
     )
     assert entity.state.hvac_action == "idle"
-    # assert sensor_entity.state.state == "idle"
+    assert sensor_entity.state.state == "idle"
 
 
 async def test_climate_hvac_action_pi_demand(

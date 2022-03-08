@@ -5,7 +5,7 @@ import asyncio
 import functools
 import logging
 import numbers
-from typing import TYPE_CHECKING, Any, Final, Type, Union
+from typing import TYPE_CHECKING, Any, Final
 
 from zhaws.server.decorators import periodic
 from zhaws.server.platforms import PlatformEntity
@@ -68,22 +68,22 @@ class Sensor(PlatformEntity):
     """Representation of a zhawss sensor."""
 
     PLATFORM = Platform.SENSOR
-    SENSOR_ATTR: Union[int, str, None] = None
+    SENSOR_ATTR: int | str | None = None
     _REFRESH_INTERVAL = (30, 45)
     _decimals: int = 1
     _divisor: int = 1
     _multiplier: int | float = 1
-    _unit: Union[str, None] = None
+    _unit: str | None = None
 
     @classmethod
     def create_platform_entity(
-        cls: Type[Sensor],
+        cls: type[Sensor],
         unique_id: str,
         cluster_handlers: list[ClusterHandler],
         endpoint: Endpoint,
         device: Device,
         **kwargs: Any,
-    ) -> Union[PlatformEntity, None]:
+    ) -> PlatformEntity | None:
         """Entity Factory.
         Return a platform entity if it is a supported configuration, otherwise return None
         """
@@ -124,7 +124,7 @@ class Sensor(PlatformEntity):
             response["state"] = raw_state
         return response
 
-    def formatter(self, value: int) -> Union[int, float]:
+    def formatter(self, value: int) -> int | float:
         """Numeric pass-through formatter."""
         if self._decimals > 0:
             return round(
@@ -179,13 +179,13 @@ class Battery(Sensor):
 
     @classmethod
     def create_platform_entity(
-        cls: Type[Battery],
+        cls: type[Battery],
         unique_id: str,
         cluster_handlers: list[ClusterHandler],
         endpoint: Endpoint,
         device: Device,
         **kwargs: Any,
-    ) -> Union[PlatformEntity, None]:
+    ) -> PlatformEntity | None:
         """Entity Factory.
         Unlike any other entity, PowerConfiguration cluster may not support
         battery_percent_remaining attribute, but zha-device-handlers takes care of it
@@ -243,7 +243,7 @@ class ElectricalMeasurement(Sensor):
 
         return response
 
-    def formatter(self, value: int) -> Union[int, float]:
+    def formatter(self, value: int) -> int | float:
         """Return 'normalized' value."""
         multiplier = getattr(
             self._cluster_handler, f"{self._div_mul_prefix}_multiplier"
@@ -349,7 +349,7 @@ class Illuminance(Sensor):
 class SmartEnergyMetering(Sensor):
     """Metering sensor."""
 
-    SENSOR_ATTR: Union[int, str] = "instantaneous_demand"
+    SENSOR_ATTR: int | str = "instantaneous_demand"
 
     def __init__(
         self,
@@ -362,7 +362,7 @@ class SmartEnergyMetering(Sensor):
         super().__init__(unique_id, cluster_handlers, endpoint, device)
         self._unit = self._cluster_handler.unit_of_measurement
 
-    def formatter(self, value: int) -> Union[int, float]:
+    def formatter(self, value: int) -> int | float:
         """Pass through cluster handler formatter."""
         return self._cluster_handler.demand_formatter(value)
 
@@ -380,9 +380,9 @@ class SmartEnergyMetering(Sensor):
 class SmartEnergySummation(SmartEnergyMetering, id_suffix="summation_delivered"):
     """Smart Energy Metering summation sensor."""
 
-    SENSOR_ATTR: Union[int, str] = "current_summ_delivered"
+    SENSOR_ATTR: int | str = "current_summ_delivered"
 
-    def formatter(self, value: int) -> Union[int, float]:
+    def formatter(self, value: int) -> int | float:
         """Numeric pass-through formatter."""
         if self._cluster_handler.unit_of_measurement != 0:
             return self._cluster_handler.summa_formatter(value)
@@ -469,13 +469,13 @@ class ThermostatHVACAction(Sensor, id_suffix="hvac_action"):
 
     @classmethod
     def create_platform_entity(
-        cls: Type[ThermostatHVACAction],
+        cls: type[ThermostatHVACAction],
         unique_id: str,
         cluster_handlers: list[ClusterHandler],
         endpoint: Endpoint,
         device: Device,
         **kwargs: Any,
-    ) -> Union[PlatformEntity, None]:
+    ) -> PlatformEntity | None:
         """Entity Factory.
         Return entity if it is a supported configuration, otherwise return None
         """
@@ -483,7 +483,7 @@ class ThermostatHVACAction(Sensor, id_suffix="hvac_action"):
         return cls(unique_id, cluster_handlers, endpoint, device, **kwargs)
 
     @property
-    def _rm_rs_action(self) -> Union[str, None]:
+    def _rm_rs_action(self) -> str | None:
         """Return the current HVAC action based on running mode and running state."""
 
         if (running_state := self._cluster_handler.running_state) is None:
@@ -520,7 +520,7 @@ class ThermostatHVACAction(Sensor, id_suffix="hvac_action"):
         return CURRENT_HVAC_OFF
 
     @property
-    def _pi_demand_action(self) -> Union[str, None]:
+    def _pi_demand_action(self) -> str | None:
         """Return the current HVAC action based on pi_demands."""
 
         heating_demand = self._cluster_handler.pi_heating_demand
@@ -542,7 +542,8 @@ class ThermostatHVACAction(Sensor, id_suffix="hvac_action"):
             and self._cluster_handler.pi_cooling_demand is None
         ):
             response["state"] = self._rm_rs_action
-        response["state"] = self._pi_demand_action
+        else:
+            response["state"] = self._pi_demand_action
         return response
 
 
@@ -555,7 +556,7 @@ class SinopeHVACAction(ThermostatHVACAction):
     """Sinope Thermostat HVAC action sensor."""
 
     @property
-    def _rm_rs_action(self) -> Union[str, None]:
+    def _rm_rs_action(self) -> str | None:
         """Return the current HVAC action based on running mode and running state."""
 
         running_mode = self._cluster_handler.running_mode
@@ -585,13 +586,13 @@ class RSSISensor(Sensor, id_suffix="rssi"):
 
     @classmethod
     def create_platform_entity(
-        cls: Type[RSSISensor],
+        cls: type[RSSISensor],
         unique_id: str,
         cluster_handlers: list[ClusterHandler],
         endpoint: Endpoint,
         device: Device,
         **kwargs: Any,
-    ) -> Union[PlatformEntity, None]:
+    ) -> PlatformEntity | None:
         """Entity Factory.
         Return entity if it is a supported configuration, otherwise return None
         """
