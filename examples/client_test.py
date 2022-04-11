@@ -1,3 +1,4 @@
+"""Client tests for zhawss."""
 import asyncio
 import logging
 
@@ -14,6 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def main() -> None:
+    """Run the client tests."""
     test_lights = False
     test_switches = False
     test_alarm_control_panel = False

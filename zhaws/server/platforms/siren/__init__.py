@@ -166,6 +166,7 @@ class Siren(PlatformEntity):
         self.maybe_send_state_changed_event()
 
     def to_json(self) -> dict:
+        """Return JSON representation of the siren."""
         json = super().to_json()
         json[ATTR_AVAILABLE_TONES] = self._attr_available_tones
         json["supported_features"] = self._attr_supported_features

@@ -290,7 +290,7 @@ class Device(LogMixin):
 
     @property
     def controller(self) -> Controller:
-        # Return the controller for this device.
+        """Return the controller for this device."""
         return self._controller
 
     @property
@@ -322,7 +322,7 @@ class Device(LogMixin):
 
     @property
     def zigbee_signature(self) -> dict[str, Any]:
-        # Get zigbee signature for this device.
+        """Get zigbee signature for this device."""
         return {
             ATTR_NODE_DESCRIPTOR: (
                 self._zigpy_device.node_desc.as_dict()
@@ -345,7 +345,7 @@ class Device(LogMixin):
         return self._platform_entities
 
     def get_platform_entity(self, unique_id: str) -> PlatformEntity:
-        """Get a platform entity by unique id"""
+        """Get a platform entity by unique id."""
         entity = self._platform_entities.get(unique_id)
         if entity is None:
             raise ValueError(f"Entity {unique_id} not found")

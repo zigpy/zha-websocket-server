@@ -13,6 +13,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def main(config_path: str | None = None) -> None:
+    """Run the websocket server."""
     if config_path is None:
         _LOGGER.info("No config file provided, using default configuration")
         configuration = ServerConfiguration()

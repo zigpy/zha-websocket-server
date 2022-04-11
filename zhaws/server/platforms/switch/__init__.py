@@ -73,6 +73,8 @@ class BaseSwitch(BaseEntity):
 
 @STRICT_MATCH(cluster_handler_names=CLUSTER_HANDLER_ON_OFF)
 class Switch(PlatformEntity, BaseSwitch):
+    """Switch entity."""
+
     def __init__(
         self,
         unique_id: str,

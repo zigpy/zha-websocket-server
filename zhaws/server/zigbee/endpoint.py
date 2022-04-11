@@ -189,6 +189,7 @@ class Endpoint:
         unique_id: str,
         cluster_handlers: list[ClusterHandler],
     ) -> None:
+        """Create a new entity."""
         from zhaws.server.zigbee.device import DeviceStatus
 
         if self.device.status == DeviceStatus.INITIALIZED:

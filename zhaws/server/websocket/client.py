@@ -160,13 +160,14 @@ class Client:
             )
 
     async def listen(self) -> None:
+        """Listen for incoming messages."""
         async for message in self._websocket:
             self._client_manager.server.track_task(
                 asyncio.create_task(self._handle_incoming_message(message))
             )
 
     def will_accept_message(self, message: dict[str, Any]) -> bool:
-        """Checks if the client has registered to accept this type of message."""
+        """Determine if client accepts this type of message."""
         if not self.receive_events:
             return False
 
@@ -251,13 +252,13 @@ class ClientManager:
         return self._server
 
     async def add_client(self, websocket: WebSocketServerProtocol) -> None:
-        """Adds a new client to the client manager."""
+        """Add a new client to the client manager."""
         client: Client = Client(websocket, self)
         self._clients.append(client)
         await client.listen()
 
     def remove_client(self, client: Client) -> None:
-        """Removes a client from the client manager."""
+        """Remove a client from the client manager."""
         client.disconnect()
         self._clients.remove(client)
 

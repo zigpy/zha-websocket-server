@@ -1,4 +1,4 @@
-"""Setup module for zha-websocket-server"""
+"""Setup module for zha-websocket-server."""
 
 import pathlib
 

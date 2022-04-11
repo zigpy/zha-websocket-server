@@ -1,1 +1,1 @@
-"""zha web socket server"""
+"""zha web socket server."""

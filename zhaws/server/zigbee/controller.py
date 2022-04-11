@@ -82,7 +82,7 @@ class Controller:
 
     @property
     def application_controller(self) -> ControllerApplication:
-        """Return the Zigpy ControllerApplication"""
+        """Return the Zigpy ControllerApplication."""
         return self._application_controller
 
     @property

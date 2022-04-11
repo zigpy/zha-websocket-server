@@ -83,6 +83,7 @@ async def connected_client_and_server(
     server_configuration: ServerConfiguration,
     zigpy_app_controller: ControllerApplication,
 ) -> AsyncGenerator[tuple[Controller, Server], None]:
+    """Return the connected client and server fixture."""
 
     application_controller_patch = patch(
         "bellows.zigbee.application.ControllerApplication.new",

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from enum import Enum
 import functools
-from typing import TYPE_CHECKING, Any, Final, Union
+from typing import TYPE_CHECKING, Any, Final
 
 import zigpy.types as t
 from zigpy.zcl.clusters.security import IasWd
@@ -22,11 +22,14 @@ STATE_UNKNOWN: Final[str] = "unknown"
 
 
 class Strobe(t.enum8):  # type: ignore #TODO fix type
+    """Strobe enum."""
+
     No_Strobe = 0x00
     Strobe = 0x01
 
 
 class EnumSelect(PlatformEntity):
+    """Select platform for zhaws."""
 
     PLATFORM = Platform.SELECT
     _enum: type[Enum]
@@ -51,14 +54,14 @@ class EnumSelect(PlatformEntity):
         """
 
     @property
-    def current_option(self) -> Union[str, None]:
+    def current_option(self) -> str | None:
         """Return the selected entity option to represent the entity state."""
         option = self._cluster_handler.data_cache.get(self._attr_name)
         if option is None:
             return None
         return option.name.replace("_", " ")
 
-    async def async_select_option(self, option: Union[str, int], **kwargs: Any) -> None:
+    async def async_select_option(self, option: str | int, **kwargs: Any) -> None:
         """Change the selected option."""
         if isinstance(option, str):
             self._cluster_handler.data_cache[self._attr_name] = self._enum[

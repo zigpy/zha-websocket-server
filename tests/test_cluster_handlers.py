@@ -286,7 +286,7 @@ async def test_out_cluster_handler_config(
 
 
 def test_cluster_handler_registry() -> None:
-    # Test ZIGBEE cluster_handler Registry.
+    """Test ZIGBEE cluster_handler Registry."""
     for (
         cluster_id,
         cluster_handler,
@@ -297,7 +297,7 @@ def test_cluster_handler_registry() -> None:
 
 
 def test_epch_unclaimed_cluster_handlers(cluster_handler: ClusterHandler) -> None:
-    # Test unclaimed cluster_handlers.
+    """Test unclaimed cluster_handlers."""
 
     ch_1 = cluster_handler(zha_const.CLUSTER_HANDLER_ON_OFF, 6)
     ch_2 = cluster_handler(zha_const.CLUSTER_HANDLER_LEVEL, 8)
@@ -335,7 +335,7 @@ def test_epch_unclaimed_cluster_handlers(cluster_handler: ClusterHandler) -> Non
 
 
 def test_epch_claim_cluster_handlers(cluster_handler: ClusterHandler) -> None:
-    # Test cluster_handler claiming.
+    """Test cluster_handler claiming."""
 
     ch_1 = cluster_handler(zha_const.CLUSTER_HANDLER_ON_OFF, 6)
     ch_2 = cluster_handler(zha_const.CLUSTER_HANDLER_LEVEL, 8)
@@ -378,7 +378,7 @@ async def test_ep_cluster_handlers_all_cluster_handlers(
     zigpy_device_mock: Callable[..., ZigpyDevice],
     device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
 ) -> None:
-    # Test Endpointcluster_handlers adding all cluster_handlers.
+    """Test Endpointcluster_handlers adding all cluster_handlers."""
     zha_device = await device_joined(
         zigpy_device_mock(
             {
@@ -429,7 +429,7 @@ async def test_cluster_handler_power_config(
     zigpy_device_mock: Callable[..., ZigpyDevice],
     device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
 ) -> None:
-    # Test that cluster_handlers only get a single power cluster_handler.
+    """Test that cluster_handlers only get a single power cluster_handler."""
     in_clusters = [0, 1, 6, 8]
     zha_device: Device = await device_joined(
         zigpy_device_mock(
@@ -543,7 +543,7 @@ async def test_ep_cluster_handlers_configure(cluster_handler: ClusterHandler) ->
 
 
 async def test_poll_control_configure(poll_control_ch: PollControl) -> None:
-    # Test poll control cluster_handler configuration.
+    """Test poll control cluster_handler configuration."""
     await poll_control_ch.async_configure()
     assert poll_control_ch.cluster.write_attributes.call_count == 1
     assert poll_control_ch.cluster.write_attributes.call_args[0][0] == {
@@ -552,7 +552,7 @@ async def test_poll_control_configure(poll_control_ch: PollControl) -> None:
 
 
 async def test_poll_control_checkin_response(poll_control_ch: PollControl) -> None:
-    # Test poll control cluster_handler checkin response.
+    """Test poll control cluster_handler checkin response."""
     rsp_mock = AsyncMock()
     set_interval_mock = AsyncMock()
     fast_poll_mock = AsyncMock()
@@ -577,7 +577,7 @@ async def test_poll_control_checkin_response(poll_control_ch: PollControl) -> No
 
 
 async def test_poll_control_cluster_command(poll_control_device: Device) -> None:
-    # Test poll control cluster_handler response to cluster command.
+    """Test poll control cluster_handler response to cluster command."""
     checkin_mock = AsyncMock()
     poll_control_ch = poll_control_device._endpoints[1].all_cluster_handlers["1:0x0020"]
     cluster = poll_control_ch.cluster
@@ -608,7 +608,7 @@ async def test_poll_control_cluster_command(poll_control_device: Device) -> None
 
 
 async def test_poll_control_ignore_list(poll_control_device: Device) -> None:
-    # Test poll control cluster_handler ignore list.
+    """Test poll control cluster_handler ignore list."""
     set_long_poll_mock = AsyncMock()
     poll_control_ch = poll_control_device._endpoints[1].all_cluster_handlers["1:0x0020"]
     cluster = poll_control_ch.cluster
@@ -627,7 +627,7 @@ async def test_poll_control_ignore_list(poll_control_device: Device) -> None:
 
 
 async def test_poll_control_ikea(poll_control_device: Device) -> None:
-    # Test poll control cluster_handler ignore list for ikea.
+    """Test poll control cluster_handler ignore list for ikea."""
     set_long_poll_mock = AsyncMock()
     poll_control_ch = poll_control_device._endpoints[1].all_cluster_handlers["1:0x0020"]
     cluster = poll_control_ch.cluster
@@ -641,7 +641,7 @@ async def test_poll_control_ikea(poll_control_device: Device) -> None:
 
 @pytest.fixture
 def zigpy_zll_device(zigpy_device_mock: Callable[..., ZigpyDevice]) -> ZigpyDevice:
-    # ZLL device fixture.
+    """ZLL device fixture."""
 
     return zigpy_device_mock(
         {

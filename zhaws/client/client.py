@@ -62,11 +62,13 @@ class Client(EventBase):
         return self._client is not None and not self._client.closed
 
     def new_message_id(self) -> int:
-        """Creates a new message ID."""
-        # XXX: JSON doesn't define limits for integers but JavaScript itself internally
-        # uses double precision floats for numbers (including in `JSON.parse`), setting
-        # a hard limit of `Number.MAX_SAFE_INTEGER == 2^53 - 1`.  We can be more
-        # conservative and just restrict it to the maximum value of a 32-bit signed int.
+        """Create a new message ID.
+
+        XXX: JSON doesn't define limits for integers but JavaScript itself internally
+        uses double precision floats for numbers (including in `JSON.parse`), setting
+        a hard limit of `Number.MAX_SAFE_INTEGER == 2^53 - 1`.  We can be more
+        conservative and just restrict it to the maximum value of a 32-bit signed int.
+        """
         self._message_id = (self._message_id + 1) % 0x80000000
         return self._message_id
 
@@ -114,6 +116,7 @@ class Client(EventBase):
             raise err
 
     async def listen_loop(self) -> None:
+        """Listen to the websocket."""
         assert self._client is not None
         while not self._client.closed:
             data = await self._receive_json_or_raise()

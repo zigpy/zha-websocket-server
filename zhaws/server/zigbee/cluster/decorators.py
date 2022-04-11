@@ -47,6 +47,7 @@ def retryable_request(
     raise_: bool = False,
 ) -> Callable:
     """Make a method with ZCL requests retryable.
+
     This adds delays keyword argument to function.
     len(delays) is number of tries.
     raise_ if the final attempt should raise the exception.

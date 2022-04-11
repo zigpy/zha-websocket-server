@@ -62,6 +62,8 @@ TEMP_CELSIUS: Final[str] = "°C"
 
 
 class HVACMode(StrEnum):
+    """HVAC mode."""
+
     OFF = "off"
     # Heating
     HEAT = "heat"
@@ -79,6 +81,8 @@ class HVACMode(StrEnum):
 
 
 class Preset(StrEnum):
+    """Preset mode."""
+
     # No preset is active
     NONE = "none"
     # Device is running an energy-saving mode
@@ -101,6 +105,8 @@ class Preset(StrEnum):
 
 
 class FanState(StrEnum):
+    """Fan state."""
+
     # Possible fan state
     ON = "on"
     OFF = "off"
@@ -115,6 +121,8 @@ class FanState(StrEnum):
 
 
 class CurrentHVAC(StrEnum):
+    """Current HVAC state."""
+
     OFF = "off"
     HEAT = "heating"
     COOL = "cooling"
@@ -169,6 +177,7 @@ _LOGGER = logging.getLogger(__name__)
     stop_on_match_group=CLUSTER_HANDLER_THERMOSTAT,
 )
 class Thermostat(PlatformEntity):
+    """ZHAWS Thermostat."""
 
     PLATFORM = Platform.CLIMATE
     DEFAULT_MAX_TEMP = 35
@@ -488,14 +497,10 @@ class Thermostat(PlatformEntity):
             self.debug("preset mode '%s' is not supported", preset_mode)
             return
 
-        if (
-            self.preset_mode
-            not in (
-                preset_mode,
-                Preset.NONE,
-            )
-            and not await self.async_preset_handler(self.preset_mode, enable=False)
-        ):
+        if self.preset_mode not in (
+            preset_mode,
+            Preset.NONE,
+        ) and not await self.async_preset_handler(self.preset_mode, enable=False):
             self.debug("Couldn't turn off '%s' preset", self.preset_mode)
             return
 

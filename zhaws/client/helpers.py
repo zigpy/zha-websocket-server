@@ -252,7 +252,7 @@ class ButtonHelper:
 
 
 class CoverHelper:
-    """helper to issue cover commands"""
+    """helper to issue cover commands."""
 
     def __init__(self, client: Client):
         """Initialize the cover helper."""

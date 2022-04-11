@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
@@ -32,7 +32,7 @@ MULTI_MATCH = functools.partial(
 class BinarySensor(PlatformEntity):
     """BinarySensor platform entity."""
 
-    SENSOR_ATTR: Union[str, None] = None
+    SENSOR_ATTR: str | None = None
     PLATFORM: Platform = Platform.BINARY_SENSOR
 
     def __init__(
@@ -64,7 +64,7 @@ class BinarySensor(PlatformEntity):
     def handle_cluster_handler_attribute_updated(
         self, event: ClusterAttributeUpdatedEvent
     ) -> None:
-        """handle attribute updates from the cluster handler."""
+        """Handle attribute updates from the cluster handler."""
         if self.SENSOR_ATTR is None or self.SENSOR_ATTR != event.name:
             return
         self._state = bool(event.value)

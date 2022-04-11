@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Type, TypeVar
+from typing import TypeVar
 
 from zhaws.server.zigbee.cluster import ClusterHandler
 
@@ -13,11 +13,11 @@ class DictRegistry(dict):
     """Dict Registry of items."""
 
     def register(
-        self, name: int | str, item: str | Type[ClusterHandler] | None = None
-    ) -> Callable[[Type[ClusterHandler]], Type[ClusterHandler]]:
+        self, name: int | str, item: str | type[ClusterHandler] | None = None
+    ) -> Callable[[type[ClusterHandler]], type[ClusterHandler]]:
         """Return decorator to register item with a specific name."""
 
-        def decorator(cluster_handler: Type[ClusterHandler]) -> Type[ClusterHandler]:
+        def decorator(cluster_handler: type[ClusterHandler]) -> type[ClusterHandler]:
             """Register decorated cluster handler or item."""
             if item is None:
                 self[name] = cluster_handler

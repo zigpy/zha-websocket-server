@@ -1,7 +1,7 @@
 """WS API for the fan platform entity."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Literal, Optional
+from typing import TYPE_CHECKING, Annotated, Literal, Union
 
 from pydantic import Field
 
@@ -19,9 +19,9 @@ class FanTurnOnCommand(PlatformEntityCommand):
     """Fan turn on command."""
 
     command: Literal[APICommands.FAN_TURN_ON] = APICommands.FAN_TURN_ON
-    speed: Optional[str]
-    percentage: Optional[Annotated[int, Field(ge=0, le=100)]]
-    preset_mode: Optional[str]
+    speed: Union[str, None]
+    percentage: Union[Annotated[int, Field(ge=0, le=100)], None]
+    preset_mode: Union[str, None]
 
 
 @decorators.websocket_command(FanTurnOnCommand)

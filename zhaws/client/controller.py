@@ -60,6 +60,7 @@ class Controller(EventBase):
     def __init__(
         self, ws_server_url: str, aiohttp_session: ClientSession | None = None
     ):
+        """Initialize the controller."""
         super().__init__()
         self._ws_server_url: str = ws_server_url
         self._client: Client = Client(ws_server_url, aiohttp_session)

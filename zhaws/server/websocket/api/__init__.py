@@ -1,7 +1,7 @@
 """Websocket api for zhawss."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union, cast
+from typing import TYPE_CHECKING, cast
 
 from zhaws.server.const import WEBSOCKET_API
 from zhaws.server.websocket.api.model import WebSocketCommand
@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 
 def register_api_command(
     server: Server,
-    command_or_handler: Union[str, WebSocketCommandHandler],
-    handler: Union[WebSocketCommandHandler, None] = None,
+    command_or_handler: str | WebSocketCommandHandler,
+    handler: WebSocketCommandHandler | None = None,
     model: type[WebSocketCommand] | None = None,
 ) -> None:
     """Register a websocket command."""
