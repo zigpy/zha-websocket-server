@@ -196,6 +196,7 @@ class BaseLight(BaseEntity):
 
     def handle_cluster_handler_set_level(self, event: LevelChangeEvent) -> None:
         """Set the brightness of this light between 0..254.
+
         brightness level 255 is a special value instructing the device to come
         on at `on_level` Zigbee attribute value, regardless of the last set
         level
@@ -578,7 +579,7 @@ class LightGroup(GroupEntity, BaseLight):
         ) = group.zigpy_group.endpoint[Identify.cluster_id]
 
     def update(self, _: Any = None) -> None:
-        # Query all members and determine the light group state.
+        """Query all members and determine the light group state."""
         self.debug("Updating light group entity state")
         platform_entities = self._group.get_platform_entities(self.PLATFORM)
         all_entities = [entity.to_json() for entity in platform_entities]

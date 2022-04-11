@@ -3,16 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    Literal,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeVar, cast
 
 from pydantic import Field
 from zigpy.types.named import EUI64
@@ -154,7 +145,7 @@ class PermitJoiningCommand(WebSocketCommand):
 
     command: Literal[APICommands.PERMIT_JOINING] = APICommands.PERMIT_JOINING
     duration: Annotated[int, Field(ge=1, le=254)] = 60
-    ieee: Optional[EUI64]
+    ieee: EUI64 | None
 
 
 @decorators.websocket_command(PermitJoiningCommand)
@@ -201,7 +192,7 @@ class ReadClusterAttributesCommand(WebSocketCommand):
     cluster_id: int
     cluster_type: Literal["in", "out"]
     attributes: list[str]
-    manufacturer_code: Optional[int]
+    manufacturer_code: int | None
 
 
 @decorators.websocket_command(ReadClusterAttributesCommand)
@@ -268,8 +259,8 @@ class WriteClusterAttributeCommand(WebSocketCommand):
     cluster_id: int
     cluster_type: Literal["in", "out"]
     attribute: str
-    value: Union[str, int, float, bool]
-    manufacturer_code: Optional[int]
+    value: str | int | float | bool
+    manufacturer_code: int | None
 
 
 @decorators.websocket_command(WriteClusterAttributeCommand)
@@ -339,7 +330,7 @@ class CreateGroupCommand(WebSocketCommand):
     command: Literal[APICommands.CREATE_GROUP] = APICommands.CREATE_GROUP
     group_name: str
     members: list[GroupMemberReference]
-    group_id: Optional[int]
+    group_id: int | None
 
 
 @decorators.websocket_command(CreateGroupCommand)
@@ -347,7 +338,7 @@ class CreateGroupCommand(WebSocketCommand):
 async def create_group(
     server: Server, client: Client, command: CreateGroupCommand
 ) -> None:
-    """create a new group."""
+    """Create a new group."""
     controller: Controller = server.controller
     group_name = command.group_name
     members = command.members

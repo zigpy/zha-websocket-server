@@ -5,7 +5,7 @@ import abc
 import asyncio
 from contextlib import suppress
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from zigpy.types.named import EUI64
 
@@ -113,6 +113,7 @@ class PlatformEntity(BaseEntity):
         cls: type[PlatformEntity], id_suffix: str | None = None, **kwargs: Any
     ):
         """Initialize subclass.
+
         :param id_suffix: suffix to add to the unique_id of the entity. Used for multi
                           entities using the same cluster handler/cluster id for the entity.
         """
@@ -155,6 +156,7 @@ class PlatformEntity(BaseEntity):
         **kwargs: Any,
     ) -> PlatformEntity | None:
         """Entity Factory.
+
         Return a platform entity if it is a supported configuration, otherwise return None
         """
         return cls(unique_id, cluster_handlers, endpoint, device, **kwargs)
@@ -294,6 +296,6 @@ class GroupEntity(BaseEntity):
 class PlatformEntityCommand(WebSocketCommand):
     """Base class for platform entity commands."""
 
-    ieee: Optional[EUI64]
-    group_id: Optional[int]
+    ieee: EUI64 | None
+    group_id: int | None
     unique_id: str

@@ -1,7 +1,7 @@
 """WS api for the alarm control panel platform entity."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import TYPE_CHECKING, Literal
 
 from zhaws.server.const import APICommands
 from zhaws.server.platforms import PlatformEntityCommand
@@ -19,7 +19,7 @@ class DisarmCommand(PlatformEntityCommand):
     command: Literal[
         APICommands.ALARM_CONTROL_PANEL_DISARM
     ] = APICommands.ALARM_CONTROL_PANEL_DISARM
-    code: Optional[str]
+    code: str | None
 
 
 @decorators.websocket_command(DisarmCommand)
@@ -35,7 +35,7 @@ class ArmHomeCommand(PlatformEntityCommand):
     command: Literal[
         APICommands.ALARM_CONTROL_PANEL_ARM_HOME
     ] = APICommands.ALARM_CONTROL_PANEL_ARM_HOME
-    code: Optional[str]
+    code: str | None
 
 
 @decorators.websocket_command(ArmHomeCommand)
@@ -53,7 +53,7 @@ class ArmAwayCommand(PlatformEntityCommand):
     command: Literal[
         APICommands.ALARM_CONTROL_PANEL_ARM_AWAY
     ] = APICommands.ALARM_CONTROL_PANEL_ARM_AWAY
-    code: Optional[str]
+    code: str | None
 
 
 @decorators.websocket_command(ArmAwayCommand)
@@ -71,7 +71,7 @@ class ArmNightCommand(PlatformEntityCommand):
     command: Literal[
         APICommands.ALARM_CONTROL_PANEL_ARM_NIGHT
     ] = APICommands.ALARM_CONTROL_PANEL_ARM_NIGHT
-    code: Optional[str]
+    code: str | None
 
 
 @decorators.websocket_command(ArmNightCommand)
@@ -89,7 +89,7 @@ class TriggerAlarmCommand(PlatformEntityCommand):
     command: Literal[
         APICommands.ALARM_CONTROL_PANEL_TRIGGER
     ] = APICommands.ALARM_CONTROL_PANEL_TRIGGER
-    code: Optional[str]
+    code: str | None
 
 
 @decorators.websocket_command(TriggerAlarmCommand)

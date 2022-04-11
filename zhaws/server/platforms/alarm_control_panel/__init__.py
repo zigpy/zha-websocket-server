@@ -34,6 +34,8 @@ SUPPORT_ALARM_ARM_VACATION: Final[int] = 32
 
 
 class AlarmState(StrEnum):
+    """Alarm state."""
+
     DISARMED = "disarmed"
     ARMED_HOME = "armed_home"
     ARMED_AWAY = "armed_away"

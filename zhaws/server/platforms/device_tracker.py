@@ -96,7 +96,8 @@ class DeviceTracker(PlatformEntity):
     @property
     def battery_level(self) -> float | None:
         """Return the battery level of the device.
-        Percentage from 0-100.
+
+        The percentage can be from from 0-100.
         """
         return self._battery_level
 

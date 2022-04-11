@@ -9,6 +9,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def periodic(refresh_interval: Tuple) -> Callable:
+    """Make a method with periodic refresh."""
+
     def scheduler(func: Callable) -> Callable[[Any, Any], Coroutine[Any, Any, None]]:
         async def wrapper(*args: Any, **kwargs: Any) -> None:
             sleep_time = random.randint(*refresh_interval)

@@ -461,6 +461,8 @@ class NodeDescriptor(BaseModel):
 
 
 class DeviceSignature(BaseModel):
+    """Device signature model."""
+
     node_descriptor: Optional[NodeDescriptor]
     manufacturer: Optional[str]
     model: Optional[str]
@@ -599,6 +601,7 @@ class Group(BaseModel):
     def convert_member_ieee(
         cls, members: dict[str, dict], values: dict[str, Any], **kwargs: Any
     ) -> dict[EUI64, Device]:
+        """Convert member IEEE to EUI64."""
         return {EUI64.convert(k): GroupMember(**v) for k, v in members.items()}
 
 

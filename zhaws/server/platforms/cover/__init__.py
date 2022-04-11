@@ -97,6 +97,7 @@ class Cover(PlatformEntity):
     @property
     def current_cover_position(self) -> int | None:
         """Return the current position of ZHA cover.
+
         None is unknown, 0 is closed, 100 is fully open.
         """
         return self._current_position
@@ -244,6 +245,7 @@ class Shade(PlatformEntity):
     @property
     def current_cover_position(self) -> int | None:
         """Return current position of cover.
+
         None is unknown, 0 is closed, 100 is fully open.
         """
         return self._position

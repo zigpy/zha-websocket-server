@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import abc
 import functools
-from typing import TYPE_CHECKING, Any, Final, Type, Union
+from typing import TYPE_CHECKING, Any, Final
 
 from zhaws.server.platforms import PlatformEntity
 from zhaws.server.platforms.registries import PLATFORM_ENTITIES, Platform
@@ -63,14 +63,15 @@ class IdentifyButton(Button):
 
     @classmethod
     def create_platform_entity(
-        cls: Type[IdentifyButton],
+        cls: type[IdentifyButton],
         unique_id: str,
         cluster_handlers: list[ClusterHandler],
         endpoint: Endpoint,
         device: Device,
         **kwargs: Any,
-    ) -> Union[PlatformEntity, None]:
+    ) -> PlatformEntity | None:
         """Entity Factory.
+
         Return a platform entity if it is a supported configuration, otherwise return None
         """
         if PLATFORM_ENTITIES.prevent_entity_creation(

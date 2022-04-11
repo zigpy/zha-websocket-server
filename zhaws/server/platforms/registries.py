@@ -4,7 +4,7 @@ from __future__ import annotations
 import collections
 from collections.abc import Callable
 import dataclasses
-from typing import TYPE_CHECKING, Iterable, Type
+from typing import TYPE_CHECKING, Iterable
 
 import attr
 from zigpy import zcl
@@ -255,7 +255,7 @@ class MatchRule:
 class EntityClassAndClusterHandlers:
     """Container for entity class and corresponding cluster handlers."""
 
-    entity_class: Type[PlatformEntity]
+    entity_class: type[PlatformEntity]
     claimed_cluster_handlers: list[ClusterHandler]
 
 
@@ -265,14 +265,14 @@ class ZHAEntityRegistry:
     def __init__(self) -> None:
         """Initialize Registry instance."""
         self._strict_registry: dict[
-            str, dict[MatchRule, Type[PlatformEntity]]
+            str, dict[MatchRule, type[PlatformEntity]]
         ] = collections.defaultdict(dict)
         self._multi_entity_registry: dict[
-            str, dict[int | str | None, dict[MatchRule, list[Type[PlatformEntity]]]]
+            str, dict[int | str | None, dict[MatchRule, list[type[PlatformEntity]]]]
         ] = collections.defaultdict(
             lambda: collections.defaultdict(lambda: collections.defaultdict(list))
         )
-        self._group_registry: dict[str, Type[GroupEntity]] = {}
+        self._group_registry: dict[str, type[GroupEntity]] = {}
         self.single_device_matches: dict[
             Platform, dict[EUI64, list[str]]
         ] = collections.defaultdict(lambda: collections.defaultdict(list))
@@ -283,8 +283,8 @@ class ZHAEntityRegistry:
         manufacturer: str,
         model: str,
         cluster_handlers: list[ClusterHandler],
-        default: Type[PlatformEntity] | None = None,
-    ) -> tuple[Type[PlatformEntity] | None, list[ClusterHandler]]:
+        default: type[PlatformEntity] | None = None,
+    ) -> tuple[type[PlatformEntity] | None, list[ClusterHandler]]:
         """Match cluster handlers to a ZHA Entity class."""
         matches = self._strict_registry[platform]
         for match in sorted(matches, key=lambda x: x.weight, reverse=True):
@@ -322,7 +322,7 @@ class ZHAEntityRegistry:
 
         return result, list(all_claimed)
 
-    def get_group_entity(self, platform: str) -> Type[GroupEntity] | None:
+    def get_group_entity(self, platform: str) -> type[GroupEntity] | None:
         """Match a ZHA group to a ZHA Entity class."""
         return self._group_registry.get(platform)
 
@@ -334,7 +334,7 @@ class ZHAEntityRegistry:
         manufacturers: Callable | set[str] | str | None = None,
         models: Callable | set[str] | str | None = None,
         aux_cluster_handlers: Callable | set[str] | str | None = None,
-    ) -> Callable[[Type[PlatformEntity]], Type[PlatformEntity]]:
+    ) -> Callable[[type[PlatformEntity]], type[PlatformEntity]]:
         """Decorate a strict match rule."""
 
         rule = MatchRule(
@@ -345,7 +345,7 @@ class ZHAEntityRegistry:
             aux_cluster_handlers,
         )
 
-        def decorator(zha_ent: Type[PlatformEntity]) -> Type[PlatformEntity]:
+        def decorator(zha_ent: type[PlatformEntity]) -> type[PlatformEntity]:
             """Register a strict match rule.
 
             All non empty fields of a match rule must match.
@@ -364,7 +364,7 @@ class ZHAEntityRegistry:
         models: Callable | set[str] | str | None = None,
         aux_cluster_handlers: Callable | set[str] | str | None = None,
         stop_on_match_group: int | str | None = None,
-    ) -> Callable[[Type[PlatformEntity]], Type[PlatformEntity]]:
+    ) -> Callable[[type[PlatformEntity]], type[PlatformEntity]]:
         """Decorate a loose match rule."""
 
         rule = MatchRule(
@@ -375,7 +375,7 @@ class ZHAEntityRegistry:
             aux_cluster_handlers,
         )
 
-        def decorator(zha_entity: Type[PlatformEntity]) -> Type[PlatformEntity]:
+        def decorator(zha_entity: type[PlatformEntity]) -> type[PlatformEntity]:
             """Register a loose match rule.
 
             All non empty fields of a match rule must match.
@@ -390,10 +390,10 @@ class ZHAEntityRegistry:
 
     def group_match(
         self, platform: str
-    ) -> Callable[[Type[GroupEntity]], Type[GroupEntity]]:
+    ) -> Callable[[type[GroupEntity]], type[GroupEntity]]:
         """Decorate a group match rule."""
 
-        def decorator(zha_ent: Type[GroupEntity]) -> Type[GroupEntity]:
+        def decorator(zha_ent: type[GroupEntity]) -> type[GroupEntity]:
             """Register a group match rule."""
             self._group_registry[platform] = zha_ent
             return zha_ent

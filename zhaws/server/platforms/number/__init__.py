@@ -92,6 +92,7 @@ class Number(PlatformEntity):
             self.maybe_send_state_changed_event()
 
     def to_json(self) -> dict:
+        """Return the JSON representation of the number entity."""
         json = super().to_json()
         json["engineer_units"] = self._analog_output_cluster_handler.engineering_units
         json["application_type"] = self._analog_output_cluster_handler.application_type

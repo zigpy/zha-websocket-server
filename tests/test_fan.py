@@ -478,7 +478,7 @@ async def test_fan_update_entity(
     zigpy_device: ZigpyDevice,
     connected_client_and_server: tuple[Controller, Server],
 ):
-    # Test zha fan refresh state.
+    """Test zha fan refresh state."""
     controller, server = connected_client_and_server
     cluster = zigpy_device.endpoints.get(1).fan
     cluster.PLUGGED_ATTR_READS = {"fan_mode": 0}

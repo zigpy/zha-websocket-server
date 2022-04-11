@@ -138,6 +138,7 @@ class GetDevicesResponse(CommandResponse):
     def convert_device_ieee(
         cls, devices: dict[str, dict], values: dict[str, Any], **kwargs: Any
     ) -> dict[EUI64, Device]:
+        """Convert device ieee to EUI64."""
         return {EUI64.convert(k): Device(**v) for k, v in devices.items()}
 
 

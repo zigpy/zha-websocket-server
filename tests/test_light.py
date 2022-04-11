@@ -637,7 +637,7 @@ async def test_zha_group_light_entity(
     coordinator: Device,
     connected_client_and_server: tuple[Controller, Server],
 ) -> None:
-    # Test the light entity for a ZHA group.
+    """Test the light entity for a ZHA group."""
     controller, server = connected_client_and_server
     member_ieee_addresses = [device_light_1.ieee, device_light_2.ieee]
     members = [

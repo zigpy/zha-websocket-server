@@ -114,6 +114,7 @@ def ranged_value_to_percentage(
     low_high_range: tuple[float, float], value: float
 ) -> int:
     """Given a range of low and high values convert a single value to a percentage.
+
     When using this utility for fan speeds, do not include 0 if it is off
     Given a low value of 1 and a high value of 255 this function
     will return:
@@ -129,6 +130,7 @@ def percentage_to_ranged_value(
     low_high_range: tuple[float, float], percentage: int
 ) -> float:
     """Given a range of low and high values convert a percentage to a single value.
+
     When using this utility for fan speeds, do not include 0 if it is off
     Given a low value of 1 and a high value of 255 this function
     will return:

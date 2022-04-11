@@ -55,7 +55,7 @@ class Server:
 
     @property
     def is_serving(self) -> bool:
-        """Returns whether or not the websocket server is serving."""
+        """Return whether or not the websocket server is serving."""
         return self._ws_server is not None and self._ws_server.is_serving
 
     @property
@@ -87,7 +87,7 @@ class Server:
             await self._controller.start_network()
 
     async def wait_closed(self) -> None:
-        """Waits until the server is not running."""
+        """Wait until the server is not running."""
         await self._stopped_event.wait()
         _LOGGER.info("Server stopped. Completing remaining tasks...")
         tasks = [t for t in self._tracked_tasks if not (t.done() or t.cancelled())]
@@ -126,12 +126,14 @@ class Server:
         self._stopped_event.set()
 
     async def __aenter__(self) -> Server:
+        """Enter the context manager."""
         await self.start_server()
         return self
 
     async def __aexit__(
         self, exc_type: Exception, exc_value: str, traceback: TracebackType
     ) -> None:
+        """Exit the context manager."""
         await self.stop_server()
         await self.wait_closed()
 

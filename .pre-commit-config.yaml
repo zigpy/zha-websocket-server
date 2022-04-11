@@ -34,8 +34,10 @@ repos:
     rev: v2.1.0
     hooks:
       - id: codespell
+        args:
+          - --ignore-words-list=ser,nd,hass
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.942
+    rev: v0.902
     hooks:
       - id: mypy

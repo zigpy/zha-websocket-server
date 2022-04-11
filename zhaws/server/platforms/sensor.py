@@ -85,6 +85,7 @@ class Sensor(PlatformEntity):
         **kwargs: Any,
     ) -> PlatformEntity | None:
         """Entity Factory.
+
         Return a platform entity if it is a supported configuration, otherwise return None
         """
         cluster_handler = cluster_handlers[0]
@@ -135,7 +136,7 @@ class Sensor(PlatformEntity):
     def handle_cluster_handler_attribute_updated(
         self, event: ClusterAttributeUpdatedEvent
     ) -> None:
-        """handle attribute updates from the cluster handler."""
+        """Handle attribute updates from the cluster handler."""
         self.maybe_send_state_changed_event()
 
     @periodic(_REFRESH_INTERVAL)
@@ -187,6 +188,7 @@ class Battery(Sensor):
         **kwargs: Any,
     ) -> PlatformEntity | None:
         """Entity Factory.
+
         Unlike any other entity, PowerConfiguration cluster may not support
         battery_percent_remaining attribute, but zha-device-handlers takes care of it
         so create the entity regardless
@@ -477,6 +479,7 @@ class ThermostatHVACAction(Sensor, id_suffix="hvac_action"):
         **kwargs: Any,
     ) -> PlatformEntity | None:
         """Entity Factory.
+
         Return entity if it is a supported configuration, otherwise return None
         """
 
@@ -594,6 +597,7 @@ class RSSISensor(Sensor, id_suffix="rssi"):
         **kwargs: Any,
     ) -> PlatformEntity | None:
         """Entity Factory.
+
         Return entity if it is a supported configuration, otherwise return None
         """
         key = f"{CLUSTER_HANDLER_BASIC}_{cls.unique_id_suffix}"

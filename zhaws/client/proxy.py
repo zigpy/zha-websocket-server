@@ -71,6 +71,7 @@ class GroupProxy(BaseProxyObject):
         self._proxied_object = group_model
 
     def __repr__(self) -> str:
+        """Return the string representation of the group proxy."""
         return self._proxied_object.__repr__()
 
 
@@ -104,4 +105,5 @@ class DeviceProxy(BaseProxyObject):
         }
 
     def __repr__(self) -> str:
+        """Return the string representation of the device proxy."""
         return self._proxied_object.__repr__()

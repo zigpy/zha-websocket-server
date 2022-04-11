@@ -17,6 +17,7 @@ async def safe_read(
     manufacturer: int | None = None,
 ) -> dict:
     """Swallow all exceptions from network read.
+
     If we throw during initialization, setup fails. Rather have an entity that
     exists, but is in a maybe wrong state, than no entity. This method should
     probably only be used during initialization.

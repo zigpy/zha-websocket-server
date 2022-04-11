@@ -15,6 +15,8 @@ class BaseModel(PydanticBaseModel):
     """Base model for zhawss models."""
 
     class Config:
+        """Config for BaseModel."""
+
         arbitrary_types_allowed = True
         extra = "allow"
 
@@ -22,6 +24,7 @@ class BaseModel(PydanticBaseModel):
     def convert_ieee(
         cls, ieee: Optional[Union[str, EUI64]], values: dict[str, Any], **kwargs: Any
     ) -> Optional[EUI64]:
+        """Convert ieee to EUI64."""
         if ieee is None:
             return None
         if isinstance(ieee, str):
@@ -37,6 +40,7 @@ class BaseModel(PydanticBaseModel):
         values: dict[str, Any],
         **kwargs: Any
     ) -> Optional[EUI64]:
+        """Convert device ieee to EUI64."""
         if device_ieee is None:
             return None
         if isinstance(device_ieee, str):
@@ -56,7 +60,7 @@ class BaseModel(PydanticBaseModel):
         exclude_defaults: bool,
         exclude_none: bool,
     ) -> Any:
-        """custom get value."""
+        """Convert EUI64 to string."""
         if isinstance(v, EUI64):
             return str(v)
         return PydanticBaseModel._get_value(

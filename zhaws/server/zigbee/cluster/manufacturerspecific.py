@@ -75,4 +75,3 @@ class SmartThingsAcceleration(ClusterHandler):
             },
         )
         """
-        pass

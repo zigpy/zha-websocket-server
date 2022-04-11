@@ -257,7 +257,7 @@ class ProbeEndpoint:
 
 
 class GroupProbe:
-    """Determine the appropriate platform for a group"""
+    """Determine the appropriate platform for a group."""
 
     def __init__(self) -> None:
         """Initialize instance."""
