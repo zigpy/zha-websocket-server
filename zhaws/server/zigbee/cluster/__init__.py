@@ -10,13 +10,19 @@ from typing import TYPE_CHECKING, Any, Callable, Final, Literal
 from zigpy.device import Device as ZigpyDevice
 import zigpy.exceptions
 from zigpy.zcl import Cluster as ZigpyCluster
-from zigpy.zcl.foundation import Status
+from zigpy.zcl.foundation import (
+    CommandSchema,
+    ConfigureReportingResponseRecord,
+    Status,
+    ZCLAttributeDef,
+)
 
 from zhaws.event import EventBase
 from zhaws.model import BaseEvent
 from zhaws.server.const import EVENT, EVENT_TYPE, DeviceEvents, EventTypes
 from zhaws.server.util import LogMixin
 from zhaws.server.zigbee.cluster.const import (
+    ATTR_PARAMS,
     CLUSTER_HANDLER_ZDO,
     CLUSTER_READS_PER_REQ,
     REPORT_CONFIG_ATTR_PER_REQ,
@@ -79,7 +85,11 @@ class ClusterHandler(LogMixin, EventBase):
         if not hasattr(self, "_value_attribute") and self.REPORT_CONFIG:
             attr = self.REPORT_CONFIG[0].get("attr")
             if isinstance(attr, str):
-                self.value_attribute = self.cluster.attridx.get(attr)
+                attribute: ZCLAttributeDef = self.cluster.attributes_by_name.get(attr)
+                if attribute is not None:
+                    self.value_attribute = attribute.id
+                else:
+                    self.value_attribute = None
             else:
                 self.value_attribute = attr
         self._status: ClusterHandlerStatus = ClusterHandlerStatus.CREATED
@@ -245,7 +255,7 @@ class ClusterHandler(LogMixin, EventBase):
         self, attrs: dict[int | str, tuple], res: list | tuple
     ) -> None:
         """Parse configure reporting result."""
-        if not isinstance(res, list):
+        if isinstance(res, (Exception, ConfigureReportingResponseRecord)):
             # assume default response
             self.debug(
                 "attr reporting for '%s' on '%s': %s",
@@ -337,7 +347,7 @@ class ClusterHandler(LogMixin, EventBase):
                 EVENT_TYPE: EventTypes.RAW_ZCL_EVENT,
                 "attribute": {
                     "id": attrid,
-                    "name": self.cluster.attributes.get(attrid, [attrid])[0],
+                    "name": self._get_attribute_name(attrid),
                     "value": value,
                 },
             }
@@ -355,14 +365,25 @@ class ClusterHandler(LogMixin, EventBase):
     def zdo_command(self, *args: Any, **kwargs: Any) -> None:
         """Handle ZDO commands on this cluster."""
 
-    def zha_send_event(self, command: str, args: list | dict) -> None:
+    def zha_send_event(self, command: str, arg: list | dict | CommandSchema) -> None:
         """Relay events to hass."""
+        if isinstance(arg, CommandSchema):
+            args = [a for a in arg if a is not None]
+            params = arg.as_dict()
+        elif isinstance(arg, (list, dict)):
+            # Quirks can directly send lists and dicts to ZHA this way
+            args = arg
+            params = {}
+        else:
+            raise TypeError(f"Unexpected zha_send_event {command!r} argument: {arg!r}")
+
         self.send_event(
             {
                 EVENT: DeviceEvents.ZHA_EVENT,
                 EVENT_TYPE: EventTypes.DEVICE_EVENT,
                 "command": command,
                 "args": args,
+                ATTR_PARAMS: params,
             }
         )
 
@@ -385,6 +406,13 @@ class ClusterHandler(LogMixin, EventBase):
             manufacturer=manufacturer,
         )
         return result.get(attribute)
+
+    def _get_attribute_name(self, attrid: int) -> str | int:
+        """Get the name of an attribute."""
+        if attrid not in self.cluster.attributes:
+            return attrid
+
+        return self.cluster.attributes[attrid].name
 
     async def _get_attributes(
         self,
@@ -516,11 +544,16 @@ class ClientClusterHandler(ClusterHandler):
     def attribute_updated(self, attrid: int, value: Any) -> None:
         """Handle an attribute updated on this cluster."""
 
+        try:
+            attr_name = self._cluster.attributes[attrid].name
+        except KeyError:
+            attr_name = "Unknown"
+
         self.zha_send_event(
             SIGNAL_ATTR_UPDATED,
             {
                 "attribute_id": attrid,
-                "attribute_name": self._cluster.attributes.get(attrid, ["Unknown"])[0],
+                "attribute_name": attr_name,
                 "value": value,
             },
         )
@@ -531,4 +564,4 @@ class ClientClusterHandler(ClusterHandler):
             self._cluster.server_commands is not None
             and self._cluster.server_commands.get(command_id) is not None
         ):
-            self.zha_send_event(self._cluster.server_commands.get(command_id)[0], args)
+            self.zha_send_event(self._cluster.server_commands[command_id].name, args)

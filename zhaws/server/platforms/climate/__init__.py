@@ -210,9 +210,9 @@ class Thermostat(PlatformEntity):
     @property
     def current_temperature(self) -> float | None:
         """Return the current temperature."""
-        if self._thermostat_cluster_handler.local_temp is None:
+        if self._thermostat_cluster_handler.local_temperature is None:
             return None
-        return self._thermostat_cluster_handler.local_temp / ZCL_TEMP
+        return self._thermostat_cluster_handler.local_temperature / ZCL_TEMP
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -340,7 +340,7 @@ class Thermostat(PlatformEntity):
     def hvac_modes(self) -> tuple[str, ...]:
         """Return the list of available HVAC operation modes."""
         return SEQ_OF_OPERATION.get(
-            self._thermostat_cluster_handler.ctrl_seqe_of_oper, (HVACMode.OFF,)
+            self._thermostat_cluster_handler.ctrl_sequence_of_oper, (HVACMode.OFF,)
         )
 
     @property

@@ -119,8 +119,8 @@ ZCL_ATTR_PLUG = {
     "abs_max_heat_setpoint_limit": 3000,
     "abs_min_cool_setpoint_limit": 2000,
     "abs_max_cool_setpoint_limit": 4000,
-    "ctrl_seqe_of_oper": Thermostat.ControlSequenceOfOperation.Cooling_and_Heating,
-    "local_temp": None,
+    "ctrl_sequence_of_oper": Thermostat.ControlSequenceOfOperation.Cooling_and_Heating,
+    "local_temperature": None,
     "max_cool_setpoint_limit": 3900,
     "max_heat_setpoint_limit": 2900,
     "min_cool_setpoint_limit": 2100,
@@ -233,7 +233,7 @@ def test_sequence_mappings():
             assert Thermostat.SystemMode(HVAC_MODE_2_SYSTEM[hvac_mode]) is not None
 
 
-async def test_climate_local_temp(
+async def test_climate_local_temperature(
     device_climate: Device,
     connected_client_and_server: tuple[Controller, Server],
 ) -> None:
@@ -510,7 +510,7 @@ async def test_hvac_modes(
 
     controller, server = connected_client_and_server
     device_climate = await device_climate_mock(
-        CLIMATE, {"ctrl_seqe_of_oper": seq_of_op}
+        CLIMATE, {"ctrl_sequence_of_oper": seq_of_op}
     )
     entity_id = find_entity_id(Platform.CLIMATE, device_climate)
     assert entity_id is not None
@@ -1103,7 +1103,7 @@ async def test_occupancy_reset(
     assert entity.state.preset_mode == "away"
 
     await send_attributes_report(
-        server, thrm_cluster, {"occupied_heating_setpoint": 1950}
+        server, thrm_cluster, {"occupied_heating_setpoint": zigpy.types.uint16_t(1950)}
     )
     assert entity.state.preset_mode == "none"
 

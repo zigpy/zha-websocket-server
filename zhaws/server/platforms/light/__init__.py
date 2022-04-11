@@ -268,7 +268,7 @@ class BaseLight(BaseEntity):
                 level, duration
             )
             t_log["move_to_level_with_on_off"] = result
-            if not isinstance(result, list) or result[1] is not Status.SUCCESS:
+            if isinstance(result, Exception) or result[1] is not Status.SUCCESS:
                 self.debug("turned on: %s", t_log)
                 return
             self._state = bool(level)
@@ -280,7 +280,7 @@ class BaseLight(BaseEntity):
             # we should call the on command on the on_off cluster if brightness is not 0.
             result = await self._on_off_cluster_handler.on()
             t_log["on_off"] = result
-            if not isinstance(result, list) or result[1] is not Status.SUCCESS:
+            if isinstance(result, Exception) or result[1] is not Status.SUCCESS:
                 self.debug("turned on: %s", t_log)
                 return
             self._state = True
@@ -291,7 +291,7 @@ class BaseLight(BaseEntity):
                 temperature, duration
             )
             t_log["move_to_color_temp"] = result
-            if not isinstance(result, list) or result[1] is not Status.SUCCESS:
+            if isinstance(result, Exception) or result[1] is not Status.SUCCESS:
                 self.debug("turned on: %s", t_log)
                 return
             self._color_temp = temperature
@@ -305,7 +305,7 @@ class BaseLight(BaseEntity):
                 int(xy_color[0] * 65535), int(xy_color[1] * 65535), duration
             )
             t_log["move_to_color"] = result
-            if not isinstance(result, list) or result[1] is not Status.SUCCESS:
+            if isinstance(result, Exception) or result[1] is not Status.SUCCESS:
                 self.debug("turned on: %s", t_log)
                 return
             self._hs_color = hs_color
@@ -366,7 +366,7 @@ class BaseLight(BaseEntity):
         else:
             result = await self._on_off_cluster_handler.off()
         self.debug("turned off: %s", result)
-        if not isinstance(result, list) or result[1] is not Status.SUCCESS:
+        if isinstance(result, Exception) or result[1] is not Status.SUCCESS:
             return
         self._state = False
 

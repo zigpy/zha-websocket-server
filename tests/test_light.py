@@ -11,7 +11,6 @@ import pytest
 from slugify import slugify
 from zigpy.device import Device as ZigpyDevice
 import zigpy.profiles.zha as zha
-import zigpy.types
 import zigpy.zcl.clusters.general as general
 import zigpy.zcl.clusters.lighting as lighting
 import zigpy.zcl.foundation as zcl_f
@@ -380,7 +379,7 @@ async def test_light(
         assert cluster_color.request.call_args == call(
             False,
             10,
-            (zigpy.types.basic.uint16_t, zigpy.types.basic.uint16_t),
+            cluster_color.commands_by_name["move_to_color_temp"].schema,
             200,
             100.0,
             expect_reply=True,
@@ -401,11 +400,7 @@ async def test_light(
         assert cluster_color.request.call_args == call(
             False,
             7,
-            (
-                zigpy.types.basic.uint16_t,
-                zigpy.types.basic.uint16_t,
-                zigpy.types.basic.uint16_t,
-            ),
+            cluster_color.commands_by_name["move_to_color"].schema,
             13369,
             18087,
             1,
@@ -465,7 +460,13 @@ async def async_test_on_off_from_client(
     assert cluster.request.call_count == 1
     assert cluster.request.await_count == 1
     assert cluster.request.call_args == call(
-        False, ON, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
+        False,
+        ON,
+        cluster.commands_by_name["on"].schema,
+        expect_reply=True,
+        manufacturer=None,
+        tries=1,
+        tsn=None,
     )
 
     await async_test_off_from_client(server, cluster, entity, controller)
@@ -487,7 +488,13 @@ async def async_test_off_from_client(
     assert cluster.request.call_count == 1
     assert cluster.request.await_count == 1
     assert cluster.request.call_args == call(
-        False, OFF, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
+        False,
+        OFF,
+        cluster.commands_by_name["off"].schema,
+        expect_reply=True,
+        manufacturer=None,
+        tries=1,
+        tsn=None,
     )
 
 
@@ -511,7 +518,13 @@ async def async_test_level_on_off_from_client(
     assert level_cluster.request.call_count == 0
     assert level_cluster.request.await_count == 0
     assert on_off_cluster.request.call_args == call(
-        False, ON, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
+        False,
+        ON,
+        on_off_cluster.commands_by_name["on"].schema,
+        expect_reply=True,
+        manufacturer=None,
+        tries=1,
+        tsn=None,
     )
     on_off_cluster.request.reset_mock()
     level_cluster.request.reset_mock()
@@ -524,12 +537,18 @@ async def async_test_level_on_off_from_client(
     assert level_cluster.request.call_count == 1
     assert level_cluster.request.await_count == 1
     assert on_off_cluster.request.call_args == call(
-        False, ON, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
+        False,
+        ON,
+        on_off_cluster.commands_by_name["on"].schema,
+        expect_reply=True,
+        manufacturer=None,
+        tries=1,
+        tsn=None,
     )
     assert level_cluster.request.call_args == call(
         False,
         4,
-        (zigpy.types.uint8_t, zigpy.types.uint16_t),
+        level_cluster.commands_by_name["move_to_level_with_on_off"].schema,
         254,
         100.0,
         expect_reply=True,
@@ -551,7 +570,7 @@ async def async_test_level_on_off_from_client(
     assert level_cluster.request.call_args == call(
         False,
         4,
-        (zigpy.types.uint8_t, zigpy.types.uint16_t),
+        level_cluster.commands_by_name["move_to_level_with_on_off"].schema,
         10,
         1,
         expect_reply=True,
@@ -604,7 +623,7 @@ async def async_test_flash_from_client(
     assert cluster.request.call_args == call(
         False,
         64,
-        (zigpy.types.uint8_t, zigpy.types.uint8_t),
+        cluster.commands_by_name["trigger_effect"].schema,
         FLASH_EFFECTS[flash],
         0,
         expect_reply=True,

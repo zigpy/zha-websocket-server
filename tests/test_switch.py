@@ -135,7 +135,13 @@ async def test_switch(
         assert entity.state.state is True
         assert len(cluster.request.mock_calls) == 1
         assert cluster.request.call_args == call(
-            False, ON, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
+            False,
+            ON,
+            cluster.commands_by_name["on"].schema,
+            expect_reply=True,
+            manufacturer=None,
+            tries=1,
+            tsn=None,
         )
 
     # Fail turn off from client
@@ -148,7 +154,13 @@ async def test_switch(
         assert entity.state.state is True
         assert len(cluster.request.mock_calls) == 1
         assert cluster.request.call_args == call(
-            False, OFF, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
+            False,
+            OFF,
+            cluster.commands_by_name["off"].schema,
+            expect_reply=True,
+            manufacturer=None,
+            tries=1,
+            tsn=None,
         )
 
     # turn off from client
@@ -161,7 +173,13 @@ async def test_switch(
         assert entity.state.state is False
         assert len(cluster.request.mock_calls) == 1
         assert cluster.request.call_args == call(
-            False, OFF, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
+            False,
+            OFF,
+            cluster.commands_by_name["off"].schema,
+            expect_reply=True,
+            manufacturer=None,
+            tries=1,
+            tsn=None,
         )
 
     # Fail turn on from client
@@ -174,7 +192,13 @@ async def test_switch(
         assert entity.state.state is False
         assert len(cluster.request.mock_calls) == 1
         assert cluster.request.call_args == call(
-            False, ON, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
+            False,
+            ON,
+            cluster.commands_by_name["on"].schema,
+            expect_reply=True,
+            manufacturer=None,
+            tries=1,
+            tsn=None,
         )
 
     # test updating entity state from client
@@ -240,7 +264,13 @@ async def test_zha_group_switch_entity(
         await server.block_till_done()
         assert len(group_cluster_on_off.request.mock_calls) == 1
         assert group_cluster_on_off.request.call_args == call(
-            False, ON, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
+            False,
+            ON,
+            group_cluster_on_off.commands_by_name["on"].schema,
+            expect_reply=True,
+            manufacturer=None,
+            tries=1,
+            tsn=None,
         )
     assert entity.state.state is True
 
@@ -254,7 +284,13 @@ async def test_zha_group_switch_entity(
         await server.block_till_done()
         assert len(group_cluster_on_off.request.mock_calls) == 1
         assert group_cluster_on_off.request.call_args == call(
-            False, OFF, (), expect_reply=True, manufacturer=None, tries=1, tsn=None
+            False,
+            OFF,
+            group_cluster_on_off.commands_by_name["off"].schema,
+            expect_reply=True,
+            manufacturer=None,
+            tries=1,
+            tsn=None,
         )
     assert entity.state.state is False
 

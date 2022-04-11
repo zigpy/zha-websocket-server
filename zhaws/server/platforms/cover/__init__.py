@@ -123,19 +123,19 @@ class Cover(PlatformEntity):
     async def async_open_cover(self, **kwargs: Any) -> None:
         """Open the window cover."""
         res = await self._cover_cluster_handler.up_open()
-        if isinstance(res, list) and res[1] is Status.SUCCESS:
+        if not isinstance(res, Exception) and res[1] is Status.SUCCESS:
             self.async_update_state(STATE_OPENING)
 
     async def async_close_cover(self, **kwargs: Any) -> None:
         """Close the window cover."""
         res = await self._cover_cluster_handler.down_close()
-        if isinstance(res, list) and res[1] is Status.SUCCESS:
+        if not isinstance(res, Exception) and res[1] is Status.SUCCESS:
             self.async_update_state(STATE_CLOSING)
 
     async def async_set_cover_position(self, position: int, **kwargs: Any) -> None:
         """Move the roller shutter to a specific position."""
         res = await self._cover_cluster_handler.go_to_lift_percentage(100 - position)
-        if isinstance(res, list) and res[1] is Status.SUCCESS:
+        if not isinstance(res, Exception) and res[1] is Status.SUCCESS:
             self.async_update_state(
                 STATE_CLOSING
                 if self._current_position is not None
@@ -146,7 +146,7 @@ class Cover(PlatformEntity):
     async def async_stop_cover(self, **kwargs: Any) -> None:
         """Stop the window cover."""
         res = await self._cover_cluster_handler.stop()
-        if isinstance(res, list) and res[1] is Status.SUCCESS:
+        if not isinstance(res, Exception) and res[1] is Status.SUCCESS:
             self._state = (
                 STATE_OPEN
                 if self._current_position is not None and self._current_position > 0
@@ -297,7 +297,7 @@ class Shade(PlatformEntity):
     async def async_open_cover(self, **kwargs: Any) -> None:
         """Open the window cover."""
         res = await self._on_off_cluster_handler.on()
-        if not isinstance(res, list) or res[1] != Status.SUCCESS:
+        if isinstance(res, Exception) or res[1] != Status.SUCCESS:
             self.debug("couldn't open cover: %s", res)
             return
 
@@ -307,7 +307,7 @@ class Shade(PlatformEntity):
     async def async_close_cover(self, **kwargs: Any) -> None:
         """Close the window cover."""
         res = await self._on_off_cluster_handler.off()
-        if not isinstance(res, list) or res[1] != Status.SUCCESS:
+        if isinstance(res, Exception) or res[1] != Status.SUCCESS:
             self.debug("couldn't open cover: %s", res)
             return
 
@@ -320,7 +320,7 @@ class Shade(PlatformEntity):
             position * 255 / 100, 1
         )
 
-        if not isinstance(res, list) or res[1] != Status.SUCCESS:
+        if isinstance(res, Exception) or res[1] != Status.SUCCESS:
             self.debug("couldn't set cover's position: %s", res)
             return
 
@@ -330,7 +330,7 @@ class Shade(PlatformEntity):
     async def async_stop_cover(self, **kwargs: Any) -> None:
         """Stop the cover."""
         res = await self._level_cluster_handler.stop()
-        if not isinstance(res, list) or res[1] != Status.SUCCESS:
+        if isinstance(res, Exception) or res[1] != Status.SUCCESS:
             self.debug("couldn't stop cover: %s", res)
             return
 

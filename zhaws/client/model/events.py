@@ -208,6 +208,7 @@ class ZHAEvent(BaseEvent):
     endpoint: MinimalEndpoint
     command: str
     args: Union[list, dict]
+    params: dict[str, Any]
 
 
 class GroupRemovedEvent(ControllerEvent):

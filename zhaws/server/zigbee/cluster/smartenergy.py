@@ -75,7 +75,7 @@ class Metering(ClusterHandler):
         "divisor": True,
         "metering_device_type": True,
         "multiplier": True,
-        "summa_formatting": True,
+        "summation_formatting": True,
         "unit_of_measure": True,
     }
 
@@ -167,7 +167,7 @@ class Metering(ClusterHandler):
         self._format_spec = self.get_formatting(fmting)
 
         fmting = self.cluster.get(
-            "summa_formatting", 0xF9
+            "summation_formatting", 0xF9
         )  # 1 digit to the right, 15 digits to the left
         self._summa_format = self.get_formatting(fmting)
 
