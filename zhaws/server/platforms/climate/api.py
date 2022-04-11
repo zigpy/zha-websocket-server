@@ -1,7 +1,7 @@
 """WS api for the climate platform entity."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, Optional, Union
 
 from zhaws.server.const import APICommands
 from zhaws.server.platforms import PlatformEntityCommand
@@ -85,20 +85,22 @@ class ClimateSetTemperatureCommand(PlatformEntityCommand):
     command: Literal[
         APICommands.CLIMATE_SET_TEMPERATURE
     ] = APICommands.CLIMATE_SET_TEMPERATURE
-    temperature: float | None
-    target_temp_high: float | None
-    target_temp_low: float | None
-    hvac_mode: None | (
-        Literal[
-            "off",  # All activity disabled / Device is off/standby
-            "heat",  # Heating
-            "cool",  # Cooling
-            "heat_cool",  # The device supports heating/cooling to a range
-            "auto",  # The temperature is set based on a schedule, learned behavior, AI or some other related mechanism. User is not able to adjust the temperature
-            "dry",  # Device is in Dry/Humidity mode
-            "fan_only",  # Only the fan is on, not fan and another mode like cool
-        ]
-    )
+    temperature: Union[float, None]
+    target_temp_high: Union[float, None]
+    target_temp_low: Union[float, None]
+    hvac_mode: Optional[
+        (
+            Literal[
+                "off",  # All activity disabled / Device is off/standby
+                "heat",  # Heating
+                "cool",  # Cooling
+                "heat_cool",  # The device supports heating/cooling to a range
+                "auto",  # The temperature is set based on a schedule, learned behavior, AI or some other related mechanism. User is not able to adjust the temperature
+                "dry",  # Device is in Dry/Humidity mode
+                "fan_only",  # Only the fan is on, not fan and another mode like cool
+            ]
+        )
+    ]
 
 
 @decorators.websocket_command(ClimateSetTemperatureCommand)

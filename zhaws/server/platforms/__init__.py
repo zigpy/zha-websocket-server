@@ -5,7 +5,7 @@ import abc
 import asyncio
 from contextlib import suppress
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Union
 
 from zigpy.types.named import EUI64
 
@@ -296,6 +296,6 @@ class GroupEntity(BaseEntity):
 class PlatformEntityCommand(WebSocketCommand):
     """Base class for platform entity commands."""
 
-    ieee: EUI64 | None
-    group_id: int | None
+    ieee: Union[EUI64, None]
+    group_id: Union[int, None]
     unique_id: str

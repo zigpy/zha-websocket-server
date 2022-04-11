@@ -3,6 +3,8 @@ repos:
     rev: v2.31.1
     hooks:
       - id: pyupgrade
+        args:
+          - --keep-runtime-typing
 
   - repo: https://github.com/fsouza/autoflake8
     rev: v0.3.1

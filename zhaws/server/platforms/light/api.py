@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Annotated, Any, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Union
 
 from pydantic import Field, validator
 
@@ -22,14 +22,19 @@ class LightTurnOnCommand(PlatformEntityCommand):
     """Light turn on command."""
 
     command: Literal[APICommands.LIGHT_TURN_ON] = APICommands.LIGHT_TURN_ON
-    brightness: Annotated[int, Field(ge=0, le=255)] | None
-    transition: Annotated[float, Field(ge=0, le=6553)] | None
-    flash: Literal["short", "long"] | None
-    effect: str | None
-    hs_color: None | (
-        tuple[Annotated[int, Field(ge=0, le=360)], Annotated[int, Field(ge=0, le=100)]]
-    )
-    color_temp: int | None
+    brightness: Union[Annotated[int, Field(ge=0, le=255)], None]
+    transition: Union[Annotated[float, Field(ge=0, le=6553)], None]
+    flash: Union[Literal["short", "long"], None]
+    effect: Union[str, None]
+    hs_color: Union[
+        None,
+        (
+            tuple[
+                Annotated[int, Field(ge=0, le=360)], Annotated[int, Field(ge=0, le=100)]
+            ]
+        ),
+    ]
+    color_temp: Union[int, None]
 
     @validator("color_temp", pre=True, always=True, each_item=False)
     def check_color_setting_exclusivity(
@@ -56,8 +61,8 @@ class LightTurnOffCommand(PlatformEntityCommand):
     """Light turn off command."""
 
     command: Literal[APICommands.LIGHT_TURN_OFF] = APICommands.LIGHT_TURN_OFF
-    transition: Annotated[float, Field(ge=0, le=6553)] | None
-    flash: Literal["short", "long"] | None
+    transition: Union[Annotated[float, Field(ge=0, le=6553)], None]
+    flash: Union[Literal["short", "long"], None]
 
 
 @decorators.websocket_command(LightTurnOffCommand)
