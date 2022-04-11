@@ -77,6 +77,20 @@ def zigpy_app_controller() -> ControllerApplication:
     return app
 
 
+@pytest.fixture(scope="session", autouse=True)
+def globally_load_quirks():
+    """Load quirks automatically so that ZHA tests run deterministically in isolation.
+
+    If portions of the ZHA test suite that do not happen to load quirks are run
+    independently, bugs can emerge that will show up only when more of the test suite is
+    run.
+    """
+
+    import zhaquirks
+
+    zhaquirks.setup()
+
+
 @pytest.fixture
 async def connected_client_and_server(
     event_loop: AbstractEventLoop,

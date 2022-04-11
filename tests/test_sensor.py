@@ -300,7 +300,7 @@ async def async_test_device_temperature(
                 "metering_device_type": 0x00,
                 "multiplier": 1,
                 "status": 0x00,
-                "summa_formatting": 0b1_0111_010,
+                "summation_formatting": 0b1_0111_010,
                 "unit_of_measure": 0x01,
             },
             {"instaneneous_demand"},
@@ -696,7 +696,7 @@ async def test_se_summation_uom(
         "metering_device_type": 0x00,
         "multiplier": 1,
         "status": 0x00,
-        "summa_formatting": 0b1_0111_010,
+        "summation_formatting": 0b1_0111_010,
         "unit_of_measure": raw_uom,
     }
     zha_device = await device_joined(zigpy_device)

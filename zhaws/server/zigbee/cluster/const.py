@@ -2,6 +2,8 @@
 
 from typing import Final, Tuple
 
+ATTR_PARAMS = "params"
+
 REPORT_CONFIG_ATTR_PER_REQ: Final[int] = 3
 REPORT_CONFIG_MAX_INT: Final[int] = 900
 REPORT_CONFIG_MAX_INT_BATTERY_SAVE: Final[int] = 10800

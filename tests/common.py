@@ -29,8 +29,9 @@ def patch_cluster(cluster: zigpy.zcl.Cluster) -> None:
             value = cluster.PLUGGED_ATTR_READS.get(attr_id)
             if value is None:
                 # try converting attr_id to attr_name and lookup the plugs again
-                attr_name = cluster.attributes.get(attr_id)
-                value = attr_name and cluster.PLUGGED_ATTR_READS.get(attr_name[0])
+                attr = cluster.attributes.get(attr_id)
+                if attr is not None:
+                    value = cluster.PLUGGED_ATTR_READS.get(attr.name)
             if value is not None:
                 result.append(
                     zcl_f.ReadAttributeRecord(
@@ -64,25 +65,49 @@ def patch_cluster(cluster: zigpy.zcl.Cluster) -> None:
     if cluster.cluster_id == 4:
         cluster.add = AsyncMock(return_value=[0])
     if cluster.cluster_id == 0x1000:
-        cluster.get_group_identifiers = AsyncMock(return_value=[0, 0, []])
+        get_group_identifiers_rsp = (
+            zigpy.zcl.clusters.lightlink.LightLink.commands_by_name[
+                "get_group_identifiers_rsp"
+            ].schema
+        )
+        cluster.get_group_identifiers = AsyncMock(
+            return_value=get_group_identifiers_rsp(
+                total=0, start_index=0, group_info_records=[]
+            )
+        )
     if cluster.cluster_id == 0xFC45:
         cluster.attributes = {
             # Relative Humidity Measurement Information
-            0x0000: ("measured_value", t.uint16_t),
+            0x0000: zcl_f.ZCLAttributeDef(
+                id=0x0000, name="measured_value", type=t.uint16_t
+            )
         }
-        cluster.attridx = {"measured_value": 0x0000}
+        cluster.attributes_by_name = {
+            "measured_value": zcl_f.ZCLAttributeDef(
+                id=0x0000, name="measured_value", type=t.uint16_t
+            )
+        }
 
 
 def update_attribute_cache(cluster: zigpy.zcl.Cluster) -> None:
     """Update attribute cache based on plugged attributes."""
-    if cluster.PLUGGED_ATTR_READS:
-        attrs = [
-            make_attribute(cluster.attridx.get(attr, attr), value)
-            for attr, value in cluster.PLUGGED_ATTR_READS.items()
-        ]
-        hdr = make_zcl_header(zcl_f.Command.Report_Attributes)
-        hdr.frame_control.disable_default_response = True
-        cluster.handle_message(hdr, [attrs])
+    if not cluster.PLUGGED_ATTR_READS:
+        return
+
+    attrs = []
+    for attrid, value in cluster.PLUGGED_ATTR_READS.items():
+        if isinstance(attrid, str):
+            attrid = cluster.attributes_by_name[attrid].id
+        else:
+            attrid = zigpy.types.uint16_t(attrid)
+        attrs.append(make_attribute(attrid, value))
+
+    hdr = make_zcl_header(zcl_f.Command.Report_Attributes)
+    hdr.frame_control.disable_default_response = True
+    msg = zcl_f.GENERAL_COMMANDS[zcl_f.GeneralCommand.Report_Attributes].schema(
+        attribute_reports=attrs
+    )
+    cluster.handle_message(hdr, msg)
 
 
 def make_attribute(attrid: int, value: Any, status: int = 0) -> zcl_f.Attribute:
@@ -102,13 +127,23 @@ async def send_attributes_report(
     This is to simulate the normal device communication that happens when a
     device is paired to the zigbee network.
     """
-    attrs = [
-        make_attribute(cluster.attridx.get(attr, attr), value)
-        for attr, value in attributes.items()
-    ]
-    hdr = make_zcl_header(zcl_f.Command.Report_Attributes)
+    attrs = []
+
+    for attrid, value in attributes.items():
+        if isinstance(attrid, str):
+            attrid = cluster.attributes_by_name[attrid].id
+        else:
+            attrid = zigpy.types.uint16_t(attrid)
+
+        attrs.append(make_attribute(attrid, value))
+
+    msg = zcl_f.GENERAL_COMMANDS[zcl_f.GeneralCommand.Report_Attributes].schema(
+        attribute_reports=attrs
+    )
+
+    hdr = make_zcl_header(zcl_f.GeneralCommand.Report_Attributes)
     hdr.frame_control.disable_default_response = True
-    cluster.handle_message(hdr, [attrs])
+    cluster.handle_message(hdr, msg)
     await server.block_till_done()
 
 

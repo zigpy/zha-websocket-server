@@ -2,7 +2,7 @@
 import math
 from typing import Any, Awaitable, Callable
 from unittest import mock
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 from zigpy.device import Device as ZigpyDevice
@@ -53,9 +53,10 @@ def zigpy_coordinator_device(
         "00:11:22:33:44:55:66:77",
         "test manufacturer",
         "test model",
+        nwk=0x0000,
     )
-    with patch.object(coordinator, "add_to_group", AsyncMock(return_value=[0])):
-        yield coordinator
+    coordinator.add_to_group = AsyncMock(return_value=[0])
+    return coordinator
 
 
 @pytest.fixture
@@ -153,7 +154,7 @@ async def poll_control_device(
             0x0201,
             1,
             {
-                "local_temp",
+                "local_temperature",
                 "occupied_cooling_setpoint",
                 "occupied_heating_setpoint",
                 "unoccupied_cooling_setpoint",
@@ -658,54 +659,65 @@ def zigpy_zll_device(zigpy_device_mock: Callable[..., ZigpyDevice]) -> ZigpyDevi
     )
 
 
-"""TODO fix mocking to make this work
+"""
 async def test_zll_device_groups(
     zigpy_zll_device: ZigpyDevice,
     endpoint: Endpoint,
     zigpy_coordinator_device: ZigpyDevice,
 ) -> None:
-    # Test adding coordinator to ZLL groups.
+    #Test adding coordinator to ZLL groups.
 
     cluster = zigpy_zll_device.endpoints[1].lightlink
-    with mock.patch(
-        "zigpy.application.ControllerApplication.get_device",
-        return_value=zigpy_coordinator_device,
-    ):
-        cluster_handler = LightLink(cluster, endpoint)
+    cluster_handler = LightLink(cluster, endpoint)
+    get_group_identifiers_rsp = zigpy.zcl.clusters.lightlink.LightLink.commands_by_name[
+        "get_group_identifiers_rsp"
+    ].schema
 
-        with patch.object(
-            cluster, "command", AsyncMock(return_value=[1, 0, []])
-        ) as cmd_mock:
-            await cluster_handler.async_configure()
-            assert cmd_mock.await_count == 1
-            assert (
-                cluster.server_commands[cmd_mock.await_args[0][0]][0]
-                == "get_group_identifiers"
+    with patch.object(
+        cluster,
+        "get_group_identifiers",
+        AsyncMock(
+            return_value=get_group_identifiers_rsp(
+                total=0, start_index=0, group_info_records=[]
             )
-            assert cluster.bind.call_count == 0
-            assert zigpy_coordinator_device.add_to_group.await_count == 1
-            assert zigpy_coordinator_device.add_to_group.await_args[0][0] == 0x0000
+        ),
+    ) as cmd_mock:
+        await cluster_handler.async_configure()
+        assert cmd_mock.await_count == 1
+        assert (
+            cluster.server_commands[cmd_mock.await_args[0][0]].name
+            == "get_group_identifiers"
+        )
+        assert cluster.bind.call_count == 0
+        assert zigpy_coordinator_device.add_to_group.await_count == 1
+        assert zigpy_coordinator_device.add_to_group.await_args[0][0] == 0x0000
 
-        zigpy_coordinator_device.add_to_group.reset_mock()
-        group_1 = zigpy.zcl.clusters.lightlink.GroupInfoRecord(0xABCD, 0x00)
-        group_2 = zigpy.zcl.clusters.lightlink.GroupInfoRecord(0xAABB, 0x00)
-        with patch.object(
-            cluster, "command", AsyncMock(return_value=[1, 0, [group_1, group_2]])
-        ) as cmd_mock:
-            await cluster_handler.async_configure()
-            assert cmd_mock.await_count == 1
-            assert (
-                cluster.server_commands[cmd_mock.await_args[0][0]][0]
-                == "get_group_identifiers"
+    zigpy_coordinator_device.add_to_group.reset_mock()
+    group_1 = zigpy.zcl.clusters.lightlink.GroupInfoRecord(0xABCD, 0x00)
+    group_2 = zigpy.zcl.clusters.lightlink.GroupInfoRecord(0xAABB, 0x00)
+    with patch.object(
+        cluster,
+        "get_group_identifiers",
+        AsyncMock(
+            return_value=get_group_identifiers_rsp(
+                total=2, start_index=0, group_info_records=[group_1, group_2]
             )
-            assert cluster.bind.call_count == 0
-            assert zigpy_coordinator_device.add_to_group.await_count == 2
-            assert (
-                zigpy_coordinator_device.add_to_group.await_args_list[0][0][0]
-                == group_1.group_id
-            )
-            assert (
-                zigpy_coordinator_device.add_to_group.await_args_list[1][0][0]
-                == group_2.group_id
-            )
-    """
+        ),
+    ) as cmd_mock:
+        await cluster_handler.async_configure()
+        assert cmd_mock.await_count == 1
+        assert (
+            cluster.server_commands[cmd_mock.await_args[0][0]].name
+            == "get_group_identifiers"
+        )
+        assert cluster.bind.call_count == 0
+        assert zigpy_coordinator_device.add_to_group.await_count == 2
+        assert (
+            zigpy_coordinator_device.add_to_group.await_args_list[0][0][0]
+            == group_1.group_id
+        )
+        assert (
+            zigpy_coordinator_device.add_to_group.await_args_list[1][0][0]
+            == group_2.group_id
+        )
+"""

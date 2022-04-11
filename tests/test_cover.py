@@ -136,7 +136,7 @@ async def test_cover(
         assert cluster.request.call_count == 1
         assert cluster.request.call_args[0][0] is False
         assert cluster.request.call_args[0][1] == 0x01
-        assert cluster.request.call_args[0][2] == ()
+        assert cluster.request.call_args[0][2].command.name == "down_close"
         assert cluster.request.call_args[1]["expect_reply"] is True
 
     # open from client
@@ -148,7 +148,7 @@ async def test_cover(
         assert cluster.request.call_count == 1
         assert cluster.request.call_args[0][0] is False
         assert cluster.request.call_args[0][1] == 0x00
-        assert cluster.request.call_args[0][2] == ()
+        assert cluster.request.call_args[0][2].command.name == "up_open"
         assert cluster.request.call_args[1]["expect_reply"] is True
 
     # set position UI
@@ -160,7 +160,7 @@ async def test_cover(
         assert cluster.request.call_count == 1
         assert cluster.request.call_args[0][0] is False
         assert cluster.request.call_args[0][1] == 0x05
-        assert cluster.request.call_args[0][2] == (zigpy.types.uint8_t,)
+        assert cluster.request.call_args[0][2].command.name == "go_to_lift_percentage"
         assert cluster.request.call_args[0][3] == 53
         assert cluster.request.call_args[1]["expect_reply"] is True
 
@@ -173,7 +173,7 @@ async def test_cover(
         assert cluster.request.call_count == 1
         assert cluster.request.call_args[0][0] is False
         assert cluster.request.call_args[0][1] == 0x02
-        assert cluster.request.call_args[0][2] == ()
+        assert cluster.request.call_args[0][2].command.name == "stop"
         assert cluster.request.call_args[1]["expect_reply"] is True
 
 

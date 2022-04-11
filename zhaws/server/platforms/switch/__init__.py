@@ -51,7 +51,7 @@ class BaseSwitch(BaseEntity):
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the entity on."""
         result = await self._on_off_cluster_handler.on()
-        if not isinstance(result, list) or result[1] is not Status.SUCCESS:
+        if isinstance(result, Exception) or result[1] is not Status.SUCCESS:
             return
         self._state = True
         self.maybe_send_state_changed_event()
@@ -59,7 +59,7 @@ class BaseSwitch(BaseEntity):
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the entity off."""
         result = await self._on_off_cluster_handler.off()
-        if not isinstance(result, list) or result[1] is not Status.SUCCESS:
+        if isinstance(result, Exception) or result[1] is not Status.SUCCESS:
             return
         self._state = False
         self.maybe_send_state_changed_event()

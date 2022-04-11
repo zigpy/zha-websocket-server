@@ -3,6 +3,7 @@ import asyncio
 
 import zigpy.exceptions
 from zigpy.zcl.clusters import lightlink
+from zigpy.zcl.foundation import GENERAL_COMMANDS, GeneralCommand
 
 from zhaws.server.zigbee import registries
 from zhaws.server.zigbee.cluster import ClusterHandler, ClusterHandlerStatus
@@ -30,10 +31,15 @@ class LightLink(ClusterHandler):
             return
 
         try:
-            _, _, groups = await self.cluster.get_group_identifiers(0)
+            rsp = await self.cluster.get_group_identifiers(0)
         except (zigpy.exceptions.ZigbeeException, asyncio.TimeoutError) as exc:
             self.warning("Couldn't get list of groups: %s", str(exc))
             return
+
+        if isinstance(rsp, GENERAL_COMMANDS[GeneralCommand.Default_Response].schema):
+            groups = []
+        else:
+            groups = rsp.group_info_records
 
         if groups:
             for group in groups:
