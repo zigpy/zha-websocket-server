@@ -25,7 +25,7 @@ setup(
         "zigpy-deconz==0.16.0",
         "zigpy-xbee==0.14.0",
         "zigpy-zigate==0.8.0",
-        "zigpy-znp==0.7.0",
+        "zigpy-znp==0.8.2",
     ],
     extras_require={"server": ["uvloop"]},
     package_data={"": ["appdb_schemas/schema_v*.sql"]},
