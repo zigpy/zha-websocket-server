@@ -19,7 +19,7 @@ setup(
         "colorlog",
         "pydantic",
         "websockets",
-        "zigpy==0.44.2",
+        "zigpy==0.51.3",
         "bellows==0.29.0",
         "zha-quirks==0.0.72",
         "zigpy-deconz==0.16.0",
