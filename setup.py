@@ -21,7 +21,7 @@ setup(
         "websockets",
         "zigpy==0.44.2",
         "bellows==0.29.0",
-        "zha-quirks==0.0.72",
+        "zha-quirks==0.0.94",
         "zigpy-deconz==0.16.0",
         "zigpy-xbee==0.14.0",
         "zigpy-zigate==0.8.0",
