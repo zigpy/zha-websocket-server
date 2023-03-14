@@ -20,7 +20,7 @@ setup(
         "pydantic",
         "websockets",
         "zigpy==0.44.2",
-        "bellows==0.29.0",
+        "bellows==0.34.10",
         "zha-quirks==0.0.72",
         "zigpy-deconz==0.16.0",
         "zigpy-xbee==0.14.0",
