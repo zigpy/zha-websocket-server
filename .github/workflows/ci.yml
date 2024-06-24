@@ -24,7 +24,7 @@ jobs:
         python-version: [3.9, '3.10']
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
         id: python
         uses: actions/setup-python@v3
@@ -56,7 +56,7 @@ jobs:
     needs: prepare-base
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
         uses: actions/setup-python@v3
         id: python
@@ -97,7 +97,7 @@ jobs:
     needs: pre-commit
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
         uses: actions/setup-python@v3
         id: python
@@ -140,7 +140,7 @@ jobs:
     needs: pre-commit
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
         uses: actions/setup-python@v3
         id: python
@@ -186,7 +186,7 @@ jobs:
     needs: pre-commit
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
         uses: actions/setup-python@v3
         id: python
@@ -229,7 +229,7 @@ jobs:
     needs: pre-commit
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
         uses: actions/setup-python@v3
         id: python
@@ -279,7 +279,7 @@ jobs:
       Run tests Python ${{ matrix.python-version }}
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         id: python
@@ -345,7 +345,7 @@ jobs:
     needs: pytest
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         id: python
