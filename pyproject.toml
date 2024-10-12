@@ -11,12 +11,12 @@ authors = [
     {name = "David F. Mulcahey", email = "david.mulcahey@icloud.com"}
 ]
 readme = "README.md"
-license = {text = "GPL-3.0"}
+license = {text = "Apache-2.0"}
 requires-python = ">=3.12"
 dependencies = [
-    "zha==0.0.15",
+    "zha==0.0.34",
     "colorlog",
-    "pydantic==1.10",
+    "pydantic==2.9.2",
     "websockets",
 ]
 
@@ -26,6 +26,8 @@ exclude = ["tests", "tests.*"]
 [project.optional-dependencies]
 testing = [
     "pytest",
+    "pytest-xdist",
+    "looptime",
 ]
 server = [
     "uvloop",
@@ -61,20 +63,13 @@ install_types = true
 non_interactive = true
 
 disable_error_code = [
-    "arg-type",
-    "assignment",
+    "no-untyped-def",
     "attr-defined",
-    "call-arg",
-    "dict-item",
-    "index",
-    "misc",
     "no-any-return",
     "no-untyped-call",
-    "no-untyped-def",
-    "override",
-    "return-value",
+    "assignment",
+    "arg-type",
     "union-attr",
-    "var-annotated",
 ]
 
 [[tool.mypy.overrides]]
@@ -203,6 +198,8 @@ ignore = [
     "TRY003",
     "TRY201",
     "TRY300",
+
+    "SIM103", # Return the condition {condition} directly
 ]
 
 [tool.ruff.lint.flake8-pytest-style]
@@ -215,7 +212,7 @@ ban-relative-imports = "all"
 [tool.ruff.lint.isort]
 force-sort-within-sections = true
 known-first-party = [
-    "zhaws",
+    "zha",
     "tests",
 ]
 combine-as-imports = true
@@ -228,3 +225,10 @@ split-on-trailing-comma = false
 
 [tool.ruff.lint.mccabe]
 max-complexity = 25
+
+[tool.coverage.report]
+show_missing = true
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
