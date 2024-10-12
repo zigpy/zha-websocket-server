@@ -1,21 +1,21 @@
 """ZHAWSS websocket server."""
+
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Iterable
 import contextlib
 import logging
 from time import monotonic
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Awaitable, Final, Iterable, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 import websockets
 
 from zhaws.server.config.model import ServerConfiguration
 from zhaws.server.const import APICommands
 from zhaws.server.decorators import periodic
-from zhaws.server.platforms import discovery
 from zhaws.server.platforms.api import load_platform_entity_apis
-from zhaws.server.platforms.discovery import PLATFORMS
 from zhaws.server.websocket.api import decorators, register_api_command
 from zhaws.server.websocket.api.model import WebSocketCommand
 from zhaws.server.websocket.client import ClientManager
@@ -41,12 +41,7 @@ class Server:
         self._stopped_event: asyncio.Event = asyncio.Event()
         self._tracked_tasks: list[asyncio.Task] = []
         self._tracked_completable_tasks: list[asyncio.Task] = []
-        self.data: dict[Any, Any] = {}
-        for platform in PLATFORMS:
-            self.data.setdefault(platform, [])
         self._register_api_commands()
-        discovery.PROBE.initialize(self)
-        discovery.GROUP_PROBE.initialize(self)
         self._tracked_tasks.append(
             asyncio.create_task(
                 self._cleanup_tracked_tasks(), name="server_cleanup_tracked_tasks"
