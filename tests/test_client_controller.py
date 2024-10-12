@@ -1,15 +1,17 @@
 """Test zha switch."""
+
+from collections.abc import Awaitable, Callable
 import logging
-from typing import Awaitable, Callable, Optional
+from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, call
 
 import pytest
 from slugify import slugify
 from zigpy.device import Device as ZigpyDevice
+from zigpy.profiles import zha
 import zigpy.profiles.zha
-import zigpy.profiles.zha as zha
 from zigpy.types.named import EUI64
-import zigpy.zcl.clusters.general as general
+from zigpy.zcl.clusters import general
 
 from zhaws.client.controller import Controller
 from zhaws.client.model.commands import (

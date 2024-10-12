@@ -1,4 +1,5 @@
 """WS API for the fan platform entity."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Annotated, Literal, Union

@@ -1,4 +1,5 @@
 """Main module for zhawss."""
+
 from websockets.__main__ import main as websockets_cli
 
 if __name__ == "__main__":

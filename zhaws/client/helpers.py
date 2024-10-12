@@ -1,4 +1,5 @@
 """Helper classes for zhaws.client."""
+
 from __future__ import annotations
 
 from typing import Any, Literal, cast

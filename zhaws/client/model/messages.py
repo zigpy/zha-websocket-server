@@ -1,4 +1,5 @@
 """Models that represent messages in zhawss."""
+
 from typing import Annotated, Union
 
 from pydantic.fields import Field

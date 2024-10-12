@@ -117,7 +117,7 @@ class Client:
         try:
             message = json.dumps(data)
         except TypeError as exc:
-            _LOGGER.error("Couldn't serialize data: %s", data, exc_info=exc)
+            _LOGGER.exception("Couldn't serialize data: %s", data, exc_info=exc)
         else:
             self._client_manager.server.track_task(
                 asyncio.create_task(self._websocket.send(message))
@@ -138,15 +138,16 @@ class Client:
         try:
             msg = WebSocketCommand.parse_obj(loaded_message)
         except ValidationError as exception:
-            _LOGGER.error(
-                f"Received invalid command[unable to parse command]: {loaded_message}",
+            _LOGGER.exception(
+                "Received invalid command[unable to parse command]: %s",
+                loaded_message,
                 exc_info=exception,
             )
             return
 
         if msg.command not in handlers:
             _LOGGER.error(
-                f"Received invalid command[command not registered]: {msg.command}"
+                "Received invalid command[command not registered]: %s", loaded_message
             )
             return
 
@@ -156,7 +157,9 @@ class Client:
             handler(self._client_manager.server, self, model.parse_obj(loaded_message))
         except Exception as err:  # pylint: disable=broad-except
             # TODO Fix this - make real error codes with error messages
-            _LOGGER.error("Error handling message: %s", loaded_message, exc_info=err)
+            _LOGGER.exception(
+                "Error handling message: %s", loaded_message, exc_info=err
+            )
             self.send_result_error(
                 loaded_message, "INTERNAL_ERROR", f"Internal error: {err}"
             )

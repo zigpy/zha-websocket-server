@@ -1,11 +1,13 @@
 """Test configuration for the ZHA component."""
+
 from asyncio import AbstractEventLoop
+from collections.abc import AsyncGenerator, Callable
 import itertools
 import logging
 import os
 import tempfile
 import time
-from typing import Any, AsyncGenerator, Callable, Optional
+from typing import Any, Optional
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import aiohttp
@@ -20,12 +22,11 @@ import zigpy.profiles
 import zigpy.types
 import zigpy.zdo.types as zdo_t
 
+from tests import common
+from zha.zigbee import Device
 from zhaws.client.controller import Controller
 from zhaws.server.config.model import ServerConfiguration
 from zhaws.server.websocket.server import Server
-from zhaws.server.zigbee.device import Device
-
-from tests import common
 
 FIXTURE_GRP_ID = 0x1001
 FIXTURE_GRP_NAME = "fixture group"
@@ -116,7 +117,7 @@ async def connected_client_and_server(
 
 @pytest.fixture
 def device_joined(
-    connected_client_and_server: tuple[Controller, Server]
+    connected_client_and_server: tuple[Controller, Server],
 ) -> Callable[[zigpy.device.Device], Device]:
     """Return a newly joined ZHAWS device."""
 

@@ -1,4 +1,5 @@
 """WS api for the alarm control panel platform entity."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, Union
@@ -16,9 +17,9 @@ if TYPE_CHECKING:
 class DisarmCommand(PlatformEntityCommand):
     """Disarm command."""
 
-    command: Literal[
+    command: Literal[APICommands.ALARM_CONTROL_PANEL_DISARM] = (
         APICommands.ALARM_CONTROL_PANEL_DISARM
-    ] = APICommands.ALARM_CONTROL_PANEL_DISARM
+    )
     code: Union[str, None]
 
 
@@ -32,9 +33,9 @@ async def disarm(server: Server, client: Client, command: DisarmCommand) -> None
 class ArmHomeCommand(PlatformEntityCommand):
     """Arm home command."""
 
-    command: Literal[
+    command: Literal[APICommands.ALARM_CONTROL_PANEL_ARM_HOME] = (
         APICommands.ALARM_CONTROL_PANEL_ARM_HOME
-    ] = APICommands.ALARM_CONTROL_PANEL_ARM_HOME
+    )
     code: Union[str, None]
 
 
@@ -50,9 +51,9 @@ async def arm_home(server: Server, client: Client, command: ArmHomeCommand) -> N
 class ArmAwayCommand(PlatformEntityCommand):
     """Arm away command."""
 
-    command: Literal[
+    command: Literal[APICommands.ALARM_CONTROL_PANEL_ARM_AWAY] = (
         APICommands.ALARM_CONTROL_PANEL_ARM_AWAY
-    ] = APICommands.ALARM_CONTROL_PANEL_ARM_AWAY
+    )
     code: Union[str, None]
 
 
@@ -68,9 +69,9 @@ async def arm_away(server: Server, client: Client, command: ArmAwayCommand) -> N
 class ArmNightCommand(PlatformEntityCommand):
     """Arm night command."""
 
-    command: Literal[
+    command: Literal[APICommands.ALARM_CONTROL_PANEL_ARM_NIGHT] = (
         APICommands.ALARM_CONTROL_PANEL_ARM_NIGHT
-    ] = APICommands.ALARM_CONTROL_PANEL_ARM_NIGHT
+    )
     code: Union[str, None]
 
 
@@ -86,9 +87,9 @@ async def arm_night(server: Server, client: Client, command: ArmNightCommand) ->
 class TriggerAlarmCommand(PlatformEntityCommand):
     """Trigger alarm command."""
 
-    command: Literal[
+    command: Literal[APICommands.ALARM_CONTROL_PANEL_TRIGGER] = (
         APICommands.ALARM_CONTROL_PANEL_TRIGGER
-    ] = APICommands.ALARM_CONTROL_PANEL_TRIGGER
+    )
     code: Union[str, None]
 
 

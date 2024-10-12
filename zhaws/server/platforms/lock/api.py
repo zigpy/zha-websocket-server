@@ -1,4 +1,5 @@
 """WS api for the lock platform entity."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
@@ -61,9 +62,9 @@ async def set_user_lock_code(
 class LockEnableUserLockCodeCommand(PlatformEntityCommand):
     """Enable user lock code command."""
 
-    command: Literal[
+    command: Literal[APICommands.LOCK_ENAABLE_USER_CODE] = (
         APICommands.LOCK_ENAABLE_USER_CODE
-    ] = APICommands.LOCK_ENAABLE_USER_CODE
+    )
     code_slot: int
 
 
@@ -81,9 +82,9 @@ async def enable_user_lock_code(
 class LockDisableUserLockCodeCommand(PlatformEntityCommand):
     """Disable user lock code command."""
 
-    command: Literal[
+    command: Literal[APICommands.LOCK_DISABLE_USER_CODE] = (
         APICommands.LOCK_DISABLE_USER_CODE
-    ] = APICommands.LOCK_DISABLE_USER_CODE
+    )
     code_slot: int
 
 
@@ -101,9 +102,9 @@ async def disable_user_lock_code(
 class LockClearUserLockCodeCommand(PlatformEntityCommand):
     """Clear user lock code command."""
 
-    command: Literal[
+    command: Literal[APICommands.LOCK_CLEAR_USER_CODE] = (
         APICommands.LOCK_CLEAR_USER_CODE
-    ] = APICommands.LOCK_CLEAR_USER_CODE
+    )
     code_slot: int
 
 

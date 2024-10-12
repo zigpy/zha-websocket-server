@@ -117,7 +117,7 @@ class Controller(EventBase):
             async with timeout(CONNECT_TIMEOUT):
                 await self._client.connect()
         except Exception as err:
-            _LOGGER.error("Unable to connect to the ZHA wss: %s", err)
+            _LOGGER.exception("Unable to connect to the ZHA wss", exc_info=err)
             raise err
 
         await self._client.listen()

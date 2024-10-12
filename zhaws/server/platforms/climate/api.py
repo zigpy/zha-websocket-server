@@ -1,4 +1,5 @@
 """WS api for the climate platform entity."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, Optional, Union
@@ -16,9 +17,9 @@ if TYPE_CHECKING:
 class ClimateSetFanModeCommand(PlatformEntityCommand):
     """Set fan mode command."""
 
-    command: Literal[
+    command: Literal[APICommands.CLIMATE_SET_FAN_MODE] = (
         APICommands.CLIMATE_SET_FAN_MODE
-    ] = APICommands.CLIMATE_SET_FAN_MODE
+    )
     fan_mode: str
 
 
@@ -34,9 +35,9 @@ async def set_fan_mode(
 class ClimateSetHVACModeCommand(PlatformEntityCommand):
     """Set HVAC mode command."""
 
-    command: Literal[
+    command: Literal[APICommands.CLIMATE_SET_HVAC_MODE] = (
         APICommands.CLIMATE_SET_HVAC_MODE
-    ] = APICommands.CLIMATE_SET_HVAC_MODE
+    )
     hvac_mode: Literal[
         "off",  # All activity disabled / Device is off/standby
         "heat",  # Heating
@@ -62,9 +63,9 @@ async def set_hvac_mode(
 class ClimateSetPresetModeCommand(PlatformEntityCommand):
     """Set preset mode command."""
 
-    command: Literal[
+    command: Literal[APICommands.CLIMATE_SET_PRESET_MODE] = (
         APICommands.CLIMATE_SET_PRESET_MODE
-    ] = APICommands.CLIMATE_SET_PRESET_MODE
+    )
     preset_mode: str
 
 
@@ -82,9 +83,9 @@ async def set_preset_mode(
 class ClimateSetTemperatureCommand(PlatformEntityCommand):
     """Set temperature command."""
 
-    command: Literal[
+    command: Literal[APICommands.CLIMATE_SET_TEMPERATURE] = (
         APICommands.CLIMATE_SET_TEMPERATURE
-    ] = APICommands.CLIMATE_SET_TEMPERATURE
+    )
     temperature: Union[float, None]
     target_temp_high: Union[float, None]
     target_temp_low: Union[float, None]

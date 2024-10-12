@@ -1,7 +1,9 @@
 """Common test objects."""
+
 import asyncio
+from collections.abc import Awaitable
 import logging
-from typing import Any, Awaitable, Optional
+from typing import Any, Optional
 from unittest.mock import AsyncMock, Mock
 
 from slugify import slugify

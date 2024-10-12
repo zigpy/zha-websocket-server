@@ -1,4 +1,5 @@
 """WS API for common platform entity functionality."""
+
 from __future__ import annotations
 
 import logging
@@ -64,9 +65,9 @@ async def execute_platform_entity_command(
 class PlatformEntityRefreshStateCommand(PlatformEntityCommand):
     """Platform entity refresh state command."""
 
-    command: Literal[
+    command: Literal[APICommands.PLATFORM_ENTITY_REFRESH_STATE] = (
         APICommands.PLATFORM_ENTITY_REFRESH_STATE
-    ] = APICommands.PLATFORM_ENTITY_REFRESH_STATE
+    )
 
 
 @decorators.websocket_command(PlatformEntityRefreshStateCommand)

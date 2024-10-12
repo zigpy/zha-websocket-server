@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Annotated, Any, Literal, Union
 
-from pydantic import Field, validator
+from pydantic import Field, field_validator
 
 from zhaws.server.const import APICommands
 from zhaws.server.platforms import PlatformEntityCommand
@@ -37,9 +37,7 @@ class LightTurnOnCommand(PlatformEntityCommand):
     ]
     color_temp: Union[int, None]
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("color_temp", pre=True, always=True, each_item=False)
+    @field_validator("color_temp", mode="before")
     def check_color_setting_exclusivity(
         cls, color_temp: int | None, values: dict[str, Any], **kwargs: Any
     ) -> int | None:

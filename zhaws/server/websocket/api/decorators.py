@@ -1,4 +1,5 @@
 """Decorators for the Websocket API."""
+
 from __future__ import annotations
 
 import asyncio
@@ -32,7 +33,7 @@ async def _handle_async_response(
         await func(server, client, msg)
     except Exception as err:  # pylint: disable=broad-except
         # TODO fix this to send a real error code and message
-        _LOGGER.exception("Error handling message: %s", err, exc_info=err)
+        _LOGGER.exception("Error handling message", exc_info=err)
         client.send_result_error(msg, "API_COMMAND_HANDLER_ERROR", str(err))
 
 

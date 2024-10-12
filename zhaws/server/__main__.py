@@ -1,4 +1,5 @@
 """Websocket application to run a zigpy Zigbee network."""
+
 from __future__ import annotations
 
 import argparse

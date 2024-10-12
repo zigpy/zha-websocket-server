@@ -1,4 +1,5 @@
 """Client tests for zhawss."""
+
 import asyncio
 import logging
 
@@ -93,7 +94,7 @@ async def main() -> None:
 
                 await asyncio.sleep(3)
             except Exception as err:
-                _LOGGER.error(err)
+                _LOGGER.exception(exc_info=err)
 
         if test_switches:
             try:
@@ -115,10 +116,9 @@ async def main() -> None:
 
                 await asyncio.sleep(3)
             except Exception as err:
-                _LOGGER.error(err)
+                _LOGGER.exception(exc_info=err)
 
         if test_alarm_control_panel:
-
             try:
                 alarm_control_panel_platform_entity = devices[
                     "00:0d:6f:00:05:65:83:f2"
@@ -130,10 +130,9 @@ async def main() -> None:
 
                 await asyncio.sleep(3)
             except Exception as err:
-                _LOGGER.error(err)
+                _LOGGER.exception(exc_info=err)
 
         if test_locks:
-
             try:
                 lock_platform_entity = devices[
                     "68:0a:e2:ff:fe:6a:22:af"
@@ -147,10 +146,9 @@ async def main() -> None:
 
                 await asyncio.sleep(3)
             except Exception as err:
-                _LOGGER.error(err)
+                _LOGGER.exception(exc_info=err)
 
         if test_buttons:
-
             try:
                 button_platform_entity = devices[
                     "04:cf:8c:df:3c:7f:c5:a7"
@@ -160,7 +158,7 @@ async def main() -> None:
 
                 await asyncio.sleep(3)
             except Exception as err:
-                _LOGGER.error(err)
+                _LOGGER.exception(exc_info=err)
 
         """TODO turn this into an example for how to create a group with the client
         await controller.groups_helper.create_group(

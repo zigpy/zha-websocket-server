@@ -1,4 +1,5 @@
 """WS api for the select platform entity."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
@@ -16,9 +17,9 @@ if TYPE_CHECKING:
 class SelectSelectOptionCommand(PlatformEntityCommand):
     """Select select option command."""
 
-    command: Literal[
+    command: Literal[APICommands.SELECT_SELECT_OPTION] = (
         APICommands.SELECT_SELECT_OPTION
-    ] = APICommands.SELECT_SELECT_OPTION
+    )
     option: str
 
 

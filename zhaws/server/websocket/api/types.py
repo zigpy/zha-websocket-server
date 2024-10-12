@@ -1,7 +1,9 @@
 """Type information for the websocket api module."""
+
 from __future__ import annotations
 
-from typing import Any, Callable, Coroutine, TypeVar
+from collections.abc import Callable, Coroutine
+from typing import Any, TypeVar
 
 from zhaws.server.websocket.api.model import WebSocketCommand
 
