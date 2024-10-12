@@ -1,8 +1,9 @@
 """Shared models for zhaws."""
+
 import logging
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, no_type_check
 
-from pydantic import BaseModel as PydanticBaseModel, validator
+from pydantic import BaseModel as PydanticBaseModel, ConfigDict, validator
 from zigpy.types.named import EUI64
 
 if TYPE_CHECKING:
@@ -14,12 +15,10 @@ _LOGGER = logging.getLogger(__name__)
 class BaseModel(PydanticBaseModel):
     """Base model for zhawss models."""
 
-    class Config:
-        """Config for BaseModel."""
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
-        arbitrary_types_allowed = True
-        extra = "allow"
-
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("ieee", pre=True, always=True, each_item=False, check_fields=False)
     def convert_ieee(
         cls, ieee: Optional[Union[str, EUI64]], values: dict[str, Any], **kwargs: Any
@@ -31,6 +30,8 @@ class BaseModel(PydanticBaseModel):
             return EUI64.convert(ieee)
         return ieee
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator(
         "device_ieee", pre=True, always=True, each_item=False, check_fields=False
     )
@@ -38,7 +39,7 @@ class BaseModel(PydanticBaseModel):
         cls,
         device_ieee: Optional[Union[str, EUI64]],
         values: dict[str, Any],
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Optional[EUI64]:
         """Convert device ieee to EUI64."""
         if device_ieee is None:

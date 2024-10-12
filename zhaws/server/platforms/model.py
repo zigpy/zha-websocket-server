@@ -16,6 +16,6 @@ class EntityStateChangedEvent(BaseEvent):
     event: Literal["state_changed"] = STATE_CHANGED
     platform: str
     unique_id: str
-    device_ieee: Optional[EUI64]
-    endpoint_id: Optional[int]
-    group_id: Optional[int]
+    device_ieee: Optional[EUI64] = None
+    endpoint_id: Optional[int] = None
+    group_id: Optional[int] = None

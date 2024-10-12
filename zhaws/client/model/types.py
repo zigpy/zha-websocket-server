@@ -75,7 +75,7 @@ class GenericState(BaseModel):
         "LQISensor",
         "LastSeenSensor",
     ]
-    state: Union[str, bool, int, float, None]
+    state: Union[str, bool, int, float, None] = None
 
 
 class DeviceTrackerState(BaseModel):
@@ -83,7 +83,7 @@ class DeviceTrackerState(BaseModel):
 
     class_name: Literal["DeviceTracker"] = "DeviceTracker"
     connected: bool
-    battery_level: Optional[float]
+    battery_level: Optional[float] = None
 
 
 class BooleanState(BaseModel):
@@ -106,7 +106,7 @@ class CoverState(BaseModel):
 
     class_name: Literal["Cover"] = "Cover"
     current_position: int
-    state: Optional[str]
+    state: Optional[str] = None
     is_opening: bool
     is_closing: bool
     is_closed: bool
@@ -116,23 +116,25 @@ class ShadeState(BaseModel):
     """Cover state model."""
 
     class_name: Literal["Shade", "KeenVent"]
-    current_position: Optional[
-        int
-    ]  # TODO: how should we represent this when it is None?
+    current_position: Optional[int] = (
+        None  # TODO: how should we represent this when it is None?
+    )
     is_closed: bool
-    state: Optional[str]
+    state: Optional[str] = None
 
 
 class FanState(BaseModel):
     """Fan state model."""
 
     class_name: Literal["Fan", "FanGroup"]
-    preset_mode: Optional[
-        str
-    ]  # TODO: how should we represent these when they are None?
-    percentage: Optional[int]  # TODO: how should we represent these when they are None?
+    preset_mode: Optional[str] = (
+        None  # TODO: how should we represent these when they are None?
+    )
+    percentage: Optional[int] = (
+        None  # TODO: how should we represent these when they are None?
+    )
     is_on: bool
-    speed: Optional[str]
+    speed: Optional[str] = None
 
 
 class LockState(BaseModel):
@@ -146,10 +148,10 @@ class BatteryState(BaseModel):
     """Battery state model."""
 
     class_name: Literal["Battery"] = "Battery"
-    state: Optional[Union[str, float, int]]
-    battery_size: Optional[str]
-    battery_quantity: Optional[int]
-    battery_voltage: Optional[float]
+    state: Optional[Union[str, float, int]] = None
+    battery_size: Optional[str] = None
+    battery_quantity: Optional[int] = None
+    battery_voltage: Optional[float] = None
 
 
 class ElectricalMeasurementState(BaseModel):
@@ -161,11 +163,11 @@ class ElectricalMeasurementState(BaseModel):
         "ElectricalMeasurementRMSCurrent",
         "ElectricalMeasurementRMSVoltage",
     ]
-    state: Optional[Union[str, float, int]]
-    measurement_type: Optional[str]
-    active_power_max: Optional[str]
-    rms_current_max: Optional[str]
-    rms_voltage_max: Optional[str]
+    state: Optional[Union[str, float, int]] = None
+    measurement_type: Optional[str] = None
+    active_power_max: Optional[str] = None
+    rms_current_max: Optional[str] = None
+    rms_voltage_max: Optional[str] = None
 
 
 class LightState(BaseModel):
@@ -173,11 +175,11 @@ class LightState(BaseModel):
 
     class_name: Literal["Light", "HueLight", "ForceOnLight", "LightGroup"]
     on: bool
-    brightness: Optional[int]
-    hs_color: Optional[tuple[float, float]]
-    color_temp: Optional[int]
-    effect: Optional[str]
-    off_brightness: Optional[int]
+    brightness: Optional[int] = None
+    hs_color: Optional[tuple[float, float]] = None
+    color_temp: Optional[int] = None
+    effect: Optional[str] = None
+    off_brightness: Optional[int] = None
 
 
 class ThermostatState(BaseModel):
@@ -190,14 +192,14 @@ class ThermostatState(BaseModel):
         "MoesThermostat",
         "BecaThermostat",
     ]
-    current_temperature: Optional[float]
-    target_temperature: Optional[float]
-    target_temperature_low: Optional[float]
-    target_temperature_high: Optional[float]
-    hvac_action: Optional[str]
-    hvac_mode: Optional[str]
-    preset_mode: Optional[str]
-    fan_mode: Optional[str]
+    current_temperature: Optional[float] = None
+    target_temperature: Optional[float] = None
+    target_temperature_low: Optional[float] = None
+    target_temperature_high: Optional[float] = None
+    hvac_action: Optional[str] = None
+    hvac_mode: Optional[str] = None
+    preset_mode: Optional[str] = None
+    fan_mode: Optional[str] = None
 
 
 class SwitchState(BaseModel):
@@ -211,9 +213,9 @@ class SmareEnergyMeteringState(BaseModel):
     """Smare energy metering state model."""
 
     class_name: Literal["SmartEnergyMetering", "SmartEnergySummation"]
-    state: Optional[Union[str, float, int]]
-    device_type: Optional[str]
-    status: Optional[str]
+    state: Optional[Union[str, float, int]] = None
+    device_type: Optional[str] = None
+    status: Optional[str] = None
 
 
 class BaseEntity(BaseEventedModel):
@@ -436,8 +438,8 @@ class SwitchEntity(BasePlatformEntity):
 class DeviceSignatureEndpoint(BaseModel):
     """Device signature endpoint model."""
 
-    profile_id: Optional[str]
-    device_type: Optional[str]
+    profile_id: Optional[str] = None
+    device_type: Optional[str] = None
     input_clusters: list[str]
     output_clusters: list[str]
 
@@ -463,9 +465,9 @@ class NodeDescriptor(BaseModel):
 class DeviceSignature(BaseModel):
     """Device signature model."""
 
-    node_descriptor: Optional[NodeDescriptor]
-    manufacturer: Optional[str]
-    model: Optional[str]
+    node_descriptor: Optional[NodeDescriptor] = None
+    manufacturer: Optional[str] = None
+    model: Optional[str] = None
     endpoints: dict[int, DeviceSignatureEndpoint]
 
 
@@ -478,11 +480,11 @@ class BaseDevice(BaseModel):
     model: str
     name: str
     quirk_applied: bool
-    quirk_class: Union[str, None]
+    quirk_class: Union[str, None] = None
     manufacturer_code: int
     power_source: str
-    lqi: Union[int, None]
-    rssi: Union[int, None]
+    lqi: Union[int, None] = None
+    rssi: Union[int, None] = None
     last_seen: str
     available: bool
     device_type: Literal["Coordinator", "Router", "EndDevice"]
@@ -597,6 +599,8 @@ class Group(BaseModel):
         ],
     ]
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("members", pre=True, always=True, each_item=False, check_fields=False)
     def convert_member_ieee(
         cls, members: dict[str, dict], values: dict[str, Any], **kwargs: Any

@@ -1,4 +1,5 @@
 """Websocket API for zhawss."""
+
 from __future__ import annotations
 
 import asyncio
@@ -69,9 +70,9 @@ async def stop_network(
 class UpdateTopologyCommand(WebSocketCommand):
     """Stop the Zigbee network."""
 
-    command: Literal[
+    command: Literal[APICommands.UPDATE_NETWORK_TOPOLOGY] = (
         APICommands.UPDATE_NETWORK_TOPOLOGY
-    ] = APICommands.UPDATE_NETWORK_TOPOLOGY
+    )
 
 
 @decorators.websocket_command(UpdateTopologyCommand)
@@ -145,7 +146,7 @@ class PermitJoiningCommand(WebSocketCommand):
 
     command: Literal[APICommands.PERMIT_JOINING] = APICommands.PERMIT_JOINING
     duration: Annotated[int, Field(ge=1, le=254)] = 60
-    ieee: Union[EUI64, None]
+    ieee: Union[EUI64, None] = None
 
 
 @decorators.websocket_command(PermitJoiningCommand)
@@ -184,15 +185,15 @@ async def remove_device(
 class ReadClusterAttributesCommand(WebSocketCommand):
     """Read cluster attributes command."""
 
-    command: Literal[
+    command: Literal[APICommands.READ_CLUSTER_ATTRIBUTES] = (
         APICommands.READ_CLUSTER_ATTRIBUTES
-    ] = APICommands.READ_CLUSTER_ATTRIBUTES
+    )
     ieee: EUI64
     endpoint_id: int
     cluster_id: int
     cluster_type: Literal["in", "out"]
     attributes: list[str]
-    manufacturer_code: Union[int, None]
+    manufacturer_code: Union[int, None] = None
 
 
 @decorators.websocket_command(ReadClusterAttributesCommand)
@@ -251,16 +252,16 @@ async def read_cluster_attributes(
 class WriteClusterAttributeCommand(WebSocketCommand):
     """Write cluster attribute command."""
 
-    command: Literal[
+    command: Literal[APICommands.WRITE_CLUSTER_ATTRIBUTE] = (
         APICommands.WRITE_CLUSTER_ATTRIBUTE
-    ] = APICommands.WRITE_CLUSTER_ATTRIBUTE
+    )
     ieee: EUI64
     endpoint_id: int
     cluster_id: int
     cluster_type: Literal["in", "out"]
     attribute: str
     value: Union[str, int, float, bool]
-    manufacturer_code: Union[int, None]
+    manufacturer_code: Union[int, None] = None
 
 
 @decorators.websocket_command(WriteClusterAttributeCommand)
@@ -330,7 +331,7 @@ class CreateGroupCommand(WebSocketCommand):
     command: Literal[APICommands.CREATE_GROUP] = APICommands.CREATE_GROUP
     group_name: str
     members: list[GroupMemberReference]
-    group_id: Union[int, None]
+    group_id: Union[int, None] = None
 
 
 @decorators.websocket_command(CreateGroupCommand)
@@ -412,9 +413,9 @@ async def add_group_members(
 class RemoveGroupMembersCommand(AddGroupMembersCommand):
     """Remove group members command."""
 
-    command: Literal[
+    command: Literal[APICommands.REMOVE_GROUP_MEMBERS] = (
         APICommands.REMOVE_GROUP_MEMBERS
-    ] = APICommands.REMOVE_GROUP_MEMBERS
+    )
 
 
 @decorators.websocket_command(RemoveGroupMembersCommand)

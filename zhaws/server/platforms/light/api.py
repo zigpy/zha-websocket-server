@@ -1,4 +1,5 @@
 """WS API for the light platform entity."""
+
 from __future__ import annotations
 
 import logging
@@ -36,6 +37,8 @@ class LightTurnOnCommand(PlatformEntityCommand):
     ]
     color_temp: Union[int, None]
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("color_temp", pre=True, always=True, each_item=False)
     def check_color_setting_exclusivity(
         cls, color_temp: int | None, values: dict[str, Any], **kwargs: Any

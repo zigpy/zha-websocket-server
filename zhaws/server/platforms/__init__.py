@@ -1,4 +1,5 @@
 """Platform module for zhawss."""
+
 from __future__ import annotations
 
 import abc
@@ -18,8 +19,8 @@ from zhaws.server.websocket.api.model import WebSocketCommand
 if TYPE_CHECKING:
     from zhaws.server.zigbee.cluster import ClusterHandler
     from zhaws.server.zigbee.device import Device
-    from zhaws.server.zigbee.group import Group
     from zhaws.server.zigbee.endpoint import Endpoint
+    from zhaws.server.zigbee.group import Group
 
 from zhaws.server.util import LogMixin
 
@@ -296,6 +297,6 @@ class GroupEntity(BaseEntity):
 class PlatformEntityCommand(WebSocketCommand):
     """Base class for platform entity commands."""
 
-    ieee: Union[EUI64, None]
-    group_id: Union[int, None]
+    ieee: Union[EUI64, None] = None
+    group_id: Union[int, None] = None
     unique_id: str

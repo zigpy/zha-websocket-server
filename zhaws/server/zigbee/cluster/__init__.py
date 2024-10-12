@@ -1,11 +1,13 @@
 """Base classes for zigbee cluster handlers."""
+
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 from enum import Enum
 from functools import partialmethod
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Final, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 from zigpy.device import Device as ZigpyDevice
 import zigpy.exceptions
@@ -55,11 +57,11 @@ class ClusterAttributeUpdatedEvent(BaseEvent):
 
     id: int
     name: str
-    value: Any
+    value: Any = None
     event_type: Literal["cluster_handler_event"] = "cluster_handler_event"
-    event: Literal[
+    event: Literal["cluster_handler_attribute_updated"] = (
         "cluster_handler_attribute_updated"
-    ] = "cluster_handler_attribute_updated"
+    )
 
 
 class ClusterHandler(LogMixin, EventBase):
@@ -166,7 +168,7 @@ class ClusterHandler(LogMixin, EventBase):
                 },
             )
             """
-        except (zigpy.exceptions.ZigbeeException, asyncio.TimeoutError) as ex:
+        except (TimeoutError, zigpy.exceptions.ZigbeeException) as ex:
             self.debug(
                 "Failed to bind '%s' cluster: %s", self.cluster.ep_attribute, str(ex)
             )
@@ -224,7 +226,7 @@ class ClusterHandler(LogMixin, EventBase):
                 # if we get a response, then it's a success
                 for attr_stat in event_data.values():
                     attr_stat["success"] = True
-            except (zigpy.exceptions.ZigbeeException, asyncio.TimeoutError) as ex:
+            except (TimeoutError, zigpy.exceptions.ZigbeeException) as ex:
                 self.debug(
                     "failed to set reporting on '%s' cluster for: %s",
                     self.cluster.ep_attribute,
@@ -438,7 +440,7 @@ class ClusterHandler(LogMixin, EventBase):
                     manufacturer=manufacturer,
                 )
                 result.update(read)
-            except (asyncio.TimeoutError, zigpy.exceptions.ZigbeeException) as ex:
+            except (TimeoutError, zigpy.exceptions.ZigbeeException) as ex:
                 self.debug(
                     "failed to get attributes '%s' on '%s' cluster: %s",
                     attributes,

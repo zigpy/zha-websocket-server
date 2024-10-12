@@ -56,7 +56,7 @@ class Attribute(BaseModel):
 
     id: int
     name: str
-    value: Any
+    value: Any = None
 
 
 class MinimalCluster(BaseModel):
@@ -87,9 +87,9 @@ class PlatformEntityStateChangedEvent(BaseEvent):
     event_type: Literal["platform_entity_event"] = "platform_entity_event"
     event: Literal["platform_entity_state_changed"] = "platform_entity_state_changed"
     platform_entity: MinimalPlatformEntity
-    endpoint: Optional[MinimalEndpoint]
-    device: Optional[MinimalDevice]
-    group: Optional[MinimalGroup]
+    endpoint: Optional[MinimalEndpoint] = None
+    device: Optional[MinimalDevice] = None
+    group: Optional[MinimalGroup] = None
     state: Annotated[
         Union[
             DeviceTrackerState,
