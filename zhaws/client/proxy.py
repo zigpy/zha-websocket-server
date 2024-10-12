@@ -1,4 +1,5 @@
 """Proxy object for the client side objects."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -44,7 +45,7 @@ class BaseProxyObject(EventBase):
         if entity is None:
             if isinstance(self._proxied_object, DeviceModel):
                 raise ValueError(
-                    "Entity not found: %s", event.platform_entity.unique_id
+                    f"Entity not found: {event.platform_entity.unique_id}",
                 )
             return  # group entities are updated to get state when created so we may not have the entity yet
         if not isinstance(entity, ButtonEntity):
