@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from zha.event import EventBase
 from zhaws.client.model.events import PlatformEntityStateChangedEvent
 from zhaws.client.model.types import (
     ButtonEntity,
     Device as DeviceModel,
     Group as GroupModel,
 )
-from zhaws.event import EventBase
 
 if TYPE_CHECKING:
     from zhaws.client.client import Client

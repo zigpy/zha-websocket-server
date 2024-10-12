@@ -9,12 +9,12 @@ from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeVar, Union, cast
 from pydantic import Field
 from zigpy.types.named import EUI64
 
+from zha.zigbee.device import Device
+from zha.zigbee.group import Group, GroupMemberReference
 from zhaws.server.const import DEVICES, DURATION, GROUPS, APICommands
 from zhaws.server.websocket.api import decorators, register_api_command
 from zhaws.server.websocket.api.model import WebSocketCommand
 from zhaws.server.zigbee.controller import Controller
-from zhaws.server.zigbee.device import Device
-from zhaws.server.zigbee.group import Group, GroupMemberReference
 
 if TYPE_CHECKING:
     from zhaws.server.websocket.client import Client

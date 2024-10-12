@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 
 import websockets
 
+from zha.application.discovery import PLATFORMS
 from zhaws.server.config.model import ServerConfiguration
 from zhaws.server.const import APICommands
 from zhaws.server.decorators import periodic
@@ -35,12 +36,16 @@ class Server:
     def __init__(self, *, configuration: ServerConfiguration) -> None:
         """Initialize the server."""
         self._config = configuration
-        self._ws_server: websockets.Serve | None = None
+        self._ws_server: websockets.WebSocketServer | None = None
         self._controller: Controller = Controller(self)
         self._client_manager: ClientManager = ClientManager(self)
         self._stopped_event: asyncio.Event = asyncio.Event()
         self._tracked_tasks: list[asyncio.Task] = []
         self._tracked_completable_tasks: list[asyncio.Task] = []
+        self.data: dict[Any, Any] = {}
+        for platform in PLATFORMS:
+            self.data.setdefault(platform, [])
+        self._register_api_commands()
         self._register_api_commands()
         self._tracked_tasks.append(
             asyncio.create_task(

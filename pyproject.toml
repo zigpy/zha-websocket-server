@@ -40,6 +40,7 @@ enabled = true
 ignore-words-list = "hass"
 
 [tool.mypy]
+plugins = "pydantic.mypy"
 python_version = "3.12"
 check_untyped_defs = true
 disallow_incomplete_defs = true

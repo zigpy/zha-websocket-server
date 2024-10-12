@@ -3,7 +3,7 @@
 import logging
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, no_type_check
 
-from pydantic import BaseModel as PydanticBaseModel, ConfigDict, validator
+from pydantic import BaseModel as PydanticBaseModel, ConfigDict, field_validator
 from zigpy.types.named import EUI64
 
 if TYPE_CHECKING:
@@ -17,12 +17,8 @@ class BaseModel(PydanticBaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("ieee", pre=True, always=True, each_item=False, check_fields=False)
-    def convert_ieee(
-        cls, ieee: Optional[Union[str, EUI64]], values: dict[str, Any], **kwargs: Any
-    ) -> Optional[EUI64]:
+    @field_validator("ieee", mode="before", check_fields=False)
+    def convert_ieee(cls, ieee: Optional[Union[str, EUI64]]) -> Optional[EUI64]:
         """Convert ieee to EUI64."""
         if ieee is None:
             return None
@@ -30,16 +26,9 @@ class BaseModel(PydanticBaseModel):
             return EUI64.convert(ieee)
         return ieee
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator(
-        "device_ieee", pre=True, always=True, each_item=False, check_fields=False
-    )
+    @field_validator("device_ieee", mode="before", check_fields=False)
     def convert_device_ieee(
-        cls,
-        device_ieee: Optional[Union[str, EUI64]],
-        values: dict[str, Any],
-        **kwargs: Any,
+        cls, device_ieee: Optional[Union[str, EUI64]]
     ) -> Optional[EUI64]:
         """Convert device ieee to EUI64."""
         if device_ieee is None:

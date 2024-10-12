@@ -1,4 +1,5 @@
 """Client implementation for the zhaws.client."""
+
 from __future__ import annotations
 
 import asyncio
@@ -12,9 +13,9 @@ from aiohttp import ClientSession, ClientWebSocketResponse, client_exceptions
 from aiohttp.http_websocket import WSMsgType
 from async_timeout import timeout
 
+from zha.event import EventBase
 from zhaws.client.model.commands import CommandResponse, ErrorResponse
 from zhaws.client.model.messages import Message
-from zhaws.event import EventBase
 from zhaws.server.websocket.api.model import WebSocketCommand
 
 SIZE_PARSE_JSON_EXECUTOR = 8192
@@ -85,13 +86,13 @@ class Client(EventBase):
             async with timeout(20):
                 await self._send_json_message(command.json(exclude_none=True))
                 return await future
-        except asyncio.TimeoutError:
-            _LOGGER.error("Timeout waiting for response")
+        except TimeoutError:
+            _LOGGER.exception("Timeout waiting for response")
             return CommandResponse.parse_obj(
                 {"message_id": message_id, "success": False}
             )
         except Exception as err:
-            _LOGGER.error("Error sending command: %s", err, exc_info=err)
+            _LOGGER.exception("Error sending command", exc_info=err)
         finally:
             self._result_futures.pop(message_id)
 
@@ -112,7 +113,7 @@ class Client(EventBase):
                 max_msg_size=0,
             )
         except client_exceptions.ClientError as err:
-            _LOGGER.error("Error connecting to server: %s", err)
+            _LOGGER.exception("Error connecting to server", exc_info=err)
             raise err
 
     async def listen_loop(self) -> None:
@@ -193,7 +194,7 @@ class Client(EventBase):
         try:
             message = Message.parse_obj(msg).__root__
         except Exception as err:
-            _LOGGER.error("Error parsing message: %s", msg, exc_info=err)
+            _LOGGER.exception("Error parsing message: %s", msg, exc_info=err)
 
         if message.message_type == "result":
             future = self._result_futures.get(message.message_id)
@@ -230,7 +231,7 @@ class Client(EventBase):
         try:
             self.emit(message.event_type, message)
         except Exception as err:
-            _LOGGER.error("Error handling event: %s", err, exc_info=err)
+            _LOGGER.exception("Error handling event", exc_info=err)
 
     async def _send_json_message(self, message: str) -> None:
         """Send a message.

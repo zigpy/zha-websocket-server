@@ -5,11 +5,11 @@ Types are representations of the objects that exist in zhawss.
 
 from typing import Annotated, Any, Literal, Optional, Union
 
-from pydantic import validator
+from pydantic import field_validator
 from pydantic.fields import Field
 from zigpy.types.named import EUI64
 
-from zhaws.event import EventBase
+from zha.event import EventBase
 from zhaws.model import BaseModel
 
 
@@ -599,12 +599,8 @@ class Group(BaseModel):
         ],
     ]
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("members", pre=True, always=True, each_item=False, check_fields=False)
-    def convert_member_ieee(
-        cls, members: dict[str, dict], values: dict[str, Any], **kwargs: Any
-    ) -> dict[EUI64, Device]:
+    @field_validator("members", mode="before", check_fields=False)
+    def convert_member_ieee(cls, members: dict[str, dict]) -> dict[EUI64, GroupMember]:
         """Convert member IEEE to EUI64."""
         return {EUI64.convert(k): GroupMember(**v) for k, v in members.items()}
 

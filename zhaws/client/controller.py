@@ -9,6 +9,7 @@ from aiohttp import ClientSession
 from async_timeout import timeout
 from zigpy.types.named import EUI64
 
+from zha.event import EventBase
 from zhaws.client.client import Client
 from zhaws.client.helpers import (
     AlarmControlPanelHelper,
@@ -45,7 +46,6 @@ from zhaws.client.model.events import (
     ZHAEvent,
 )
 from zhaws.client.proxy import DeviceProxy, GroupProxy
-from zhaws.event import EventBase
 from zhaws.server.const import ControllerEvents, EventTypes
 from zhaws.server.websocket.api.model import WebSocketCommand
 

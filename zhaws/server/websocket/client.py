@@ -1,10 +1,12 @@
 """Client classes for zhawss."""
+
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import ValidationError
 from websockets.server import WebSocketServerProtocol
@@ -124,9 +126,9 @@ class Client:
     async def _handle_incoming_message(self, message: str | bytes) -> None:
         """Handle an incoming message."""
         _LOGGER.info("Message received: %s", message)
-        handlers: dict[
-            str, tuple[Callable, WebSocketCommand]
-        ] = self._client_manager.server.data[WEBSOCKET_API]
+        handlers: dict[str, tuple[Callable, WebSocketCommand]] = (
+            self._client_manager.server.data[WEBSOCKET_API]
+        )
 
         loaded_message = json.loads(message)
         _LOGGER.debug(
@@ -188,9 +190,9 @@ class Client:
 class ClientListenRawZCLCommand(WebSocketCommand):
     """Listen to raw ZCL data."""
 
-    command: Literal[
+    command: Literal[APICommands.CLIENT_LISTEN_RAW_ZCL] = (
         APICommands.CLIENT_LISTEN_RAW_ZCL
-    ] = APICommands.CLIENT_LISTEN_RAW_ZCL
+    )
 
 
 class ClientListenCommand(WebSocketCommand):

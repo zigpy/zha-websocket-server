@@ -1,8 +1,7 @@
 """Constants."""
 
+from enum import StrEnum
 from typing import Final
-
-from zhaws.backports.enum import StrEnum
 
 
 class APICommands(StrEnum):
