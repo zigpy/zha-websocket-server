@@ -6,11 +6,6 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-if [ ! -n "$DEVCONTAINER" ];then
-  python3 -m venv venv
-  source venv/bin/activate
-fi
-
 curl -LsSf https://astral.sh/uv/install.sh | sh
 uv venv venv
 . venv/bin/activate
