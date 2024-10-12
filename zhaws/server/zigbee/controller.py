@@ -16,6 +16,7 @@ from zha.application.gateway import (
     GroupEvent,
     RawDeviceInitializedEvent,
 )
+from zha.application.helpers import ZHAData
 from zha.event import EventBase
 from zha.zigbee.group import GroupInfo
 from zhaws.server.const import (
@@ -68,7 +69,12 @@ class Controller(EventBase):
             _LOGGER.warning("Attempted to start an already running Zigbee network")
             return
         _LOGGER.info("Starting Zigbee network")
-        self.zha_gateway = await Gateway.async_from_config(self.server.config)
+        self.zha_gateway = await Gateway.async_from_config(
+            ZHAData(
+                config=self.server.config.zha_config,
+                zigpy_config=self.server.config.zigpy_config,
+            )
+        )
         await self.zha_gateway.async_initialize()
         self._unsubs.append(self.zha_gateway.on_all_events(self._handle_event_protocol))
         await self.zha_gateway.async_initialize_devices_and_entities()
