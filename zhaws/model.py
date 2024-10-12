@@ -18,6 +18,7 @@ class BaseModel(PydanticBaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
     @field_validator("ieee", mode="before", check_fields=False)
+    @classmethod
     def convert_ieee(cls, ieee: Optional[Union[str, EUI64]]) -> Optional[EUI64]:
         """Convert ieee to EUI64."""
         if ieee is None:
@@ -27,6 +28,7 @@ class BaseModel(PydanticBaseModel):
         return ieee
 
     @field_validator("device_ieee", mode="before", check_fields=False)
+    @classmethod
     def convert_device_ieee(
         cls, device_ieee: Optional[Union[str, EUI64]]
     ) -> Optional[EUI64]:

@@ -36,7 +36,7 @@ _LOGGER = logging.getLogger(__name__)
 @pytest.fixture
 def server_configuration() -> ServerConfiguration:
     """Server configuration fixture."""
-    port = aiohttp.test_utils.unused_port()  # type: ignore
+    port = aiohttp.test_utils.unused_port()
     with tempfile.TemporaryDirectory() as tempdir:
         # you can e.g. create a file here:
         config_path = os.path.join(tempdir, "configuration.json")
@@ -76,20 +76,6 @@ def zigpy_app_controller() -> ControllerApplication:
     type(app).nwk = PropertyMock(return_value=zigpy.types.NWK(0x0000))
     type(app).devices = PropertyMock(return_value={})
     return app
-
-
-@pytest.fixture(scope="session", autouse=True)
-def globally_load_quirks():
-    """Load quirks automatically so that ZHA tests run deterministically in isolation.
-
-    If portions of the ZHA test suite that do not happen to load quirks are run
-    independently, bugs can emerge that will show up only when more of the test suite is
-    run.
-    """
-
-    import zhaquirks
-
-    zhaquirks.setup()
 
 
 @pytest.fixture

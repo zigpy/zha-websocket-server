@@ -135,7 +135,10 @@ class GetDevicesResponse(CommandResponse):
     devices: dict[EUI64, Device]
 
     @field_validator("devices", mode="before", check_fields=False)
-    def convert_device_ieee(cls, devices: dict[str, dict]) -> dict[EUI64, Device]:
+    @classmethod
+    def convert_devices_device_ieee(
+        cls, devices: dict[str, dict]
+    ) -> dict[EUI64, Device]:
         """Convert device ieee to EUI64."""
         return {EUI64.convert(k): Device(**v) for k, v in devices.items()}
 

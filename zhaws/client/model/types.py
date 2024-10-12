@@ -600,6 +600,7 @@ class Group(BaseModel):
     ]
 
     @field_validator("members", mode="before", check_fields=False)
+    @classmethod
     def convert_member_ieee(cls, members: dict[str, dict]) -> dict[EUI64, GroupMember]:
         """Convert member IEEE to EUI64."""
         return {EUI64.convert(k): GroupMember(**v) for k, v in members.items()}

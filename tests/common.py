@@ -13,10 +13,7 @@ import zigpy.zcl.foundation as zcl_f
 
 from zhaws.client.model.types import BasePlatformEntity
 from zhaws.client.proxy import DeviceProxy
-from zhaws.server.platforms.registries import Platform
 from zhaws.server.websocket.server import Server
-from zhaws.server.zigbee.device import Device
-from zhaws.server.zigbee.group import Group
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -93,6 +93,9 @@ class Client(EventBase):
             )
         except Exception as err:
             _LOGGER.exception("Error sending command", exc_info=err)
+            return CommandResponse.parse_obj(
+                {"message_id": message_id, "success": False}
+            )
         finally:
             self._result_futures.pop(message_id)
 
@@ -126,7 +129,7 @@ class Client(EventBase):
     async def listen(self) -> None:
         """Start listening to the websocket."""
         if not self.connected:
-            raise Exception("Not connected when start listening")
+            raise Exception("Not connected when start listening")  # noqa: TRY002
 
         assert self._client
 
@@ -164,13 +167,13 @@ class Client(EventBase):
         msg = await self._client.receive()
 
         if msg.type in (WSMsgType.CLOSE, WSMsgType.CLOSED, WSMsgType.CLOSING):
-            raise Exception("Connection was closed.")
+            raise Exception("Connection was closed.")  # noqa: TRY002
 
         if msg.type == WSMsgType.ERROR:
-            raise Exception()
+            raise Exception()  # noqa: TRY002
 
         if msg.type != WSMsgType.TEXT:
-            raise Exception(f"Received non-Text message: {msg.type}")
+            raise Exception(f"Received non-Text message: {msg.type}")  # noqa: TRY002
 
         try:
             if len(msg.data) > SIZE_PARSE_JSON_EXECUTOR:
@@ -178,7 +181,7 @@ class Client(EventBase):
             else:
                 data = msg.json()
         except ValueError as err:
-            raise Exception("Received invalid JSON.") from err
+            raise Exception("Received invalid JSON.") from err  # noqa: TRY002
 
         if _LOGGER.isEnabledFor(logging.DEBUG):
             _LOGGER.debug("Received message:\n%s\n", pprint.pformat(msg))
@@ -239,7 +242,7 @@ class Client(EventBase):
         Raises NotConnected if client not connected.
         """
         if not self.connected:
-            raise Exception()
+            raise Exception()  # noqa: TRY002
 
         _LOGGER.debug("Publishing message:\n%s\n", pprint.pformat(message))
 

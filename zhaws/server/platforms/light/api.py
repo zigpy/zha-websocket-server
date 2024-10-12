@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Annotated, Any, Literal, Union
+from typing import TYPE_CHECKING, Annotated, Literal, Union
 
-from pydantic import Field, field_validator
+from pydantic import Field, ValidationInfo, field_validator
 
 from zhaws.server.const import APICommands
 from zhaws.server.platforms import PlatformEntityCommand
@@ -37,14 +37,15 @@ class LightTurnOnCommand(PlatformEntityCommand):
     ]
     color_temp: Union[int, None]
 
-    @field_validator("color_temp", mode="before")
+    @field_validator("color_temp", mode="before", check_fields=False)
+    @classmethod
     def check_color_setting_exclusivity(
-        cls, color_temp: int | None, values: dict[str, Any], **kwargs: Any
+        cls, color_temp: int | None, validation_info: ValidationInfo
     ) -> int | None:
         """Ensure only one color mode is set."""
         if (
-            "hs_color" in values
-            and values["hs_color"] is not None
+            "hs_color" in validation_info.data
+            and validation_info.data["hs_color"] is not None
             and color_temp is not None
         ):
             raise ValueError('Only one of "hs_color" and "color_temp" can be set')

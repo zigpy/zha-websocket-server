@@ -60,7 +60,7 @@ def websocket_command(
     ws_command: type[WebSocketCommand],
 ) -> Callable[[WebSocketCommandHandler], WebSocketCommandHandler]:
     """Tag a function as a websocket command."""
-    command = ws_command.__fields__["command"].default
+    command = ws_command.model_fields["command"].default
 
     def decorate(func: WebSocketCommandHandler) -> WebSocketCommandHandler:
         """Decorate ws command function."""
