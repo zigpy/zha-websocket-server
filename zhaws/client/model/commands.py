@@ -181,7 +181,7 @@ class GroupsResponse(CommandResponse):
 class UpdateGroupResponse(CommandResponse):
     """Update group response."""
 
-    command: Literal["create_group", "add_group_members", "remove_group_members"]
+    command: Literal["update_group", "add_group_members", "remove_group_members"]
     group: Group
 
 

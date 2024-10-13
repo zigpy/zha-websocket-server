@@ -6,6 +6,7 @@ from typing import Any, Literal, cast
 
 from zigpy.types.named import EUI64
 
+from zha.application.discovery import Platform
 from zhaws.client.client import Client
 from zhaws.client.model.commands import (
     CommandResponse,
@@ -60,7 +61,6 @@ from zhaws.server.platforms.lock.api import (
     LockUnlockCommand,
 )
 from zhaws.server.platforms.number.api import NumberSetValueCommand
-from zhaws.server.platforms.registries import Platform
 from zhaws.server.platforms.select.api import SelectSelectOptionCommand
 from zhaws.server.platforms.siren.api import SirenTurnOffCommand, SirenTurnOnCommand
 from zhaws.server.platforms.switch.api import SwitchTurnOffCommand, SwitchTurnOnCommand

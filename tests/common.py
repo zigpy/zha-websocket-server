@@ -12,7 +12,8 @@ import zigpy.zcl
 import zigpy.zcl.foundation as zcl_f
 
 from zha.application.discovery import Platform
-from zha.zigbee import Device, Group
+from zha.zigbee.device import Device
+from zha.zigbee.group import Group
 from zhaws.client.model.types import BasePlatformEntity
 from zhaws.client.proxy import DeviceProxy
 from zhaws.server.websocket.server import Server
@@ -218,11 +219,10 @@ def find_entity_ids(
     This is used to get the entity id in order to get the state from the state
     machine so that we can test state changes.
     """
-    ieeetail = "".join([f"{o:02x}" for o in zha_device.ieee[:4]])
-    head = f"{domain}.{slugify(f'{zha_device.name} {ieeetail}', separator='_')}"
+    head = f"{domain}.{str(zha_device.ieee)}"
 
     entity_ids = [
-        f"{entity.PLATFORM}.{slugify(entity.name, separator='_')}"
+        f"{entity.PLATFORM}.{entity.unique_id}"
         for entity in zha_device.platform_entities.values()
     ]
 

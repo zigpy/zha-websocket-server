@@ -1,13 +1,10 @@
 """Shared models for zhaws."""
 
 import logging
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, no_type_check
+from typing import Any, Literal, Optional, Union
 
 from pydantic import BaseModel as PydanticBaseModel, ConfigDict, field_validator
 from zigpy.types.named import EUI64
-
-if TYPE_CHECKING:
-    from pydantic.typing import AbstractSetIntStr, MappingIntStrAny
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,6 +22,8 @@ class BaseModel(PydanticBaseModel):
             return None
         if isinstance(ieee, str):
             return EUI64.convert(ieee)
+        if isinstance(ieee, list):
+            return EUI64(ieee)
         return ieee
 
     @field_validator("device_ieee", mode="before", check_fields=False)
@@ -37,34 +36,17 @@ class BaseModel(PydanticBaseModel):
             return None
         if isinstance(device_ieee, str):
             return EUI64.convert(device_ieee)
+        if isinstance(device_ieee, list):
+            return EUI64(device_ieee)
         return device_ieee
 
     @classmethod
-    @no_type_check
-    def _get_value(
-        cls,
-        v: Any,
-        to_dict: bool,
-        by_alias: bool,
-        include: Optional[Union["AbstractSetIntStr", "MappingIntStrAny"]],
-        exclude: Optional[Union["AbstractSetIntStr", "MappingIntStrAny"]],
-        exclude_unset: bool,
-        exclude_defaults: bool,
-        exclude_none: bool,
-    ) -> Any:
+    def _get_value(cls, *args, **kwargs) -> Any:
         """Convert EUI64 to string."""
-        if isinstance(v, EUI64):
-            return str(v)
-        return PydanticBaseModel._get_value(
-            v,
-            to_dict,
-            by_alias,
-            include,
-            exclude,
-            exclude_unset,
-            exclude_defaults,
-            exclude_none,
-        )
+        value = args[0]
+        if isinstance(value, EUI64):
+            return str(value)
+        return PydanticBaseModel._get_value(cls, *args, **kwargs)
 
 
 class BaseEvent(BaseModel):

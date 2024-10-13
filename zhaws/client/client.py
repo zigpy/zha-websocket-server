@@ -195,7 +195,7 @@ class Client(EventBase):
         """
 
         try:
-            message = Message.parse_obj(msg).__root__
+            message = Message.parse_obj(msg).root
         except Exception as err:
             _LOGGER.exception("Error parsing message: %s", msg, exc_info=err)
 

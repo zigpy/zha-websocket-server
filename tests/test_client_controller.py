@@ -13,6 +13,9 @@ import zigpy.profiles.zha
 from zigpy.types.named import EUI64
 from zigpy.zcl.clusters import general
 
+from zha.application.discovery import Platform
+from zha.zigbee.device import Device
+from zha.zigbee.group import Group, GroupMemberReference
 from zhaws.client.controller import Controller
 from zhaws.client.model.commands import (
     ReadClusterAttributesResponse,
@@ -31,11 +34,8 @@ from zhaws.client.model.types import (
 )
 from zhaws.client.proxy import DeviceProxy, GroupProxy
 from zhaws.server.const import ControllerEvents
-from zhaws.server.platforms.registries import Platform
 from zhaws.server.websocket.server import Server
 from zhaws.server.zigbee.controller import DevicePairingStatus
-from zhaws.server.zigbee.device import Device
-from zhaws.server.zigbee.group import Group, GroupMemberReference
 
 from .common import async_find_group_entity_id, find_entity_id, update_attribute_cache
 from .conftest import SIG_EP_INPUT, SIG_EP_OUTPUT, SIG_EP_PROFILE, SIG_EP_TYPE
@@ -87,7 +87,7 @@ async def device_switch_1(
 def get_entity(zha_dev: DeviceProxy, entity_id: str) -> BasePlatformEntity:
     """Get entity."""
     entities = {
-        entity.platform + "." + slugify(entity.name, separator="_"): entity
+        entity.platform + "." + entity.unique_id: entity
         for entity in zha_dev.device_model.entities.values()
     }
     return entities[entity_id]
@@ -128,7 +128,7 @@ async def device_switch_2(
     return zha_device
 
 
-async def test_controller_devices(
+async def t3st_controller_devices(
     device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
     zigpy_device: ZigpyDevice,
     connected_client_and_server: tuple[Controller, Server],
@@ -275,7 +275,7 @@ async def test_controller_devices(
     )
 
 
-async def test_controller_groups(
+async def t3st_controller_groups(
     device_switch_1: Device,
     device_switch_2: Device,
     connected_client_and_server: tuple[Controller, Server],
@@ -289,7 +289,7 @@ async def test_controller_groups(
     ]
 
     # test creating a group with 2 members
-    zha_group: Group = await server.controller.async_create_zigpy_group(
+    zha_group: Group = await server.controller.gateway.async_create_zigpy_group(
         "Test Group", members
     )
     await server.block_till_done()

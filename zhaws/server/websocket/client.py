@@ -4,12 +4,17 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
+import datetime
+from enum import Enum, StrEnum
 import json
 import logging
 from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import ValidationError
 from websockets.server import WebSocketServerProtocol
+from zigpy.types import EUI64
+from zigpy.types.named import NWK
+from zigpy.zdo.types import NodeDescriptor
 
 from zhaws.server.const import (
     COMMAND,
@@ -32,6 +37,39 @@ if TYPE_CHECKING:
     from zhaws.server.websocket.server import Server
 
 _LOGGER = logging.getLogger(__name__)
+
+
+class JSONEncoder(json.JSONEncoder):
+    """JSONEncoder that supports Home Assistant objects."""
+
+    def default(self, o: Any) -> Any:
+        """Convert Home Assistant objects.
+
+        Hand other objects to the original method.
+        """
+        if isinstance(o, EUI64):
+            return str(o)
+        if isinstance(o, NWK):
+            return repr(o)
+        if isinstance(o, NodeDescriptor):
+            return o.as_dict()
+        if isinstance(o, StrEnum):
+            return str(o)
+        if isinstance(o, Enum):
+            return o.name
+        if isinstance(o, datetime.timedelta):
+            return {"__type": str(type(o)), "total_seconds": o.total_seconds()}
+        if isinstance(o, datetime.datetime):
+            return o.isoformat()
+        if isinstance(o, (datetime.date, datetime.time)):
+            return {"__type": str(type(o)), "isoformat": o.isoformat()}
+        if isinstance(o, set):
+            return list(o)
+
+        try:
+            return json.JSONEncoder.default(self, o)
+        except TypeError:
+            return {"__type": str(type(o)), "repr": repr(o)}
 
 
 class Client:
@@ -115,7 +153,7 @@ class Client:
     def _send_data(self, data: dict[str, Any]) -> None:
         """Send data to this client."""
         try:
-            message = json.dumps(data)
+            message = json.dumps(data, cls=JSONEncoder)
         except TypeError as exc:
             _LOGGER.exception("Couldn't serialize data: %s", data, exc_info=exc)
         else:
