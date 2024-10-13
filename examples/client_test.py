@@ -28,19 +28,7 @@ async def main() -> None:
     async with Controller("ws://localhost:8001/") as controller:
         await controller.clients.listen()
 
-        await controller.network.start_network(
-            {
-                "radio_type": "ezsp",
-                "device": {
-                    "path": "/dev/cu.GoControl_zigbee\u0011",
-                    "flow_control": "software",
-                    "baudrate": 57600,
-                },
-                "database_path": "./zigbee.db",
-                "enable_quirks": True,
-                "message_id": 1,
-            }
-        )
+        await controller.network.start_network()
 
         await controller.load_devices()
         await controller.load_groups()
@@ -94,7 +82,7 @@ async def main() -> None:
 
                 await asyncio.sleep(3)
             except Exception as err:
-                _LOGGER.exception(exc_info=err)
+                _LOGGER.exception("Exception testing lights", exc_info=err)
 
         if test_switches:
             try:
@@ -116,7 +104,7 @@ async def main() -> None:
 
                 await asyncio.sleep(3)
             except Exception as err:
-                _LOGGER.exception(exc_info=err)
+                _LOGGER.exception("Exception testing switches", exc_info=err)
 
         if test_alarm_control_panel:
             try:
@@ -130,7 +118,7 @@ async def main() -> None:
 
                 await asyncio.sleep(3)
             except Exception as err:
-                _LOGGER.exception(exc_info=err)
+                _LOGGER.exception("Exception testing alarm control panel", exc_info=err)
 
         if test_locks:
             try:
@@ -146,7 +134,7 @@ async def main() -> None:
 
                 await asyncio.sleep(3)
             except Exception as err:
-                _LOGGER.exception(exc_info=err)
+                _LOGGER.exception("Exception testing locks", exc_info=err)
 
         if test_buttons:
             try:
@@ -158,7 +146,7 @@ async def main() -> None:
 
                 await asyncio.sleep(3)
             except Exception as err:
-                _LOGGER.exception(exc_info=err)
+                _LOGGER.exception("Exception testing buttons", exc_info=err)
 
         """TODO turn this into an example for how to create a group with the client
         await controller.groups_helper.create_group(

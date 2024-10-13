@@ -13,5 +13,5 @@ class PlatformEntityCommand(WebSocketCommand):
     """Base class for platform entity commands."""
 
     ieee: Union[EUI64, None]
-    group_id: Union[int, None]
+    group_id: Union[int, None] = None
     unique_id: str

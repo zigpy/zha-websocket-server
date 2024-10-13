@@ -90,7 +90,7 @@ class TriggerAlarmCommand(PlatformEntityCommand):
     command: Literal[APICommands.ALARM_CONTROL_PANEL_TRIGGER] = (
         APICommands.ALARM_CONTROL_PANEL_TRIGGER
     )
-    code: Union[str, None]
+    code: Union[str, None] = None
 
 
 @decorators.websocket_command(TriggerAlarmCommand)

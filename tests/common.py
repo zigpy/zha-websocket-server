@@ -11,6 +11,8 @@ import zigpy.types as t
 import zigpy.zcl
 import zigpy.zcl.foundation as zcl_f
 
+from zha.application.discovery import Platform
+from zha.zigbee import Device, Group
 from zhaws.client.model.types import BasePlatformEntity
 from zhaws.client.proxy import DeviceProxy
 from zhaws.server.websocket.server import Server
@@ -203,6 +205,7 @@ def find_entity_id(
         for entity_id in entities:
             if qualifier in entity_id:
                 return entity_id
+        return None
     else:
         return entities[0]
 

@@ -170,10 +170,12 @@ class Server:
 
     async def _await_and_log_pending(self, pending: Iterable[Awaitable[Any]]) -> None:
         """Await and log tasks that take a long time."""
-        # pylint: disable=no-self-use
         wait_time = 0
         while pending:
-            _, pending = await asyncio.wait(pending, timeout=BLOCK_LOG_TIMEOUT)
+            _, pending = await asyncio.wait(
+                [asyncio.ensure_future(task) for task in pending],
+                timeout=BLOCK_LOG_TIMEOUT,
+            )
             if not pending:
                 return
             wait_time += BLOCK_LOG_TIMEOUT

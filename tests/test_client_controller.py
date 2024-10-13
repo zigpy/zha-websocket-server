@@ -102,7 +102,7 @@ def get_group_entity(
         for entity in group_proxy.group_model.entities.values()
     }
 
-    return entities.get(entity_id)  # type: ignore
+    return entities.get(entity_id)
 
 
 @pytest.fixture
@@ -141,7 +141,7 @@ async def test_controller_devices(
 
     client_device: Optional[DeviceProxy] = controller.devices.get(zha_device.ieee)
     assert client_device is not None
-    entity: SwitchEntity = get_entity(client_device, entity_id)  # type: ignore
+    entity: SwitchEntity = get_entity(client_device, entity_id)
     assert entity is not None
 
     assert isinstance(entity, SwitchEntity)
@@ -176,7 +176,7 @@ async def test_controller_devices(
     assert len(controller.devices) == 1
 
     # we removed and joined the device again so lets get the entity again
-    client_device: Optional[DeviceProxy] = controller.devices.get(zha_device.ieee)
+    client_device = controller.devices.get(zha_device.ieee)
     assert client_device is not None
     entity: SwitchEntity = get_entity(client_device, entity_id)  # type: ignore
     assert entity is not None
@@ -330,14 +330,14 @@ async def test_controller_groups(
     assert client_device1 is not None
     entity_id1 = find_entity_id(Platform.SWITCH, device_switch_1)
     assert entity_id1 is not None
-    entity1: SwitchEntity = get_entity(client_device1, entity_id1)  # type: ignore
+    entity1: SwitchEntity = get_entity(client_device1, entity_id1)
     assert entity1 is not None
 
     client_device2: Optional[DeviceProxy] = controller.devices.get(device_switch_2.ieee)
     assert client_device2 is not None
     entity_id2 = find_entity_id(Platform.SWITCH, device_switch_2)
     assert entity_id2 is not None
-    entity2: SwitchEntity = get_entity(client_device2, entity_id2)  # type: ignore
+    entity2: SwitchEntity = get_entity(client_device2, entity_id2)
     assert entity2 is not None
 
     response: GroupModel = await controller.groups_helper.create_group(
@@ -351,9 +351,7 @@ async def test_controller_groups(
     assert client_device2.device_model.ieee in response.members
 
     # test remove member from group from controller
-    response: GroupModel = await controller.groups_helper.remove_group_members(
-        response, [entity2]
-    )
+    response = await controller.groups_helper.remove_group_members(response, [entity2])
     await server.block_till_done()
     assert len(controller.groups) == 2
     assert response.id in controller.groups
@@ -362,9 +360,7 @@ async def test_controller_groups(
     assert client_device2.device_model.ieee not in response.members
 
     # test add member to group from controller
-    response: GroupModel = await controller.groups_helper.add_group_members(
-        response, [entity2]
-    )
+    response = await controller.groups_helper.add_group_members(response, [entity2])
     await server.block_till_done()
     assert len(controller.groups) == 2
     assert response.id in controller.groups

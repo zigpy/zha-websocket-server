@@ -27,11 +27,11 @@ async def test_server_client_connect_disconnect(
             assert client._listen_task is not None
 
         # The listen task is automatically stopped when we disconnect
-        assert client._listen_task is None  # type: ignore
+        assert client._listen_task is None
         assert "not connected" in repr(client)
         assert not client.connected
 
-    assert not server.is_serving  # type: ignore
+    assert not server.is_serving
     assert server._ws_server is None
 
 
