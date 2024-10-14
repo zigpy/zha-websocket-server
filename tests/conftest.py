@@ -200,7 +200,9 @@ async def zigpy_app_controller() -> AsyncGenerator[ControllerApplication, None]:
 
         # Create a fake coordinator device
         dev = app.add_device(nwk=app.state.node_info.nwk, ieee=app.state.node_info.ieee)
-        dev.node_desc = zdo_t.NodeDescriptor()
+        dev.node_desc = zdo_t.NodeDescriptor.deserialize(
+            b"\x02@\x807\x10\x7fd\x00\x00*d\x00\x00"
+        )[0]
         dev.node_desc.logical_type = zdo_t.LogicalType.Coordinator
         dev.manufacturer = "Coordinator Manufacturer"
         dev.model = "Coordinator Model"
