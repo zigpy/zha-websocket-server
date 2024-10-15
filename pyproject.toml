@@ -83,11 +83,6 @@ module = [
 ]
 warn_unreachable = false
 
-[tool.pylint]
-load-plugins = "pylint_pydantic"
-max-line-length = 120
-disable = ["C0103", "W0212"]
-
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = "tests"
@@ -242,3 +237,8 @@ exclude_also = [
     "if TYPE_CHECKING:",
     "raise NotImplementedError",
 ]
+
+[tool.pylint]
+load-plugins = "pylint_pydantic"
+max-line-length = 120
+disable = ["C0103", "W0212"]

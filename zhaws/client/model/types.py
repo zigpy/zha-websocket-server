@@ -282,8 +282,7 @@ class BinarySensorEntity(BasePlatformEntity):
     class_name: Literal[
         "Accelerometer", "Occupancy", "Opening", "BinaryInput", "Motion", "IASZone"
     ]
-    sensor_attribute: str
-    zone_type: Optional[int]
+    attribute_name: str
     state: BooleanState
 
 
@@ -421,14 +420,15 @@ class NumberEntity(BasePlatformEntity):
     """Number entity model."""
 
     class_name: Literal["Number"]
-    engineer_units: Optional[int]  # TODO: how should we represent this when it is None?
+    engineering_units: Optional[
+        int
+    ]  # TODO: how should we represent this when it is None?
     application_type: Optional[
         int
     ]  # TODO: how should we represent this when it is None?
     step: Optional[float]  # TODO: how should we represent this when it is None?
     min_value: float
     max_value: float
-    name: str
     state: GenericState
 
 
