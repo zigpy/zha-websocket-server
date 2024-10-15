@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+import dataclasses
+from enum import StrEnum
 import logging
 from typing import TYPE_CHECKING
 
@@ -10,15 +12,16 @@ from zha.application.gateway import (
     DeviceFullInitEvent,
     DeviceJoinedEvent,
     DeviceLeftEvent,
-    DevicePairingStatus,
     DeviceRemovedEvent,
     Gateway,
     GroupEvent,
     RawDeviceInitializedEvent,
 )
 from zha.application.helpers import ZHAData
+from zha.application.platforms import EntityStateChangedEvent
 from zha.event import EventBase
 from zha.zigbee.group import GroupInfo
+from zhaws.client.model.types import Device as DeviceModel
 from zhaws.server.const import (
     DEVICE,
     EVENT,
@@ -30,12 +33,22 @@ from zhaws.server.const import (
     ControllerEvents,
     EventTypes,
     MessageTypes,
+    PlatformEntityEvents,
 )
 
 if TYPE_CHECKING:
     from zhaws.server.websocket.server import Server
 
 _LOGGER = logging.getLogger(__name__)
+
+
+class DevicePairingStatus(StrEnum):
+    """Status of a device."""
+
+    PAIRED = "paired"
+    INTERVIEW_COMPLETE = "interview_complete"
+    CONFIGURED = "configured"
+    INITIALIZED = "initialized"
 
 
 class Controller(EventBase):
@@ -78,6 +91,12 @@ class Controller(EventBase):
         await self.zha_gateway.async_initialize()
         self._unsubs.append(self.zha_gateway.on_all_events(self._handle_event_protocol))
         await self.zha_gateway.async_initialize_devices_and_entities()
+        for device in self.zha_gateway.devices.values():
+            for entity in device.platform_entities.values():
+                entity.on_all_events(self._handle_event_protocol)
+        for group in self.zha_gateway.groups.values():
+            for entity in group.group_entities.values():
+                entity.on_all_events(self._handle_event_protocol)
 
     async def stop_network(self) -> None:
         """Stop the Zigbee network."""
@@ -131,9 +150,12 @@ class Controller(EventBase):
             event.device_info.ieee,
             f"0x{event.device_info.nwk:04x}",
         )
+
         self.server.client_manager.broadcast(
             {
-                DEVICE: event.device_info,
+                DEVICE: DeviceModel.model_validate(
+                    dataclasses.asdict(event.device_info)
+                ).dict(),
                 "new_join": event.new_join,
                 PAIRING_STATUS: DevicePairingStatus.INITIALIZED,
                 MESSAGE_TYPE: MessageTypes.EVENT,
@@ -141,6 +163,11 @@ class Controller(EventBase):
                 EVENT: ControllerEvents.DEVICE_FULLY_INITIALIZED,
             }
         )
+
+        for entity in self.gateway.devices[
+            event.device_info.ieee
+        ].platform_entities.values():
+            entity.on_all_events(self._handle_event_protocol)
 
     def handle_device_left(self, event: DeviceLeftEvent) -> None:
         """Handle device leaving the network."""
@@ -164,7 +191,9 @@ class Controller(EventBase):
         )
         self.server.client_manager.broadcast(
             {
-                DEVICE: event.device_info,
+                DEVICE: DeviceModel.model_validate(
+                    dataclasses.asdict(event.device_info)
+                ).dict(),
                 MESSAGE_TYPE: MessageTypes.EVENT,
                 EVENT_TYPE: EventTypes.CONTROLLER_EVENT,
                 EVENT: ControllerEvents.DEVICE_REMOVED,
@@ -199,5 +228,31 @@ class Controller(EventBase):
                 MESSAGE_TYPE: MessageTypes.EVENT,
                 EVENT_TYPE: EventTypes.CONTROLLER_EVENT,
                 EVENT: event,
+            }
+        )
+
+    def handle_state_changed(self, event: EntityStateChangedEvent) -> None:
+        """Handle platform entity state changed event."""
+
+        state = (
+            self.gateway.devices[event.device_ieee]
+            .platform_entities[(event.platform, event.unique_id)]
+            .state
+        )
+        self.server.client_manager.broadcast(
+            {
+                "state": state,
+                "platform_entity": {
+                    "unique_id": event.unique_id,
+                    "platform": event.platform,
+                },
+                "endpoint": {
+                    "id": event.endpoint_id,
+                    "unique_id": str(event.endpoint_id),
+                },
+                "device": {"ieee": str(event.device_ieee)},
+                MESSAGE_TYPE: MessageTypes.EVENT,
+                EVENT: PlatformEntityEvents.PLATFORM_ENTITY_STATE_CHANGED,
+                EVENT_TYPE: EventTypes.PLATFORM_ENTITY_EVENT,
             }
         )
