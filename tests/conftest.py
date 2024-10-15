@@ -198,6 +198,8 @@ async def zigpy_app_controller() -> AsyncGenerator[ControllerApplication, None]:
         for name in COUNTER_NAMES:
             app.state.counters["ezsp_counters"][name].increment()
 
+        app.remove = AsyncMock(return_value=[Status.SUCCESS])
+
         # Create a fake coordinator device
         dev = app.add_device(nwk=app.state.node_info.nwk, ieee=app.state.node_info.ieee)
         dev.node_desc = zdo_t.NodeDescriptor.deserialize(
@@ -292,6 +294,10 @@ def zigpy_device_mock(
         device.manufacturer = manufacturer
         device.model = model
         device.node_desc = zdo_t.NodeDescriptor.deserialize(node_descriptor)[0]
+        device.node_desc.mac_capability_flags = (
+            device.node_desc.mac_capability_flags
+            | zdo_t._NodeDescriptorEnums.MACCapabilityFlags.MainsPowered
+        )
         device.last_seen = time.time()
 
         for epid, ep in endpoints.items():

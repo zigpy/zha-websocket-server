@@ -39,7 +39,7 @@ def patch_cluster(cluster: zigpy.zcl.Cluster) -> None:
                     zcl_f.ReadAttributeRecord(
                         attr_id,
                         zcl_f.Status.SUCCESS,
-                        zcl_f.TypeValue(python_type=None, value=value),
+                        zcl_f.TypeValue(type=None, value=value),
                     )
                 )
             else:
@@ -104,7 +104,7 @@ def update_attribute_cache(cluster: zigpy.zcl.Cluster) -> None:
             attrid = zigpy.types.uint16_t(attrid)
         attrs.append(make_attribute(attrid, value))
 
-    hdr = make_zcl_header(zcl_f.Command.Report_Attributes)
+    hdr = make_zcl_header(zcl_f.GeneralCommand.Report_Attributes)
     hdr.frame_control.disable_default_response = True
     msg = zcl_f.GENERAL_COMMANDS[zcl_f.GeneralCommand.Report_Attributes].schema(
         attribute_reports=attrs
