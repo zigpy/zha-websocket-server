@@ -486,6 +486,46 @@ class DeviceSignatureEndpoint(BaseModel):
     input_clusters: list[str]
     output_clusters: list[str]
 
+    @field_validator("profile_id", mode="before", check_fields=False)
+    @classmethod
+    def convert_profile_id(cls, profile_id: int | str) -> str:
+        """Convert profile_id."""
+        if isinstance(profile_id, int):
+            return f"0x{profile_id:04x}"
+        return profile_id
+
+    @field_validator("device_type", mode="before", check_fields=False)
+    @classmethod
+    def convert_device_type(cls, device_type: int | str) -> str:
+        """Convert device_type."""
+        if isinstance(device_type, int):
+            return f"0x{device_type:04x}"
+        return device_type
+
+    @field_validator("input_clusters", mode="before", check_fields=False)
+    @classmethod
+    def convert_input_clusters(cls, input_clusters: list[int | str]) -> list[str]:
+        """Convert input_clusters."""
+        clusters = []
+        for cluster_id in input_clusters:
+            if isinstance(cluster_id, int):
+                clusters.append(f"0x{cluster_id:04x}")
+            else:
+                clusters.append(cluster_id)
+        return clusters
+
+    @field_validator("output_clusters", mode="before", check_fields=False)
+    @classmethod
+    def convert_output_clusters(cls, output_clusters: list[int | str]) -> list[str]:
+        """Convert output_clusters."""
+        clusters = []
+        for cluster_id in output_clusters:
+            if isinstance(cluster_id, int):
+                clusters.append(f"0x{cluster_id:04x}")
+            else:
+                clusters.append(cluster_id)
+        return clusters
+
 
 class NodeDescriptor(BaseModel):
     """Node descriptor model."""
@@ -592,17 +632,16 @@ class Device(BaseDevice):
 
     @field_validator("entities", mode="before", check_fields=False)
     @classmethod
-    def convert_entities(cls, entities: dict[tuple, dict]) -> dict[str, dict]:
+    def convert_entities(cls, entities: dict) -> dict:
         """Convert entities keys from tuple to string."""
         if all(isinstance(k, tuple) for k in entities):
             return {f"{k[0]}.{k[1]}": v for k, v in entities.items()}
+        assert all(isinstance(k, str) for k in entities)
         return entities
 
     @field_validator("device_automation_triggers", mode="before", check_fields=False)
     @classmethod
-    def convert_device_automation_triggers(
-        cls, triggers: dict[tuple, dict]
-    ) -> dict[str, dict]:
+    def convert_device_automation_triggers(cls, triggers: dict) -> dict:
         """Convert device automation triggers keys from tuple to string."""
         if all(isinstance(k, tuple) for k in triggers):
             return {f"{k[0]}~{k[1]}": v for k, v in triggers.items()}
