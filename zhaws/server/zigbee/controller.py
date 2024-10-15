@@ -6,7 +6,7 @@ from collections.abc import Callable
 import dataclasses
 from enum import StrEnum
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from zha.application.gateway import (
     DeviceFullInitEvent,
@@ -21,6 +21,12 @@ from zha.application.helpers import ZHAData
 from zha.application.platforms import EntityStateChangedEvent
 from zha.event import EventBase
 from zha.zigbee.group import GroupInfo
+from zhaws.client.model.events import (
+    GroupAddedEvent,
+    GroupMemberAddedEvent,
+    GroupMemberRemovedEvent,
+    GroupRemovedEvent,
+)
 from zhaws.client.model.types import Device as DeviceModel
 from zhaws.server.const import (
     DEVICE,
@@ -207,29 +213,73 @@ class Controller(EventBase):
 
     def handle_group_member_removed(self, event: GroupEvent) -> None:
         """Handle zigpy group member removed event."""
-        self._broadcast_group_event(
-            event.group_info, ControllerEvents.GROUP_MEMBER_REMOVED
-        )
+        try:
+            raw_data: dict[str, Any] = {
+                "group": dataclasses.asdict(event.group_info),
+                "event": ControllerEvents.GROUP_MEMBER_REMOVED.value,
+            }
+            raw_data["group"]["id"] = raw_data["group"]["group_id"]
+            data = GroupMemberRemovedEvent.model_validate(raw_data).dict()
+            self._broadcast_group_event(
+                data["group"], ControllerEvents.GROUP_MEMBER_REMOVED
+            )
+        except Exception as ex:
+            _LOGGER.exception(
+                "Failed to validate group member removed event", exc_info=ex
+            )
+            raise ex
 
     def handle_group_member_added(self, event: GroupEvent) -> None:
         """Handle zigpy group member added event."""
-        self._broadcast_group_event(
-            event.group_info, ControllerEvents.GROUP_MEMBER_ADDED
-        )
+        try:
+            raw_data: dict[str, Any] = {
+                "group": dataclasses.asdict(event.group_info),
+                "event": ControllerEvents.GROUP_MEMBER_ADDED.value,
+            }
+            raw_data["group"]["id"] = raw_data["group"]["group_id"]
+            model = GroupMemberAddedEvent.model_validate(raw_data)
+            data = model.group.model_dump()
+            self._broadcast_group_event(data, ControllerEvents.GROUP_MEMBER_ADDED)
+        except Exception as ex:
+            _LOGGER.exception(
+                "Failed to validate group member added event", exc_info=ex
+            )
+            raise ex
 
     def handle_group_added(self, event: GroupEvent) -> None:
         """Handle zigpy group added event."""
-        self._broadcast_group_event(event.group_info, ControllerEvents.GROUP_ADDED)
+        try:
+            raw_data: dict[str, Any] = {
+                "group": dataclasses.asdict(event.group_info),
+                "event": ControllerEvents.GROUP_ADDED.value,
+            }
+            raw_data["group"]["id"] = raw_data["group"]["group_id"]
+            data = GroupAddedEvent.model_validate(raw_data).dict()
+            self._broadcast_group_event(data["group"], ControllerEvents.GROUP_ADDED)
+        except Exception as ex:
+            _LOGGER.exception("Failed to validate group added event", exc_info=ex)
+            raise ex
 
     def handle_group_removed(self, event: GroupEvent) -> None:
         """Handle zigpy group removed event."""
-        self._broadcast_group_event(event.group_info, ControllerEvents.GROUP_REMOVED)
+        try:
+            raw_data: dict[str, Any] = {
+                "group": dataclasses.asdict(event.group_info),
+                "event": ControllerEvents.GROUP_REMOVED.value,
+            }
+            raw_data["group"]["id"] = raw_data["group"]["group_id"]
+            data = GroupRemovedEvent.model_validate(raw_data).dict()
+            self._broadcast_group_event(data["group"], ControllerEvents.GROUP_REMOVED)
+        except Exception as ex:
+            _LOGGER.exception("Failed to validate group removed event", exc_info=ex)
+            raise ex
 
     def _broadcast_group_event(self, group: GroupInfo, event: str) -> None:
         """Broadcast group event."""
+
         self.server.client_manager.broadcast(
             {
-                "group": group.to_json(),
+                "group": group,
                 MESSAGE_TYPE: MessageTypes.EVENT,
                 EVENT_TYPE: EventTypes.CONTROLLER_EVENT,
                 EVENT: event,
