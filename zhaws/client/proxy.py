@@ -41,7 +41,9 @@ class BaseProxyObject(EventBase):
         self, event: PlatformEntityStateChangedEvent
     ) -> None:
         """Proxy the firing of an entity event."""
-        entity = self._proxied_object.entities.get(event.platform_entity.unique_id)
+        entity = self._proxied_object.entities.get(
+            f"{event.platform_entity.platform}.{event.platform_entity.unique_id}"
+        )
         if entity is None:
             if isinstance(self._proxied_object, DeviceModel):
                 raise ValueError(
