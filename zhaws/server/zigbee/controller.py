@@ -125,23 +125,27 @@ class Controller(EventBase):
                 EVENT: ControllerEvents.DEVICE_JOINED,
                 IEEE: str(event.device_info.ieee),
                 NWK: f"0x{event.device_info.nwk:04x}",
-                PAIRING_STATUS: event.device_info.pairing_status,
+                PAIRING_STATUS: DevicePairingStatus.PAIRED,
             }
         )
 
     def handle_raw_device_initialized(self, event: RawDeviceInitializedEvent) -> None:
         """Handle a device initialization without quirks loaded."""
-        self.server.client_manager.broadcast(
-            {
-                MESSAGE_TYPE: MessageTypes.EVENT,
-                EVENT_TYPE: EventTypes.CONTROLLER_EVENT,
-                EVENT: ControllerEvents.RAW_DEVICE_INITIALIZED,
-                PAIRING_STATUS: DevicePairingStatus.INTERVIEW_COMPLETE,
-                "model": event.model,
-                "manufacturer": event.manufacturer,
-                "signature": event.signature,
-            }
-        )
+        signature = event.device_info.signature
+        signature["node_descriptor"] = signature["node_desc"]
+        del signature["node_desc"]
+        event_data = {
+            MESSAGE_TYPE: MessageTypes.EVENT,
+            EVENT_TYPE: EventTypes.CONTROLLER_EVENT,
+            EVENT: ControllerEvents.RAW_DEVICE_INITIALIZED,
+            PAIRING_STATUS: DevicePairingStatus.INTERVIEW_COMPLETE,
+            "model": event.device_info.model,
+            "manufacturer": event.device_info.manufacturer,
+            "signature": signature,
+            "nwk": event.device_info.nwk,
+            "ieee": event.device_info.ieee,
+        }
+        self.server.client_manager.broadcast(event_data)
 
     def handle_device_fully_initialized(self, event: DeviceFullInitEvent) -> None:
         """Handle device joined and basic information discovered."""
@@ -164,10 +168,11 @@ class Controller(EventBase):
             }
         )
 
-        for entity in self.gateway.devices[
-            event.device_info.ieee
-        ].platform_entities.values():
-            entity.on_all_events(self._handle_event_protocol)
+        if event.new_join:
+            for entity in self.gateway.devices[
+                event.device_info.ieee
+            ].platform_entities.values():
+                entity.on_all_events(self._handle_event_protocol)
 
     def handle_device_left(self, event: DeviceLeftEvent) -> None:
         """Handle device leaving the network."""
