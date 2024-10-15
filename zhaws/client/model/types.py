@@ -594,7 +594,9 @@ class BaseDevice(BaseModel):
     @field_serializer("ieee")
     def serialize_ieee(self, ieee):
         """Customize how ieee is serialized."""
-        return str(ieee)
+        if isinstance(ieee, EUI64):
+            return str(ieee)
+        return ieee
 
 
 class Device(BaseDevice):
@@ -679,8 +681,9 @@ class SwitchGroupEntity(GroupEntity):
 class GroupMember(BaseModel):
     """Group member model."""
 
+    ieee: EUI64
     endpoint_id: int
-    device: Device
+    device: Device = Field(alias="device_info")
     entities: dict[
         str,
         Annotated[
@@ -725,9 +728,29 @@ class Group(BaseModel):
 
     @field_validator("members", mode="before", check_fields=False)
     @classmethod
-    def convert_member_ieee(cls, members: dict[str, dict]) -> dict[EUI64, GroupMember]:
-        """Convert member IEEE to EUI64."""
-        return {EUI64.convert(k): GroupMember(**v) for k, v in members.items()}
+    def convert_members(cls, members: dict | list[dict]) -> dict:
+        """Convert members."""
+
+        converted_members = {}
+        if isinstance(members, dict):
+            return {EUI64.convert(k): v for k, v in members.items()}
+        for member in members:
+            if "device" in member:
+                ieee = member["device"]["ieee"]
+            else:
+                ieee = member["device_info"]["ieee"]
+            if isinstance(ieee, str):
+                ieee = EUI64.convert(ieee)
+            elif isinstance(ieee, list) and not isinstance(ieee, EUI64):
+                ieee = EUI64.deserialize(ieee)[0]
+            converted_members[ieee] = member
+        return converted_members
+
+    @field_serializer("members")
+    def serialize_members(self, members):
+        """Customize how members are serialized."""
+        data = {str(k): v.model_dump(by_alias=True) for k, v in members.items()}
+        return data
 
 
 class GroupMemberReference(BaseModel):

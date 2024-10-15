@@ -174,14 +174,14 @@ class WriteClusterAttributeResponse(CommandResponse):
 class GroupsResponse(CommandResponse):
     """Get groups response."""
 
-    command: Literal["get_groups", "create_group", "remove_groups"]
+    command: Literal["get_groups", "remove_groups"]
     groups: dict[int, Group]
 
 
 class UpdateGroupResponse(CommandResponse):
     """Update group response."""
 
-    command: Literal["update_group", "add_group_members", "remove_group_members"]
+    command: Literal["create_group", "add_group_members", "remove_group_members"]
     group: Group
 
 

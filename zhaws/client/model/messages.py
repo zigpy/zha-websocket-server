@@ -2,7 +2,7 @@
 
 from typing import Annotated, Any, Optional, Union
 
-from pydantic import RootModel, field_validator
+from pydantic import RootModel, field_serializer, field_validator
 from pydantic.fields import Field
 from zigpy.types.named import EUI64
 
@@ -26,8 +26,15 @@ class Message(RootModel):
             return None
         if isinstance(ieee, str):
             return EUI64.convert(ieee)
-        if isinstance(ieee, list):
-            return EUI64(ieee)
+        if isinstance(ieee, list) and not isinstance(ieee, EUI64):
+            return EUI64.deserialize(ieee)[0]
+        return ieee
+
+    @field_serializer("ieee", check_fields=False)
+    def serialize_ieee(self, ieee):
+        """Customize how ieee is serialized."""
+        if isinstance(ieee, EUI64):
+            return str(ieee)
         return ieee
 
     @field_validator("device_ieee", mode="before", check_fields=False)
@@ -40,8 +47,15 @@ class Message(RootModel):
             return None
         if isinstance(device_ieee, str):
             return EUI64.convert(device_ieee)
-        if isinstance(device_ieee, list):
-            return EUI64(device_ieee)
+        if isinstance(device_ieee, list) and not isinstance(device_ieee, EUI64):
+            return EUI64.deserialize(device_ieee)[0]
+        return device_ieee
+
+    @field_serializer("device_ieee", check_fields=False)
+    def serialize_device_ieee(self, device_ieee):
+        """Customize how device_ieee is serialized."""
+        if isinstance(device_ieee, EUI64):
+            return str(device_ieee)
         return device_ieee
 
     @classmethod
