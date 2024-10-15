@@ -118,6 +118,7 @@ class Client:
             message = json.dumps(data)
         except ValueError as exc:
             _LOGGER.exception("Couldn't serialize data: %s", data, exc_info=exc)
+            raise exc
         else:
             self._client_manager.server.track_task(
                 asyncio.create_task(self._websocket.send(message))
