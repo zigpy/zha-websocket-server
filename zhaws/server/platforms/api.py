@@ -49,7 +49,7 @@ async def execute_platform_entity_command(
         if action.__code__.co_argcount == 1:  # the only argument is self
             await action()
         else:
-            await action(**command.dict(exclude_none=True))
+            await action(**command.model_dump(exclude_none=True))
     except Exception as err:
         _LOGGER.exception("Error executing command: %s", method_name, exc_info=err)
         client.send_result_error(command, "PLATFORM_ENTITY_ACTION_ERROR", str(err))

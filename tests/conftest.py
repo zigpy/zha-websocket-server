@@ -43,7 +43,7 @@ def server_configuration() -> ServerConfiguration:
     with tempfile.TemporaryDirectory() as tempdir:
         # you can e.g. create a file here:
         config_path = os.path.join(tempdir, "configuration.json")
-        server_config = ServerConfiguration.parse_obj(
+        server_config = ServerConfiguration.model_validate(
             {
                 "host": "localhost",
                 "port": port,
@@ -105,7 +105,7 @@ def server_configuration() -> ServerConfiguration:
             }
         )
         with open(config_path, "w") as tmpfile:
-            tmpfile.write(server_config.json())
+            tmpfile.write(server_config.model_dump_json())
             return server_config
 
 

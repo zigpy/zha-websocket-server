@@ -107,7 +107,7 @@ async def get_devices(
         response_devices: dict[str, dict] = {
             str(ieee): DeviceModel.model_validate(
                 dataclasses.asdict(device.extended_device_info)
-            ).dict()
+            ).model_dump()
             for ieee, device in server.controller.gateway.devices.items()
         }
         _LOGGER.info("devices: %s", response_devices)

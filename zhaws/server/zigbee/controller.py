@@ -165,7 +165,7 @@ class Controller(EventBase):
             {
                 DEVICE: DeviceModel.model_validate(
                     dataclasses.asdict(event.device_info)
-                ).dict(),
+                ).model_dump(),
                 "new_join": event.new_join,
                 PAIRING_STATUS: DevicePairingStatus.INITIALIZED,
                 MESSAGE_TYPE: MessageTypes.EVENT,
@@ -204,7 +204,7 @@ class Controller(EventBase):
             {
                 DEVICE: DeviceModel.model_validate(
                     dataclasses.asdict(event.device_info)
-                ).dict(),
+                ).model_dump(),
                 MESSAGE_TYPE: MessageTypes.EVENT,
                 EVENT_TYPE: EventTypes.CONTROLLER_EVENT,
                 EVENT: ControllerEvents.DEVICE_REMOVED,
@@ -219,7 +219,7 @@ class Controller(EventBase):
                 "event": ControllerEvents.GROUP_MEMBER_REMOVED.value,
             }
             raw_data["group"]["id"] = raw_data["group"]["group_id"]
-            data = GroupMemberRemovedEvent.model_validate(raw_data).dict()
+            data = GroupMemberRemovedEvent.model_validate(raw_data).model_dump()
             self._broadcast_group_event(
                 data["group"], ControllerEvents.GROUP_MEMBER_REMOVED
             )
@@ -254,7 +254,7 @@ class Controller(EventBase):
                 "event": ControllerEvents.GROUP_ADDED.value,
             }
             raw_data["group"]["id"] = raw_data["group"]["group_id"]
-            data = GroupAddedEvent.model_validate(raw_data).dict()
+            data = GroupAddedEvent.model_validate(raw_data).model_dump()
             self._broadcast_group_event(data["group"], ControllerEvents.GROUP_ADDED)
         except Exception as ex:
             _LOGGER.exception("Failed to validate group added event", exc_info=ex)
@@ -268,7 +268,7 @@ class Controller(EventBase):
                 "event": ControllerEvents.GROUP_REMOVED.value,
             }
             raw_data["group"]["id"] = raw_data["group"]["group_id"]
-            data = GroupRemovedEvent.model_validate(raw_data).dict()
+            data = GroupRemovedEvent.model_validate(raw_data).model_dump()
             self._broadcast_group_event(data["group"], ControllerEvents.GROUP_REMOVED)
         except Exception as ex:
             _LOGGER.exception("Failed to validate group removed event", exc_info=ex)

@@ -145,7 +145,7 @@ class Client:
         )
 
         try:
-            msg = WebSocketCommand.parse_obj(loaded_message)
+            msg = WebSocketCommand.model_validate(loaded_message)
         except ValidationError as exception:
             _LOGGER.exception(
                 "Received invalid command[unable to parse command]: %s",
@@ -163,7 +163,9 @@ class Client:
         handler, model = handlers[msg.command]
 
         try:
-            handler(self._client_manager.server, self, model.parse_obj(loaded_message))
+            handler(
+                self._client_manager.server, self, model.model_validate(loaded_message)
+            )
         except Exception as err:  # pylint: disable=broad-except
             # TODO Fix this - make real error codes with error messages
             _LOGGER.exception(

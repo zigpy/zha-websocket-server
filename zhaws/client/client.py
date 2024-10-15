@@ -84,16 +84,18 @@ class Client(EventBase):
 
         try:
             async with timeout(20):
-                await self._send_json_message(command.json(exclude_none=True))
+                await self._send_json_message(
+                    command.model_dump_json(exclude_none=True)
+                )
                 return await future
         except TimeoutError:
             _LOGGER.exception("Timeout waiting for response")
-            return CommandResponse.parse_obj(
+            return CommandResponse.model_validate(
                 {"message_id": message_id, "success": False}
             )
         except Exception as err:
             _LOGGER.exception("Error sending command", exc_info=err)
-            return CommandResponse.parse_obj(
+            return CommandResponse.model_validate(
                 {"message_id": message_id, "success": False}
             )
         finally:
@@ -102,7 +104,7 @@ class Client(EventBase):
     async def async_send_command_no_wait(self, command: WebSocketCommand) -> None:
         """Send a command without waiting for the response."""
         command.message_id = self.new_message_id()
-        await self._send_json_message(command.json(exclude_none=True))
+        await self._send_json_message(command.model_dump_json(exclude_none=True))
 
     async def connect(self) -> None:
         """Connect to the websocket server."""
@@ -195,7 +197,7 @@ class Client(EventBase):
         """
 
         try:
-            message = Message.parse_obj(msg).root
+            message = Message.model_validate(msg).root
         except Exception as err:
             _LOGGER.exception("Error parsing message: %s", msg, exc_info=err)
             if msg["message_type"] == "result":
