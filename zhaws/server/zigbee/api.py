@@ -8,11 +8,11 @@ import logging
 from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeVar, Union, cast
 
 from pydantic import Field
-from zigpy.profiles import PROFILES
 from zigpy.types.named import EUI64
 
 from zha.zigbee.device import Device
 from zha.zigbee.group import Group, GroupMemberReference
+from zhaws.client.model.types import Device as DeviceModel
 from zhaws.server.const import DEVICES, DURATION, GROUPS, APICommands
 from zhaws.server.websocket.api import decorators, register_api_command
 from zhaws.server.websocket.api.model import WebSocketCommand
@@ -93,53 +93,24 @@ class GetDevicesCommand(WebSocketCommand):
     command: Literal[APICommands.GET_DEVICES] = APICommands.GET_DEVICES
 
 
-def zha_device_info(device: Device) -> dict:
-    """Get ZHA device information."""
-    device_info = {}
-    device_info.update(dataclasses.asdict(device.device_info))
-    device_info["ieee"] = str(device_info["ieee"])
-    device_info["signature"]["node_descriptor"] = device_info["signature"][
-        "node_descriptor"
-    ].as_dict()
-    device_info["entities"] = {
-        f"{key[0]}-{key[1]}": dataclasses.asdict(platform_entity.info_object)
-        for key, platform_entity in device.platform_entities.items()
-    }
-
-    for entity in device_info["entities"].values():
-        del entity["cluster_handlers"]
-
-    # Return endpoint device type Names
-    names = []
-    for endpoint in (ep for epid, ep in device.device.endpoints.items() if epid):
-        profile = PROFILES.get(endpoint.profile_id)
-        if profile and endpoint.device_type is not None:
-            # DeviceType provides undefined enums
-            names.append({"name": profile.DeviceType(endpoint.device_type).name})
-        else:
-            names.append(
-                {
-                    "name": f"unknown {endpoint.device_type} device_type "
-                    f"of 0x{(endpoint.profile_id or 0xFFFF):04x} profile id"
-                }
-            )
-    device_info["endpoint_names"] = names
-
-    return device_info
-
-
 @decorators.websocket_command(GetDevicesCommand)
 @decorators.async_response
 async def get_devices(
     server: Server, client: Client, command: GetDevicesCommand
 ) -> None:
     """Get Zigbee devices."""
-    response_devices: dict[str, dict] = {
-        str(ieee): zha_device_info(device)
-        for ieee, device in server.controller.gateway.devices.items()
-    }
-    _LOGGER.info("devices: %s", response_devices)
-    client.send_result_success(command, {DEVICES: response_devices})
+    try:
+        response_devices: dict[str, dict] = {
+            str(ieee): DeviceModel.model_validate(
+                dataclasses.asdict(device.extended_device_info)
+            ).dict()
+            for ieee, device in server.controller.gateway.devices.items()
+        }
+        _LOGGER.info("devices: %s", response_devices)
+        client.send_result_success(command, {DEVICES: response_devices})
+    except Exception as e:
+        _LOGGER.exception("Error getting devices", exc_info=e)
+        client.send_result_error(command, "Error getting devices", str(e))
 
 
 class ReconfigureDeviceCommand(WebSocketCommand):
@@ -155,7 +126,7 @@ async def reconfigure_device(
     server: Server, client: Client, command: ReconfigureDeviceCommand
 ) -> None:
     """Reconfigure a zigbee device."""
-    device = server.controller.devices.get(command.ieee)
+    device = server.controller.gateway.devices.get(command.ieee)
     if device:
         await device.async_configure()
     client.send_result_success(command)
@@ -215,7 +186,7 @@ async def remove_device(
     server: Server, client: Client, command: RemoveDeviceCommand
 ) -> None:
     """Permit joining devices to the Zigbee network."""
-    await server.controller.application_controller.remove(command.ieee)
+    await server.controller.gateway.async_remove_device(command.ieee)
     client.send_result_success(command)
 
 
@@ -239,7 +210,7 @@ async def read_cluster_attributes(
     server: Server, client: Client, command: ReadClusterAttributesCommand
 ) -> None:
     """Read the specified cluster attributes."""
-    device: Device = server.controller.devices[command.ieee]
+    device: Device = server.controller.gateway.devices[command.ieee]
     if not device:
         client.send_result_error(
             command,
@@ -307,7 +278,7 @@ async def write_cluster_attribute(
     server: Server, client: Client, command: WriteClusterAttributeCommand
 ) -> None:
     """Set the value of the specific cluster attribute."""
-    device: Device = server.controller.devices[command.ieee]
+    device: Device = server.controller.gateway.devices[command.ieee]
     if not device:
         client.send_result_error(
             command,
