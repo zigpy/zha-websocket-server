@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Annotated, Literal, Union
 
 from pydantic import Field, ValidationInfo, field_validator
 
+from zha.application.discovery import Platform
 from zhaws.server.const import APICommands
 from zhaws.server.platforms import PlatformEntityCommand
 from zhaws.server.platforms.api import execute_platform_entity_command
@@ -23,6 +24,7 @@ class LightTurnOnCommand(PlatformEntityCommand):
     """Light turn on command."""
 
     command: Literal[APICommands.LIGHT_TURN_ON] = APICommands.LIGHT_TURN_ON
+    platform: str = Platform.LIGHT
     brightness: Union[Annotated[int, Field(ge=0, le=255)], None]
     transition: Union[Annotated[float, Field(ge=0, le=6553)], None]
     flash: Union[Literal["short", "long"], None]
@@ -63,6 +65,7 @@ class LightTurnOffCommand(PlatformEntityCommand):
     """Light turn off command."""
 
     command: Literal[APICommands.LIGHT_TURN_OFF] = APICommands.LIGHT_TURN_OFF
+    platform: str = Platform.LIGHT
     transition: Union[Annotated[float, Field(ge=0, le=6553)], None]
     flash: Union[Literal["short", "long"], None]
 

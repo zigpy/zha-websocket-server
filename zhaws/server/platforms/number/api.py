@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
+from zha.application.discovery import Platform
 from zhaws.server.const import APICommands
 from zhaws.server.platforms import PlatformEntityCommand
 from zhaws.server.platforms.api import execute_platform_entity_command
@@ -21,6 +22,7 @@ class NumberSetValueCommand(PlatformEntityCommand):
     """Number set value command."""
 
     command: Literal[APICommands.NUMBER_SET_VALUE] = APICommands.NUMBER_SET_VALUE
+    platform: str = Platform.NUMBER
     value: float
 
 

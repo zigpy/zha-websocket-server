@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
+from zha.application.discovery import Platform
 from zhaws.server.const import APICommands
 from zhaws.server.platforms import PlatformEntityCommand
 from zhaws.server.platforms.api import execute_platform_entity_command
@@ -18,6 +19,7 @@ class LockLockCommand(PlatformEntityCommand):
     """Lock lock command."""
 
     command: Literal[APICommands.LOCK_LOCK] = APICommands.LOCK_LOCK
+    platform: str = Platform.LOCK
 
 
 @decorators.websocket_command(LockLockCommand)
@@ -31,6 +33,7 @@ class LockUnlockCommand(PlatformEntityCommand):
     """Lock unlock command."""
 
     command: Literal[APICommands.LOCK_UNLOCK] = APICommands.LOCK_UNLOCK
+    platform: str = Platform.LOCK
 
 
 @decorators.websocket_command(LockUnlockCommand)
@@ -44,6 +47,7 @@ class LockSetUserLockCodeCommand(PlatformEntityCommand):
     """Set user lock code command."""
 
     command: Literal[APICommands.LOCK_SET_USER_CODE] = APICommands.LOCK_SET_USER_CODE
+    platform: str = Platform.LOCK
     code_slot: int
     user_code: str
 
@@ -65,6 +69,7 @@ class LockEnableUserLockCodeCommand(PlatformEntityCommand):
     command: Literal[APICommands.LOCK_ENAABLE_USER_CODE] = (
         APICommands.LOCK_ENAABLE_USER_CODE
     )
+    platform: str = Platform.LOCK
     code_slot: int
 
 
@@ -85,6 +90,7 @@ class LockDisableUserLockCodeCommand(PlatformEntityCommand):
     command: Literal[APICommands.LOCK_DISABLE_USER_CODE] = (
         APICommands.LOCK_DISABLE_USER_CODE
     )
+    platform: str = Platform.LOCK
     code_slot: int
 
 
@@ -105,6 +111,7 @@ class LockClearUserLockCodeCommand(PlatformEntityCommand):
     command: Literal[APICommands.LOCK_CLEAR_USER_CODE] = (
         APICommands.LOCK_CLEAR_USER_CODE
     )
+    platform: str = Platform.LOCK
     code_slot: int
 
 

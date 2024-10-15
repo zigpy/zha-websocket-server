@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, Union
 
+from zha.application.discovery import Platform
 from zhaws.server.const import APICommands
 from zhaws.server.platforms import PlatformEntityCommand
 from zhaws.server.platforms.api import execute_platform_entity_command
@@ -20,6 +21,7 @@ class DisarmCommand(PlatformEntityCommand):
     command: Literal[APICommands.ALARM_CONTROL_PANEL_DISARM] = (
         APICommands.ALARM_CONTROL_PANEL_DISARM
     )
+    platform: str = Platform.ALARM_CONTROL_PANEL
     code: Union[str, None]
 
 
@@ -36,6 +38,7 @@ class ArmHomeCommand(PlatformEntityCommand):
     command: Literal[APICommands.ALARM_CONTROL_PANEL_ARM_HOME] = (
         APICommands.ALARM_CONTROL_PANEL_ARM_HOME
     )
+    platform: str = Platform.ALARM_CONTROL_PANEL
     code: Union[str, None]
 
 
@@ -54,6 +57,7 @@ class ArmAwayCommand(PlatformEntityCommand):
     command: Literal[APICommands.ALARM_CONTROL_PANEL_ARM_AWAY] = (
         APICommands.ALARM_CONTROL_PANEL_ARM_AWAY
     )
+    platform: str = Platform.ALARM_CONTROL_PANEL
     code: Union[str, None]
 
 
@@ -72,6 +76,7 @@ class ArmNightCommand(PlatformEntityCommand):
     command: Literal[APICommands.ALARM_CONTROL_PANEL_ARM_NIGHT] = (
         APICommands.ALARM_CONTROL_PANEL_ARM_NIGHT
     )
+    platform: str = Platform.ALARM_CONTROL_PANEL
     code: Union[str, None]
 
 
@@ -90,6 +95,7 @@ class TriggerAlarmCommand(PlatformEntityCommand):
     command: Literal[APICommands.ALARM_CONTROL_PANEL_TRIGGER] = (
         APICommands.ALARM_CONTROL_PANEL_TRIGGER
     )
+    platform: str = Platform.ALARM_CONTROL_PANEL
     code: Union[str, None] = None
 
 

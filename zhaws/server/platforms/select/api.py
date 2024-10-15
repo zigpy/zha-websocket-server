@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
+from zha.application.discovery import Platform
 from zhaws.server.const import APICommands
 from zhaws.server.platforms import PlatformEntityCommand
 from zhaws.server.platforms.api import execute_platform_entity_command
@@ -20,6 +21,7 @@ class SelectSelectOptionCommand(PlatformEntityCommand):
     command: Literal[APICommands.SELECT_SELECT_OPTION] = (
         APICommands.SELECT_SELECT_OPTION
     )
+    platform: str = Platform.SELECT
     option: str
 
 
