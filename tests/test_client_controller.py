@@ -191,13 +191,17 @@ async def test_controller_devices(
     # test read cluster attribute
     cluster = zigpy_device.endpoints.get(1).on_off
     assert cluster is not None
-    cluster.PLUGGED_ATTR_READS = {general.OnOff.AttributeDefs.on_off.id: 1}
+    cluster.PLUGGED_ATTR_READS = {general.OnOff.AttributeDefs.on_off.name: 1}
     update_attribute_cache(cluster)
     await controller.entities.refresh_state(entity)
     await server.block_till_done()
     read_response: ReadClusterAttributesResponse = (
         await controller.devices_helper.read_cluster_attributes(
-            client_device.device_model, general.OnOff.cluster_id, "in", 1, ["on_off"]
+            client_device.device_model,
+            general.OnOff.cluster_id,
+            "in",
+            1,
+            [general.OnOff.AttributeDefs.on_off.name],
         )
     )
     await server.block_till_done()
@@ -205,25 +209,36 @@ async def test_controller_devices(
     assert read_response.success is True
     assert len(read_response.succeeded) == 1
     assert len(read_response.failed) == 0
-    assert read_response.succeeded["on_off"] == 1
+    assert read_response.succeeded[general.OnOff.AttributeDefs.on_off.name] == 1
     assert read_response.cluster.id == general.OnOff.cluster_id
     assert read_response.cluster.endpoint_id == 1
-    assert read_response.cluster.endpoint_attribute == "on_off"
-    assert read_response.cluster.name == "On/Off"
+    assert (
+        read_response.cluster.endpoint_attribute
+        == general.OnOff.AttributeDefs.on_off.name
+    )
+    assert read_response.cluster.name == general.OnOff.name
     assert entity.state.state is True
 
     # test write cluster attribute
     write_response: WriteClusterAttributeResponse = (
         await controller.devices_helper.write_cluster_attribute(
-            client_device.device_model, general.OnOff.cluster_id, "in", 1, "on_off", 0
+            client_device.device_model,
+            general.OnOff.cluster_id,
+            "in",
+            1,
+            general.OnOff.AttributeDefs.on_off.name,
+            0,
         )
     )
     assert write_response is not None
     assert write_response.success is True
     assert write_response.cluster.id == general.OnOff.cluster_id
     assert write_response.cluster.endpoint_id == 1
-    assert write_response.cluster.endpoint_attribute == "on_off"
-    assert write_response.cluster.name == "On/Off"
+    assert (
+        write_response.cluster.endpoint_attribute
+        == general.OnOff.AttributeDefs.on_off.name
+    )
+    assert write_response.cluster.name == general.OnOff.name
 
     await controller.entities.refresh_state(entity)
     await server.block_till_done()
@@ -239,7 +254,7 @@ async def test_controller_devices(
         ieee=zigpy_device.ieee,
         nwk=str(zigpy_device.nwk).lower(),
     )
-    server.controller.device_joined(zigpy_device)
+    server.controller.gateway.device_joined(zigpy_device)
     await server.block_till_done()
     assert listener.call_count == 1
     assert listener.call_args == call(device_joined_event)
@@ -247,7 +262,7 @@ async def test_controller_devices(
     # test device left
     listener.reset_mock()
     controller.on_event(ControllerEvents.DEVICE_LEFT, listener)
-    server.controller.device_left(zigpy_device)
+    server.controller.gateway.device_left(zigpy_device)
     await server.block_till_done()
     assert listener.call_count == 1
     assert listener.call_args == call(
@@ -260,14 +275,14 @@ async def test_controller_devices(
     # test raw  device initialized
     listener.reset_mock()
     controller.on_event(ControllerEvents.RAW_DEVICE_INITIALIZED, listener)
-    server.controller.raw_device_initialized(zigpy_device)
+    server.controller.gateway.raw_device_initialized(zigpy_device)
     await server.block_till_done()
     assert listener.call_count == 1
     assert listener.call_args == call(
         RawDeviceInitializedEvent(
             pairing_status=DevicePairingStatus.INTERVIEW_COMPLETE,
             ieee=zigpy_device.ieee,
-            nwk=str(zigpy_device.nwk).lower(),
+            nwk=str(zigpy_device.nwk),
             manufacturer=client_device.device_model.manufacturer,
             model=client_device.device_model.model,
             signature=client_device.device_model.signature,
