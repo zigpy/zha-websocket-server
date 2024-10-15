@@ -26,8 +26,10 @@ async def execute_platform_entity_command(
     try:
         if command.ieee:
             _LOGGER.debug("command: %s", command)
-            device = server.controller.get_device(command.ieee)
-            platform_entity: Any = device.get_platform_entity(command.unique_id)
+            device = server.controller.gateway.get_device(command.ieee)
+            platform_entity: Any = device.get_platform_entity(
+                command.platform, command.unique_id
+            )
         else:
             assert command.group_id
             group = server.controller.get_group(command.group_id)
