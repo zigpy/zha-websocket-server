@@ -5,9 +5,10 @@ Types are representations of the objects that exist in zhawss.
 
 from typing import Annotated, Any, Literal, Optional, Union
 
-from pydantic import field_validator
+from pydantic import ValidationInfo, field_serializer, field_validator
 from pydantic.fields import Field
-from zigpy.types.named import EUI64
+from zigpy.types.named import EUI64, NWK
+from zigpy.zdo.types import NodeDescriptor as ZigpyNodeDescriptor
 
 from zha.event import EventBase
 from zhaws.model import BaseModel
@@ -76,6 +77,13 @@ class GenericState(BaseModel):
         "LastSeenSensor",
     ]
     state: Union[str, bool, int, float, None] = None
+
+
+class DeviceCounterSensorState(BaseModel):
+    """Device counter sensor state model."""
+
+    class_name: Literal["DeviceCounterSensor"] = "DeviceCounterSensor"
+    state: int
 
 
 class DeviceTrackerState(BaseModel):
@@ -221,10 +229,16 @@ class SmareEnergyMeteringState(BaseModel):
 class BaseEntity(BaseEventedModel):
     """Base platform entity model."""
 
-    name: str
     unique_id: str
     platform: str
     class_name: str
+    fallback_name: str | None = None
+    translation_key: str | None = None
+    device_class: str | None = None
+    state_class: str | None = None
+    entity_category: str | None = None
+    entity_registry_enabled_default: bool
+    enabled: bool
 
 
 class BasePlatformEntity(BaseEntity):
@@ -280,7 +294,7 @@ class BaseSensorEntity(BasePlatformEntity):
     decimals: int
     divisor: int
     multiplier: Union[int, float]
-    unit: Optional[int]
+    unit: Optional[int | str]
 
 
 class SensorEntity(BaseSensorEntity):
@@ -306,6 +320,35 @@ class SensorEntity(BaseSensorEntity):
         "LastSeenSensor",
     ]
     state: GenericState
+
+
+class DeviceCounterSensorEntity(BaseEntity):
+    """Device counter sensor model."""
+
+    class_name: Literal["DeviceCounterSensor"]
+    counter: str
+    counter_value: int
+    counter_groups: str
+    counter_group: str
+    state: DeviceCounterSensorState
+
+    @field_validator("state", mode="before", check_fields=False)
+    @classmethod
+    def convert_state(
+        cls, state: dict | int | None, validation_info: ValidationInfo
+    ) -> DeviceCounterSensorState:
+        """Convert counter value to counter_value."""
+        if state is not None:
+            if isinstance(state, int):
+                return DeviceCounterSensorState(state=state)
+            if isinstance(state, dict):
+                if "state" in state:
+                    return DeviceCounterSensorState(state=state["state"])
+                else:
+                    return DeviceCounterSensorState(
+                        state=validation_info.data["counter_value"]
+                    )
+        return DeviceCounterSensorState(state=validation_info.data["counter_value"])
 
 
 class BatteryEntity(BaseSensorEntity):
@@ -470,6 +513,16 @@ class DeviceSignature(BaseModel):
     model: Optional[str] = None
     endpoints: dict[int, DeviceSignatureEndpoint]
 
+    @field_validator("node_descriptor", mode="before", check_fields=False)
+    @classmethod
+    def convert_node_descriptor(
+        cls, node_descriptor: ZigpyNodeDescriptor
+    ) -> NodeDescriptor:
+        """Convert node descriptor."""
+        if isinstance(node_descriptor, ZigpyNodeDescriptor):
+            return node_descriptor.as_dict()
+        return node_descriptor
+
 
 class BaseDevice(BaseModel):
     """Base device model."""
@@ -489,6 +542,19 @@ class BaseDevice(BaseModel):
     available: bool
     device_type: Literal["Coordinator", "Router", "EndDevice"]
     signature: DeviceSignature
+
+    @field_validator("nwk", mode="before", check_fields=False)
+    @classmethod
+    def convert_nwk(cls, nwk: NWK) -> str:
+        """Convert nwk to hex."""
+        if isinstance(nwk, NWK):
+            return repr(nwk)
+        return nwk
+
+    @field_serializer("ieee")
+    def serialize_ieee(self, ieee):
+        """Customize how ieee is serialized."""
+        return str(ieee)
 
 
 class Device(BaseDevice):
@@ -516,12 +582,31 @@ class Device(BaseDevice):
                 ElectricalMeasurementEntity,
                 SmartEnergyMeteringEntity,
                 ThermostatEntity,
+                DeviceCounterSensorEntity,
             ],
             Field(discriminator="class_name"),  # noqa: F821
         ],
     ]
     neighbors: list[Any]
     device_automation_triggers: dict[str, dict[str, Any]]
+
+    @field_validator("entities", mode="before", check_fields=False)
+    @classmethod
+    def convert_entities(cls, entities: dict[tuple, dict]) -> dict[str, dict]:
+        """Convert entities keys from tuple to string."""
+        if all(isinstance(k, tuple) for k in entities):
+            return {f"{k[0]}.{k[1]}": v for k, v in entities.items()}
+        return entities
+
+    @field_validator("device_automation_triggers", mode="before", check_fields=False)
+    @classmethod
+    def convert_device_automation_triggers(
+        cls, triggers: dict[tuple, dict]
+    ) -> dict[str, dict]:
+        """Convert device automation triggers keys from tuple to string."""
+        if all(isinstance(k, tuple) for k in triggers):
+            return {f"{k[0]}~{k[1]}": v for k, v in triggers.items()}
+        return triggers
 
 
 class GroupEntity(BaseEntity):

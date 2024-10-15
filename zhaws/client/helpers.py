@@ -688,6 +688,7 @@ class PlatformEntityHelper:
         command = PlatformEntityRefreshStateCommand(
             ieee=platform_entity.device_ieee,
             unique_id=platform_entity.unique_id,
+            platform=platform_entity.platform,
         )
         return await self._client.async_send_command(command)
 
