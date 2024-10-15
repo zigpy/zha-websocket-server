@@ -202,6 +202,8 @@ class Client(EventBase):
                 future = self._result_futures.get(msg["message_id"])
                 if future is not None:
                     future.set_exception(err)
+                    return
+            return
 
         if message.message_type == "result":
             future = self._result_futures.get(message.message_id)
