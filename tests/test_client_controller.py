@@ -6,7 +6,6 @@ from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, call
 
 import pytest
-from slugify import slugify
 from zigpy.device import Device as ZigpyDevice
 from zigpy.profiles import zha
 from zigpy.types.named import EUI64
@@ -96,12 +95,8 @@ def get_group_entity(
     group_proxy: GroupProxy, entity_id: str
 ) -> Optional[SwitchGroupEntity]:
     """Get entity."""
-    entities = {
-        entity.platform + "." + slugify(entity.name, separator="_"): entity
-        for entity in group_proxy.group_model.entities.values()
-    }
 
-    return entities.get(entity_id)
+    return group_proxy.group_model.entities.get(entity_id)
 
 
 @pytest.fixture
@@ -290,7 +285,7 @@ async def test_controller_devices(
     )
 
 
-async def t3st_controller_groups(
+async def test_controller_groups(
     device_switch_1: Device,
     device_switch_2: Device,
     connected_client_and_server: tuple[Controller, Server],
@@ -319,7 +314,7 @@ async def t3st_controller_groups(
     entity_id = async_find_group_entity_id(Platform.SWITCH, zha_group)
     assert entity_id is not None
 
-    group_proxy: Optional[GroupProxy] = controller.groups.get(2)
+    group_proxy: Optional[GroupProxy] = controller.groups.get(zha_group.group_id)
     assert group_proxy is not None
 
     entity: SwitchGroupEntity = get_group_entity(group_proxy, entity_id)  # type: ignore
