@@ -140,6 +140,7 @@ class Server:
     async def block_till_done(self) -> None:
         """Block until all pending work is done."""
         # To flush out any call_soon_threadsafe
+        await self.controller.gateway.async_block_till_done()
         await asyncio.sleep(0.001)
         start_time: float | None = None
 
