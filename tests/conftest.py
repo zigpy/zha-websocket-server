@@ -1,6 +1,5 @@
 """Test configuration for the ZHA component."""
 
-from asyncio import AbstractEventLoop
 from collections.abc import AsyncGenerator, Callable
 import itertools
 import logging
@@ -219,7 +218,6 @@ async def zigpy_app_controller() -> AsyncGenerator[ControllerApplication, None]:
 
 @pytest.fixture
 async def connected_client_and_server(
-    event_loop: AbstractEventLoop,
     server_configuration: ServerConfiguration,
     zigpy_app_controller: ControllerApplication,
 ) -> AsyncGenerator[tuple[Controller, Server], None]:
