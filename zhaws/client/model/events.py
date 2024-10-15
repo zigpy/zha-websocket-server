@@ -34,7 +34,6 @@ from zhaws.model import BaseEvent, BaseModel
 class MinimalPlatformEntity(BaseModel):
     """Platform entity model."""
 
-    name: str
     unique_id: str
     platform: str
 
@@ -92,20 +91,22 @@ class PlatformEntityStateChangedEvent(BaseEvent):
     device: Optional[MinimalDevice] = None
     group: Optional[MinimalGroup] = None
     state: Annotated[
-        Union[
-            DeviceTrackerState,
-            CoverState,
-            ShadeState,
-            FanState,
-            LockState,
-            BatteryState,
-            ElectricalMeasurementState,
-            LightState,
-            SwitchState,
-            SmareEnergyMeteringState,
-            GenericState,
-            BooleanState,
-            ThermostatState,
+        Optional[
+            Union[
+                DeviceTrackerState,
+                CoverState,
+                ShadeState,
+                FanState,
+                LockState,
+                BatteryState,
+                ElectricalMeasurementState,
+                LightState,
+                SwitchState,
+                SmareEnergyMeteringState,
+                GenericState,
+                BooleanState,
+                ThermostatState,
+            ]
         ],
         Field(discriminator="class_name"),  # noqa: F821
     ]
