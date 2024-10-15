@@ -6,7 +6,6 @@ import logging
 from typing import Any, Optional
 from unittest.mock import AsyncMock, Mock
 
-from slugify import slugify
 import zigpy.types as t
 import zigpy.zcl
 import zigpy.zcl.foundation as zcl_f
@@ -265,13 +264,8 @@ def find_entity_ids(
 
 def async_find_group_entity_id(domain: str, group: Group) -> Optional[str]:
     """Find the group entity id under test."""
-    entity_id = f"{domain}.{group.name.lower().replace(' ','_')}_0x{group.group_id:04x}"
+    entity_id = f"{domain}_zha_group_0x{group.group_id:04x}"
 
-    entity_ids = [
-        f"{entity.PLATFORM}.{slugify(entity.name, separator='_')}"
-        for entity in group.group_entities.values()
-    ]
-
-    if entity_id in entity_ids:
+    if entity_id in group.group_entities:
         return entity_id
     return None
