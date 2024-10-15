@@ -11,8 +11,12 @@ from pydantic import Field
 from zigpy.types.named import EUI64
 
 from zha.zigbee.device import Device
-from zha.zigbee.group import Group, GroupMemberReference
-from zhaws.client.model.types import Device as DeviceModel
+from zha.zigbee.group import Group
+from zhaws.client.model.types import (
+    Device as DeviceModel,
+    Group as GroupModel,
+    GroupMemberReference,
+)
 from zhaws.server.const import DEVICES, DURATION, GROUPS, APICommands
 from zhaws.server.websocket.api import decorators, register_api_command
 from zhaws.server.websocket.api.model import WebSocketCommand
@@ -142,9 +146,11 @@ class GetGroupsCommand(WebSocketCommand):
 @decorators.async_response
 async def get_groups(server: Server, client: Client, command: GetGroupsCommand) -> None:
     """Get Zigbee groups."""
-    groups: dict[int, Any] = {
-        id: group.to_json() for id, group in server.controller.groups.items()
-    }
+    groups: dict[int, Any] = {}
+    for id, group in server.controller.gateway.groups.items():
+        group_data = dataclasses.asdict(group.info_object)
+        group_data["id"] = group_data["group_id"]
+        groups[id] = GroupModel.model_validate(group_data).model_dump()
     _LOGGER.info("groups: %s", groups)
     client.send_result_success(command, {GROUPS: groups})
 
@@ -352,10 +358,13 @@ async def create_group(
     group_name = command.group_name
     members = command.members
     group_id = command.group_id
-    group: Group = await controller.async_create_zigpy_group(
+    group: Group = await controller.gateway.async_create_zigpy_group(
         group_name, members, group_id
     )
-    client.send_result_success(command, {"group": group.to_json()})
+    ret_group = dataclasses.asdict(group.info_object)
+    ret_group["id"] = ret_group["group_id"]
+    ret_group = GroupModel.model_validate(ret_group).model_dump()
+    client.send_result_success(command, {"group": ret_group})
 
 
 class RemoveGroupsCommand(WebSocketCommand):
@@ -377,13 +386,16 @@ async def remove_groups(
     if len(group_ids) > 1:
         tasks = []
         for group_id in group_ids:
-            tasks.append(controller.async_remove_zigpy_group(group_id))
+            tasks.append(controller.gateway.async_remove_zigpy_group(group_id))
         await asyncio.gather(*tasks)
     else:
-        await controller.async_remove_zigpy_group(group_ids[0])
-    groups: dict[int, Any] = {
-        id: group.to_json() for id, group in server.controller.groups.items()
-    }
+        await controller.gateway.async_remove_zigpy_group(group_ids[0])
+    groups: dict[int, Any] = {}
+    for id, group in server.controller.gateway.groups.items():
+        group_data = dataclasses.asdict(group.info_object)
+        group_data["id"] = group_data["group_id"]
+        groups[id] = GroupModel.model_validate(group_data).model_dump()
+    _LOGGER.info("groups: %s", groups)
     client.send_result_success(command, {GROUPS: groups})
 
 
@@ -408,13 +420,15 @@ async def add_group_members(
     members = command.members
     group = None
 
-    if group_id in controller.groups:
-        group = controller.groups[group_id]
+    if group_id in controller.gateway.groups:
+        group = controller.gateway.groups[group_id]
         await group.async_add_members(members)
     if not group:
         client.send_result_error(command, "G1", "ZHA Group not found")
         return
-    ret_group = group.to_json()
+    ret_group = dataclasses.asdict(group.info_object)
+    ret_group["id"] = ret_group["group_id"]
+    ret_group = GroupModel.model_validate(ret_group).model_dump()
     client.send_result_success(command, {GROUP: ret_group})
 
 
@@ -437,13 +451,15 @@ async def remove_group_members(
     members = command.members
     group = None
 
-    if group_id in controller.groups:
-        group = controller.groups[group_id]
+    if group_id in controller.gateway.groups:
+        group = controller.gateway.groups[group_id]
         await group.async_remove_members(members)
     if not group:
         client.send_result_error(command, "G1", "ZHA Group not found")
         return
-    ret_group = group.to_json()
+    ret_group = dataclasses.asdict(group.info_object)
+    ret_group["id"] = ret_group["group_id"]
+    ret_group = GroupModel.model_validate(ret_group).model_dump()
     client.send_result_success(command, {GROUP: ret_group})
 
 
