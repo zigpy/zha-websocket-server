@@ -9,7 +9,6 @@ import pytest
 from slugify import slugify
 from zigpy.device import Device as ZigpyDevice
 from zigpy.profiles import zha
-import zigpy.profiles.zha
 from zigpy.types.named import EUI64
 from zigpy.zcl.clusters import general
 
@@ -55,7 +54,7 @@ def zigpy_device(zigpy_device_mock: Callable[..., ZigpyDevice]) -> ZigpyDevice:
             SIG_EP_INPUT: [general.Basic.cluster_id, general.OnOff.cluster_id],
             SIG_EP_OUTPUT: [],
             SIG_EP_TYPE: zha.DeviceType.ON_OFF_SWITCH,
-            SIG_EP_PROFILE: zigpy.profiles.zha.PROFILE_ID,
+            SIG_EP_PROFILE: zha.PROFILE_ID,
         }
     }
     return zigpy_device_mock(endpoints)
@@ -74,7 +73,7 @@ async def device_switch_1(
                 SIG_EP_INPUT: [general.OnOff.cluster_id, general.Groups.cluster_id],
                 SIG_EP_OUTPUT: [],
                 SIG_EP_TYPE: zha.DeviceType.ON_OFF_SWITCH,
-                SIG_EP_PROFILE: zigpy.profiles.zha.PROFILE_ID,
+                SIG_EP_PROFILE: zha.PROFILE_ID,
             }
         },
         ieee=IEEE_GROUPABLE_DEVICE,
@@ -118,7 +117,7 @@ async def device_switch_2(
                 SIG_EP_INPUT: [general.OnOff.cluster_id, general.Groups.cluster_id],
                 SIG_EP_OUTPUT: [],
                 SIG_EP_TYPE: zha.DeviceType.ON_OFF_SWITCH,
-                SIG_EP_PROFILE: zigpy.profiles.zha.PROFILE_ID,
+                SIG_EP_PROFILE: zha.PROFILE_ID,
             }
         },
         ieee=IEEE_GROUPABLE_DEVICE2,
@@ -128,7 +127,7 @@ async def device_switch_2(
     return zha_device
 
 
-async def t3st_controller_devices(
+async def test_controller_devices(
     device_joined: Callable[[ZigpyDevice], Awaitable[Device]],
     zigpy_device: ZigpyDevice,
     connected_client_and_server: tuple[Controller, Server],
@@ -150,30 +149,30 @@ async def t3st_controller_devices(
 
     await controller.load_devices()
     devices: dict[EUI64, DeviceProxy] = controller.devices
-    assert len(devices) == 1
+    assert len(devices) == 2
     assert zha_device.ieee in devices
 
     # test client -> server
     await controller.devices_helper.remove_device(client_device.device_model)
-    assert server.controller.application_controller.remove.call_count == 1
-    assert server.controller.application_controller.remove.call_args == call(
+    assert server.controller.gateway.application_controller.remove.await_count == 1
+    assert server.controller.gateway.application_controller.remove.await_args == call(
         client_device.device_model.ieee
     )
 
     # test server -> client
-    server.controller.device_removed(zigpy_device)
+    server.controller.gateway.device_removed(zigpy_device)
     await server.block_till_done()
-    assert len(controller.devices) == 0
+    assert len(controller.devices) == 1
 
     # rejoin the device
     zha_device = await device_joined(zigpy_device)
     await server.block_till_done()
-    assert len(controller.devices) == 1
+    assert len(controller.devices) == 2
 
     # test rejoining the same device
     zha_device = await device_joined(zigpy_device)
     await server.block_till_done()
-    assert len(controller.devices) == 1
+    assert len(controller.devices) == 2
 
     # we removed and joined the device again so lets get the entity again
     client_device = controller.devices.get(zha_device.ieee)
@@ -192,7 +191,7 @@ async def t3st_controller_devices(
     # test read cluster attribute
     cluster = zigpy_device.endpoints.get(1).on_off
     assert cluster is not None
-    cluster.PLUGGED_ATTR_READS = {"on_off": 1}
+    cluster.PLUGGED_ATTR_READS = {general.OnOff.AttributeDefs.on_off.id: 1}
     update_attribute_cache(cluster)
     await controller.entities.refresh_state(entity)
     await server.block_till_done()
@@ -201,6 +200,7 @@ async def t3st_controller_devices(
             client_device.device_model, general.OnOff.cluster_id, "in", 1, ["on_off"]
         )
     )
+    await server.block_till_done()
     assert read_response is not None
     assert read_response.success is True
     assert len(read_response.succeeded) == 1
