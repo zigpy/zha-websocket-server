@@ -25,15 +25,32 @@ def patch_cluster(cluster: zigpy.zcl.Cluster) -> None:
     """Patch a cluster for testing."""
     cluster.PLUGGED_ATTR_READS = {}
 
+    def _get_attr_from_cache(attr_id: str | int) -> Any:
+        value = cluster._attr_cache.get(attr_id)
+        if value is None:
+            # try converting attr_id to attr_name and lookup the plugs again
+            attr = cluster.attributes.get(attr_id)
+            if attr is not None:
+                value = cluster._attr_cache.get(attr.name)
+        return value
+
+    def _get_attr_from_plugs(attr_id: str | int) -> Any:
+        value = cluster.PLUGGED_ATTR_READS.get(attr_id)
+        if value is None:
+            # try converting attr_id to attr_name and lookup the plugs again
+            attr = cluster.attributes.get(attr_id)
+            if attr is not None:
+                value = cluster.PLUGGED_ATTR_READS.get(attr.name)
+        return value
+
     async def _read_attribute_raw(attributes: Any, *args: Any, **kwargs: Any) -> Any:
         result = []
         for attr_id in attributes:
-            value = cluster.PLUGGED_ATTR_READS.get(attr_id)
+            # first check attr cache
+            value = _get_attr_from_cache(attr_id)
             if value is None:
-                # try converting attr_id to attr_name and lookup the plugs again
-                attr = cluster.attributes.get(attr_id)
-                if attr is not None:
-                    value = cluster.PLUGGED_ATTR_READS.get(attr.name)
+                # then check plugged attributes
+                value = _get_attr_from_plugs(attr_id)
             if value is not None:
                 result.append(
                     zcl_f.ReadAttributeRecord(
