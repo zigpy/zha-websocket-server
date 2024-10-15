@@ -18,6 +18,7 @@ dependencies = [
     "colorlog",
     "pydantic==2.9.2",
     "websockets",
+    "orjson",
 ]
 
 [tool.setuptools.packages.find]
@@ -28,6 +29,7 @@ testing = [
     "pytest",
     "pytest-xdist",
     "looptime",
+    "pylint-pydantic",
 ]
 server = [
     "uvloop",
