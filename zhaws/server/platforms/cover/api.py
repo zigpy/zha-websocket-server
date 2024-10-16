@@ -1,8 +1,10 @@
 """WS API for the cover platform entity."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
+from zha.application.discovery import Platform
 from zhaws.server.const import APICommands
 from zhaws.server.platforms import PlatformEntityCommand
 from zhaws.server.platforms.api import execute_platform_entity_command
@@ -17,6 +19,7 @@ class CoverOpenCommand(PlatformEntityCommand):
     """Cover open command."""
 
     command: Literal[APICommands.COVER_OPEN] = APICommands.COVER_OPEN
+    platform: str = Platform.COVER
 
 
 @decorators.websocket_command(CoverOpenCommand)
@@ -30,6 +33,7 @@ class CoverCloseCommand(PlatformEntityCommand):
     """Cover close command."""
 
     command: Literal[APICommands.COVER_CLOSE] = APICommands.COVER_CLOSE
+    platform: str = Platform.COVER
 
 
 @decorators.websocket_command(CoverCloseCommand)
@@ -43,6 +47,7 @@ class CoverSetPositionCommand(PlatformEntityCommand):
     """Cover set position command."""
 
     command: Literal[APICommands.COVER_SET_POSITION] = APICommands.COVER_SET_POSITION
+    platform: str = Platform.COVER
     position: int
 
 
@@ -61,6 +66,7 @@ class CoverStopCommand(PlatformEntityCommand):
     """Cover stop command."""
 
     command: Literal[APICommands.COVER_STOP] = APICommands.COVER_STOP
+    platform: str = Platform.COVER
 
 
 @decorators.websocket_command(CoverStopCommand)

@@ -1,4 +1,5 @@
 """Client implementation for the zhaws.client."""
+
 from __future__ import annotations
 
 import asyncio
@@ -12,9 +13,9 @@ from aiohttp import ClientSession, ClientWebSocketResponse, client_exceptions
 from aiohttp.http_websocket import WSMsgType
 from async_timeout import timeout
 
+from zha.event import EventBase
 from zhaws.client.model.commands import CommandResponse, ErrorResponse
 from zhaws.client.model.messages import Message
-from zhaws.event import EventBase
 from zhaws.server.websocket.api.model import WebSocketCommand
 
 SIZE_PARSE_JSON_EXECUTOR = 8192
@@ -83,22 +84,27 @@ class Client(EventBase):
 
         try:
             async with timeout(20):
-                await self._send_json_message(command.json(exclude_none=True))
+                await self._send_json_message(
+                    command.model_dump_json(exclude_none=True)
+                )
                 return await future
-        except asyncio.TimeoutError:
-            _LOGGER.error("Timeout waiting for response")
-            return CommandResponse.parse_obj(
+        except TimeoutError:
+            _LOGGER.exception("Timeout waiting for response")
+            return CommandResponse.model_validate(
                 {"message_id": message_id, "success": False}
             )
         except Exception as err:
-            _LOGGER.error("Error sending command: %s", err, exc_info=err)
+            _LOGGER.exception("Error sending command", exc_info=err)
+            return CommandResponse.model_validate(
+                {"message_id": message_id, "success": False}
+            )
         finally:
             self._result_futures.pop(message_id)
 
     async def async_send_command_no_wait(self, command: WebSocketCommand) -> None:
         """Send a command without waiting for the response."""
         command.message_id = self.new_message_id()
-        await self._send_json_message(command.json(exclude_none=True))
+        await self._send_json_message(command.model_dump_json(exclude_none=True))
 
     async def connect(self) -> None:
         """Connect to the websocket server."""
@@ -112,7 +118,7 @@ class Client(EventBase):
                 max_msg_size=0,
             )
         except client_exceptions.ClientError as err:
-            _LOGGER.error("Error connecting to server: %s", err)
+            _LOGGER.exception("Error connecting to server", exc_info=err)
             raise err
 
     async def listen_loop(self) -> None:
@@ -125,7 +131,7 @@ class Client(EventBase):
     async def listen(self) -> None:
         """Start listening to the websocket."""
         if not self.connected:
-            raise Exception("Not connected when start listening")
+            raise Exception("Not connected when start listening")  # noqa: TRY002
 
         assert self._client
 
@@ -163,13 +169,13 @@ class Client(EventBase):
         msg = await self._client.receive()
 
         if msg.type in (WSMsgType.CLOSE, WSMsgType.CLOSED, WSMsgType.CLOSING):
-            raise Exception("Connection was closed.")
+            raise Exception("Connection was closed.")  # noqa: TRY002
 
         if msg.type == WSMsgType.ERROR:
-            raise Exception()
+            raise Exception()  # noqa: TRY002
 
         if msg.type != WSMsgType.TEXT:
-            raise Exception(f"Received non-Text message: {msg.type}")
+            raise Exception(f"Received non-Text message: {msg.type}")  # noqa: TRY002
 
         try:
             if len(msg.data) > SIZE_PARSE_JSON_EXECUTOR:
@@ -177,7 +183,7 @@ class Client(EventBase):
             else:
                 data = msg.json()
         except ValueError as err:
-            raise Exception("Received invalid JSON.") from err
+            raise Exception("Received invalid JSON.") from err  # noqa: TRY002
 
         if _LOGGER.isEnabledFor(logging.DEBUG):
             _LOGGER.debug("Received message:\n%s\n", pprint.pformat(msg))
@@ -191,9 +197,15 @@ class Client(EventBase):
         """
 
         try:
-            message = Message.parse_obj(msg).__root__
+            message = Message.model_validate(msg).root
         except Exception as err:
-            _LOGGER.error("Error parsing message: %s", msg, exc_info=err)
+            _LOGGER.exception("Error parsing message: %s", msg, exc_info=err)
+            if msg["message_type"] == "result":
+                future = self._result_futures.get(msg["message_id"])
+                if future is not None:
+                    future.set_exception(err)
+                    return
+            return
 
         if message.message_type == "result":
             future = self._result_futures.get(message.message_id)
@@ -230,7 +242,7 @@ class Client(EventBase):
         try:
             self.emit(message.event_type, message)
         except Exception as err:
-            _LOGGER.error("Error handling event: %s", err, exc_info=err)
+            _LOGGER.exception("Error handling event", exc_info=err)
 
     async def _send_json_message(self, message: str) -> None:
         """Send a message.
@@ -238,7 +250,7 @@ class Client(EventBase):
         Raises NotConnected if client not connected.
         """
         if not self.connected:
-            raise Exception()
+            raise Exception()  # noqa: TRY002
 
         _LOGGER.debug("Publishing message:\n%s\n", pprint.pformat(message))
 

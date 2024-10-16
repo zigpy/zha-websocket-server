@@ -1,8 +1,10 @@
 """WS api for the climate platform entity."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, Optional, Union
 
+from zha.application.discovery import Platform
 from zhaws.server.const import APICommands
 from zhaws.server.platforms import PlatformEntityCommand
 from zhaws.server.platforms.api import execute_platform_entity_command
@@ -16,9 +18,10 @@ if TYPE_CHECKING:
 class ClimateSetFanModeCommand(PlatformEntityCommand):
     """Set fan mode command."""
 
-    command: Literal[
+    command: Literal[APICommands.CLIMATE_SET_FAN_MODE] = (
         APICommands.CLIMATE_SET_FAN_MODE
-    ] = APICommands.CLIMATE_SET_FAN_MODE
+    )
+    platform: str = Platform.CLIMATE
     fan_mode: str
 
 
@@ -34,9 +37,10 @@ async def set_fan_mode(
 class ClimateSetHVACModeCommand(PlatformEntityCommand):
     """Set HVAC mode command."""
 
-    command: Literal[
+    command: Literal[APICommands.CLIMATE_SET_HVAC_MODE] = (
         APICommands.CLIMATE_SET_HVAC_MODE
-    ] = APICommands.CLIMATE_SET_HVAC_MODE
+    )
+    platform: str = Platform.CLIMATE
     hvac_mode: Literal[
         "off",  # All activity disabled / Device is off/standby
         "heat",  # Heating
@@ -62,9 +66,10 @@ async def set_hvac_mode(
 class ClimateSetPresetModeCommand(PlatformEntityCommand):
     """Set preset mode command."""
 
-    command: Literal[
+    command: Literal[APICommands.CLIMATE_SET_PRESET_MODE] = (
         APICommands.CLIMATE_SET_PRESET_MODE
-    ] = APICommands.CLIMATE_SET_PRESET_MODE
+    )
+    platform: str = Platform.CLIMATE
     preset_mode: str
 
 
@@ -82,9 +87,10 @@ async def set_preset_mode(
 class ClimateSetTemperatureCommand(PlatformEntityCommand):
     """Set temperature command."""
 
-    command: Literal[
+    command: Literal[APICommands.CLIMATE_SET_TEMPERATURE] = (
         APICommands.CLIMATE_SET_TEMPERATURE
-    ] = APICommands.CLIMATE_SET_TEMPERATURE
+    )
+    platform: str = Platform.CLIMATE
     temperature: Union[float, None]
     target_temp_high: Union[float, None]
     target_temp_low: Union[float, None]

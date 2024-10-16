@@ -1,4 +1,5 @@
 """Tests for the server and client."""
+
 from __future__ import annotations
 
 from zhaws.client.client import Client
@@ -26,16 +27,16 @@ async def test_server_client_connect_disconnect(
             assert client._listen_task is not None
 
         # The listen task is automatically stopped when we disconnect
-        assert client._listen_task is None  # type: ignore
+        assert client._listen_task is None
         assert "not connected" in repr(client)
         assert not client.connected
 
-    assert not server.is_serving  # type: ignore
+    assert not server.is_serving
     assert server._ws_server is None
 
 
 async def test_client_message_id_uniqueness(
-    connected_client_and_server: tuple[Controller, Server]
+    connected_client_and_server: tuple[Controller, Server],
 ) -> None:
     """Tests that client message IDs are unique."""
     controller, server = connected_client_and_server
@@ -45,7 +46,7 @@ async def test_client_message_id_uniqueness(
 
 
 async def test_client_stop_server(
-    connected_client_and_server: tuple[Controller, Server]
+    connected_client_and_server: tuple[Controller, Server],
 ) -> None:
     """Tests that the client can stop the server."""
     controller, server = connected_client_and_server

@@ -1,8 +1,10 @@
 """WS API for the button platform entity."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
+from zha.application.discovery import Platform
 from zhaws.server.const import APICommands
 from zhaws.server.platforms import PlatformEntityCommand
 from zhaws.server.platforms.api import execute_platform_entity_command
@@ -17,6 +19,7 @@ class ButtonPressCommand(PlatformEntityCommand):
     """Button press command."""
 
     command: Literal[APICommands.BUTTON_PRESS] = APICommands.BUTTON_PRESS
+    platform: str = Platform.BUTTON
 
 
 @decorators.websocket_command(ButtonPressCommand)

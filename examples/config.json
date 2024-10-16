@@ -2,14 +2,58 @@
   "host": "localhost",
   "port": "8001",
   "network_auto_start": true,
-  "zigpy_configuration": {
-    "database_path": "./zigbee.db",
-    "enable_quirks": true
+  "zha_config": {
+    "coordinator_configuration": {
+      "path": "/dev/cu.wchusbserial971207DO",
+      "baudrate": 115200,
+      "flow_control": "hardware",
+      "radio_type": "ezsp"
+    },
+    "quirks_configuration": {
+      "enabled": true,
+      "custom_quirks_path": "/Users/davidmulcahey/.homeassistant/quirks"
+    },
+    "device_overrides": {},
+    "light_options": {
+      "default_light_transition": 0.0,
+      "enable_enhanced_light_transition": false,
+      "enable_light_transitioning_flag": true,
+      "always_prefer_xy_color_mode": true,
+      "group_members_assume_state": true
+    },
+    "device_options": {
+      "enable_identify_on_join": true,
+      "consider_unavailable_mains": 5,
+      "consider_unavailable_battery": 21600,
+      "enable_mains_startup_polling": true
+    },
+    "alarm_control_panel_options": {
+      "master_code": "1234",
+      "failed_tries": 3,
+      "arm_requires_code": false
+    }
   },
-  "radio_configuration": {
-    "type": "ezsp",
-    "flow_control": "software",
-    "baudrate": 57600,
-    "path": "/dev/cu.GoControl_zigbee\u000c"
+  "zigpy_config": {
+    "startup_energy_scan": false,
+    "handle_unknown_devices": true,
+    "source_routing": true,
+    "max_concurrent_requests": 128,
+    "ezsp_config": {
+      "CONFIG_PACKET_BUFFER_COUNT": 255,
+      "CONFIG_MTORR_FLOW_CONTROL": 1,
+      "CONFIG_KEY_TABLE_SIZE": 12,
+      "CONFIG_ROUTE_TABLE_SIZE": 200
+    },
+    "ota": {
+      "otau_directory": "/Users/davidmulcahey/.homeassistant/zigpy_ota",
+      "inovelli_provider": false,
+      "thirdreality_provider": true
+    },
+    "database_path": "/Users/davidmulcahey/.homeassistant/zigbee.db",
+    "device": {
+      "baudrate": 115200,
+      "flow_control": "hardware",
+      "path": "/dev/cu.wchusbserial971207DO"
+    }
   }
 }

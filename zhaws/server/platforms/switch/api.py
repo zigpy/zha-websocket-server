@@ -1,8 +1,10 @@
 """WS api for the switch platform entity."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
+from zha.application.discovery import Platform
 from zhaws.server.const import APICommands
 from zhaws.server.platforms import PlatformEntityCommand
 from zhaws.server.platforms.api import execute_platform_entity_command
@@ -17,6 +19,7 @@ class SwitchTurnOnCommand(PlatformEntityCommand):
     """Switch turn on command."""
 
     command: Literal[APICommands.SWITCH_TURN_ON] = APICommands.SWITCH_TURN_ON
+    platform: str = Platform.SWITCH
 
 
 @decorators.websocket_command(SwitchTurnOnCommand)
@@ -30,6 +33,7 @@ class SwitchTurnOffCommand(PlatformEntityCommand):
     """Switch turn off command."""
 
     command: Literal[APICommands.SWITCH_TURN_OFF] = APICommands.SWITCH_TURN_OFF
+    platform: str = Platform.SWITCH
 
 
 @decorators.websocket_command(SwitchTurnOffCommand)

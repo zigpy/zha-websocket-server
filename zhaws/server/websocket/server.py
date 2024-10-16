@@ -1,21 +1,22 @@
 """ZHAWSS websocket server."""
+
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Iterable
 import contextlib
 import logging
 from time import monotonic
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Awaitable, Final, Iterable, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 import websockets
 
+from zha.application.discovery import PLATFORMS
 from zhaws.server.config.model import ServerConfiguration
 from zhaws.server.const import APICommands
 from zhaws.server.decorators import periodic
-from zhaws.server.platforms import discovery
 from zhaws.server.platforms.api import load_platform_entity_apis
-from zhaws.server.platforms.discovery import PLATFORMS
 from zhaws.server.websocket.api import decorators, register_api_command
 from zhaws.server.websocket.api.model import WebSocketCommand
 from zhaws.server.websocket.client import ClientManager
@@ -35,7 +36,7 @@ class Server:
     def __init__(self, *, configuration: ServerConfiguration) -> None:
         """Initialize the server."""
         self._config = configuration
-        self._ws_server: websockets.Serve | None = None
+        self._ws_server: websockets.WebSocketServer | None = None
         self._controller: Controller = Controller(self)
         self._client_manager: ClientManager = ClientManager(self)
         self._stopped_event: asyncio.Event = asyncio.Event()
@@ -45,8 +46,7 @@ class Server:
         for platform in PLATFORMS:
             self.data.setdefault(platform, [])
         self._register_api_commands()
-        discovery.PROBE.initialize(self)
-        discovery.GROUP_PROBE.initialize(self)
+        self._register_api_commands()
         self._tracked_tasks.append(
             asyncio.create_task(
                 self._cleanup_tracked_tasks(), name="server_cleanup_tracked_tasks"
@@ -140,6 +140,7 @@ class Server:
     async def block_till_done(self) -> None:
         """Block until all pending work is done."""
         # To flush out any call_soon_threadsafe
+        await self.controller.gateway.async_block_till_done()
         await asyncio.sleep(0.001)
         start_time: float | None = None
 
@@ -170,10 +171,12 @@ class Server:
 
     async def _await_and_log_pending(self, pending: Iterable[Awaitable[Any]]) -> None:
         """Await and log tasks that take a long time."""
-        # pylint: disable=no-self-use
         wait_time = 0
         while pending:
-            _, pending = await asyncio.wait(pending, timeout=BLOCK_LOG_TIMEOUT)
+            _, pending = await asyncio.wait(
+                [asyncio.ensure_future(task) for task in pending],
+                timeout=BLOCK_LOG_TIMEOUT,
+            )
             if not pending:
                 return
             wait_time += BLOCK_LOG_TIMEOUT

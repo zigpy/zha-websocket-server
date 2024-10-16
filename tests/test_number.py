@@ -1,19 +1,21 @@
 """Test zha analog output."""
-from typing import Awaitable, Callable, Optional
+
+from collections.abc import Awaitable, Callable
+from typing import Optional
 from unittest.mock import call
 
 import pytest
 from zigpy.device import Device as ZigpyDevice
-import zigpy.profiles.zha as zha
+from zigpy.profiles import zha
 import zigpy.types
-import zigpy.zcl.clusters.general as general
+from zigpy.zcl.clusters import general
 
+from zha.application.discovery import Platform
+from zha.zigbee.device import Device
 from zhaws.client.controller import Controller
 from zhaws.client.model.types import NumberEntity
 from zhaws.client.proxy import DeviceProxy
-from zhaws.server.platforms.registries import Platform
 from zhaws.server.websocket.server import Server
-from zhaws.server.zigbee.device import Device
 
 from .common import find_entity, send_attributes_report, update_attribute_cache
 from .conftest import SIG_EP_INPUT, SIG_EP_OUTPUT, SIG_EP_PROFILE, SIG_EP_TYPE
@@ -21,7 +23,7 @@ from .conftest import SIG_EP_INPUT, SIG_EP_OUTPUT, SIG_EP_PROFILE, SIG_EP_TYPE
 
 @pytest.fixture
 def zigpy_analog_output_device(
-    zigpy_device_mock: Callable[..., ZigpyDevice]
+    zigpy_device_mock: Callable[..., ZigpyDevice],
 ) -> ZigpyDevice:
     """Zigpy analog_output device."""
 
@@ -81,7 +83,7 @@ async def test_number(
     assert cluster.read_attributes.call_count == 3
 
     # test that the state is 15.0
-    assert entity.state.state == "15.0"
+    assert entity.state.state == 15.0
 
     # test attributes
     assert entity.min_value == 1.0
@@ -92,17 +94,19 @@ async def test_number(
     assert cluster.read_attributes.call_count == 3
     await send_attributes_report(server, cluster, {0x0055: 15})
     await server.block_till_done()
-    assert entity.state.state == "15.0"
+    assert entity.state.state == 15.0
 
     # update value from device
     await send_attributes_report(server, cluster, {0x0055: 20})
     await server.block_till_done()
-    assert entity.state.state == "20.0"
+    assert entity.state.state == 20.0
 
     # change value from client
     await controller.numbers.set_value(entity, 30.0)
     await server.block_till_done()
 
     assert len(cluster.write_attributes.mock_calls) == 1
-    assert cluster.write_attributes.call_args == call({"present_value": 30.0})
-    assert entity.state.state == "30.0"
+    assert cluster.write_attributes.call_args == call(
+        {"present_value": 30.0}, manufacturer=None
+    )
+    assert entity.state.state == 30.0

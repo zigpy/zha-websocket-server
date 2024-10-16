@@ -1,6 +1,7 @@
 """Event models for zhawss.
 
-Events are unprompted messages from the server -> client and they contain only the data that is necessary to handle the event.
+Events are unprompted messages from the server -> client and they contain only the data that is necessary to
+handle the event.
 """
 
 from typing import Annotated, Any, Literal, Optional, Union
@@ -33,7 +34,6 @@ from zhaws.model import BaseEvent, BaseModel
 class MinimalPlatformEntity(BaseModel):
     """Platform entity model."""
 
-    name: str
     unique_id: str
     platform: str
 
@@ -56,7 +56,7 @@ class Attribute(BaseModel):
 
     id: int
     name: str
-    value: Any
+    value: Any = None
 
 
 class MinimalCluster(BaseModel):
@@ -87,24 +87,26 @@ class PlatformEntityStateChangedEvent(BaseEvent):
     event_type: Literal["platform_entity_event"] = "platform_entity_event"
     event: Literal["platform_entity_state_changed"] = "platform_entity_state_changed"
     platform_entity: MinimalPlatformEntity
-    endpoint: Optional[MinimalEndpoint]
-    device: Optional[MinimalDevice]
-    group: Optional[MinimalGroup]
+    endpoint: Optional[MinimalEndpoint] = None
+    device: Optional[MinimalDevice] = None
+    group: Optional[MinimalGroup] = None
     state: Annotated[
-        Union[
-            DeviceTrackerState,
-            CoverState,
-            ShadeState,
-            FanState,
-            LockState,
-            BatteryState,
-            ElectricalMeasurementState,
-            LightState,
-            SwitchState,
-            SmareEnergyMeteringState,
-            GenericState,
-            BooleanState,
-            ThermostatState,
+        Optional[
+            Union[
+                DeviceTrackerState,
+                CoverState,
+                ShadeState,
+                FanState,
+                LockState,
+                BatteryState,
+                ElectricalMeasurementState,
+                LightState,
+                SwitchState,
+                SmareEnergyMeteringState,
+                GenericState,
+                BooleanState,
+                ThermostatState,
+            ]
         ],
         Field(discriminator="class_name"),  # noqa: F821
     ]

@@ -1,8 +1,10 @@
 """WS api for the alarm control panel platform entity."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, Union
 
+from zha.application.discovery import Platform
 from zhaws.server.const import APICommands
 from zhaws.server.platforms import PlatformEntityCommand
 from zhaws.server.platforms.api import execute_platform_entity_command
@@ -16,9 +18,10 @@ if TYPE_CHECKING:
 class DisarmCommand(PlatformEntityCommand):
     """Disarm command."""
 
-    command: Literal[
+    command: Literal[APICommands.ALARM_CONTROL_PANEL_DISARM] = (
         APICommands.ALARM_CONTROL_PANEL_DISARM
-    ] = APICommands.ALARM_CONTROL_PANEL_DISARM
+    )
+    platform: str = Platform.ALARM_CONTROL_PANEL
     code: Union[str, None]
 
 
@@ -32,9 +35,10 @@ async def disarm(server: Server, client: Client, command: DisarmCommand) -> None
 class ArmHomeCommand(PlatformEntityCommand):
     """Arm home command."""
 
-    command: Literal[
+    command: Literal[APICommands.ALARM_CONTROL_PANEL_ARM_HOME] = (
         APICommands.ALARM_CONTROL_PANEL_ARM_HOME
-    ] = APICommands.ALARM_CONTROL_PANEL_ARM_HOME
+    )
+    platform: str = Platform.ALARM_CONTROL_PANEL
     code: Union[str, None]
 
 
@@ -50,9 +54,10 @@ async def arm_home(server: Server, client: Client, command: ArmHomeCommand) -> N
 class ArmAwayCommand(PlatformEntityCommand):
     """Arm away command."""
 
-    command: Literal[
+    command: Literal[APICommands.ALARM_CONTROL_PANEL_ARM_AWAY] = (
         APICommands.ALARM_CONTROL_PANEL_ARM_AWAY
-    ] = APICommands.ALARM_CONTROL_PANEL_ARM_AWAY
+    )
+    platform: str = Platform.ALARM_CONTROL_PANEL
     code: Union[str, None]
 
 
@@ -68,9 +73,10 @@ async def arm_away(server: Server, client: Client, command: ArmAwayCommand) -> N
 class ArmNightCommand(PlatformEntityCommand):
     """Arm night command."""
 
-    command: Literal[
+    command: Literal[APICommands.ALARM_CONTROL_PANEL_ARM_NIGHT] = (
         APICommands.ALARM_CONTROL_PANEL_ARM_NIGHT
-    ] = APICommands.ALARM_CONTROL_PANEL_ARM_NIGHT
+    )
+    platform: str = Platform.ALARM_CONTROL_PANEL
     code: Union[str, None]
 
 
@@ -86,10 +92,11 @@ async def arm_night(server: Server, client: Client, command: ArmNightCommand) ->
 class TriggerAlarmCommand(PlatformEntityCommand):
     """Trigger alarm command."""
 
-    command: Literal[
+    command: Literal[APICommands.ALARM_CONTROL_PANEL_TRIGGER] = (
         APICommands.ALARM_CONTROL_PANEL_TRIGGER
-    ] = APICommands.ALARM_CONTROL_PANEL_TRIGGER
-    code: Union[str, None]
+    )
+    platform: str = Platform.ALARM_CONTROL_PANEL
+    code: Union[str, None] = None
 
 
 @decorators.websocket_command(TriggerAlarmCommand)

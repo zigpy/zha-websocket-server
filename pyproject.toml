@@ -1,0 +1,244 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel", "setuptools-git-versioning<2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zhaws"
+dynamic = ["version"]
+description = "Library implementing a websocket server for ZHA"
+urls = {repository = "https://github.com/zigpy/zhaws"}
+authors = [
+    {name = "David F. Mulcahey", email = "david.mulcahey@icloud.com"}
+]
+readme = "README.md"
+license = {text = "Apache-2.0"}
+requires-python = ">=3.12"
+dependencies = [
+    "zha==0.0.34",
+    "colorlog",
+    "pydantic==2.9.2",
+    "websockets",
+    "orjson",
+]
+
+[tool.setuptools.packages.find]
+exclude = ["tests", "tests.*"]
+
+[project.optional-dependencies]
+testing = [
+    "pytest",
+    "pytest-xdist",
+    "looptime",
+    "pylint-pydantic",
+]
+server = [
+    "uvloop",
+]
+
+[tool.setuptools-git-versioning]
+enabled = true
+
+[tool.codespell]
+ignore-words-list = "hass"
+
+[tool.mypy]
+plugins = [
+  "pydantic.mypy"
+]
+python_version = "3.12"
+check_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+follow_imports = "silent"
+ignore_missing_imports = true
+no_implicit_optional = true
+strict_equality = true
+warn_incomplete_stub = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = true
+show_error_codes = true
+show_error_context = true
+error_summary = true
+
+install_types = true
+non_interactive = true
+
+disable_error_code = [
+    "no-untyped-def",
+    "attr-defined",
+    "no-any-return",
+    "no-untyped-call",
+    "assignment",
+    "arg-type",
+    "union-attr",
+]
+
+[[tool.mypy.overrides]]
+module = [
+  "tests.*",
+]
+warn_unreachable = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = "tests"
+norecursedirs = ".git"
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "B002", # Python does not support the unary prefix increment
+    "B007", # Loop control variable {name} not used within loop body
+    "B014", # Exception handler with duplicate exception
+    "B023", # Function definition does not bind loop variable {name}
+    "B026", # Star-arg unpacking after a keyword argument is strongly discouraged
+    "B904", # Use raise from to specify exception cause
+    "C", # complexity
+    "COM818", # Trailing comma on bare tuple prohibited
+    "D", # docstrings
+    "DTZ003", # Use datetime.now(tz=) instead of datetime.utcnow()
+    "DTZ004", # Use datetime.fromtimestamp(ts, tz=) instead of datetime.utcfromtimestamp(ts)
+    "E", # pycodestyle
+    "F", # pyflakes/autoflake
+    "G", # flake8-logging-format
+    "I", # isort
+    "ICN001", # import concentions; {name} should be imported as {asname}
+    "N804", # First argument of a class method should be named cls
+    "N805", # First argument of a method should be named self
+    "N815", # Variable {name} in class scope should not be mixedCase
+    "PERF101", # Do not cast an iterable to list before iterating over it
+    "PERF102", # When using only the {subset} of a dict use the {subset}() method
+    "PERF203", # try-except within a loop incurs performance overhead
+    "PGH004", # Use specific rule codes when using noqa
+    "PLC0414", # Useless import alias. Import alias does not rename original package.
+    "PLC", # pylint
+    "PLE", # pylint
+    "PLR", # pylint
+    "PLW", # pylint
+    "Q000", # Double quotes found but single quotes preferred
+    "RUF006", # Store a reference to the return value of asyncio.create_task
+    "S102", # Use of exec detected
+    "S103", # bad-file-permissions
+    "S108", # hardcoded-temp-file
+    "S306", # suspicious-mktemp-usage
+    "S307", # suspicious-eval-usage
+    "S313", # suspicious-xmlc-element-tree-usage
+    "S314", # suspicious-xml-element-tree-usage
+    "S315", # suspicious-xml-expat-reader-usage
+    "S316", # suspicious-xml-expat-builder-usage
+    "S317", # suspicious-xml-sax-usage
+    "S318", # suspicious-xml-mini-dom-usage
+    "S319", # suspicious-xml-pull-dom-usage
+    "S320", # suspicious-xmle-tree-usage
+    "S601", # paramiko-call
+    "S602", # subprocess-popen-with-shell-equals-true
+    "S604", # call-with-shell-equals-true
+    "S608", # hardcoded-sql-expression
+    "S609", # unix-command-wildcard-injection
+    "SIM", # flake8-simplify
+    "T100", # Trace found: {name} used
+    "T20", # flake8-print
+    "TID251", # Banned imports
+    "TRY", # tryceratops
+    "UP", # pyupgrade
+    "W", # pycodestyle
+]
+
+ignore = [
+    "D202", # No blank lines allowed after function docstring
+    "D203", # 1 blank line required before class docstring
+    "D213", # Multi-line docstring summary should start at the second line
+    "D406", # Section name should end with a newline
+    "D407", # Section name underlining
+    "E501", # line too long
+    "E731", # do not assign a lambda expression, use a def
+
+    # Ignore ignored, as the rule is now back in preview/nursery, which cannot
+    # be ignored anymore without warnings.
+    # https://github.com/astral-sh/ruff/issues/7491
+    # "PLC1901", # Lots of false positives
+
+    # False positives https://github.com/astral-sh/ruff/issues/5386
+    "PLC0208", # Use a sequence type instead of a `set` when iterating over values
+    "PLR0911", # Too many return statements ({returns} > {max_returns})
+    "PLR0912", # Too many branches ({branches} > {max_branches})
+    "PLR0913", # Too many arguments to function call ({c_args} > {max_args})
+    "PLR0915", # Too many statements ({statements} > {max_statements})
+    "PLR2004", # Magic value used in comparison, consider replacing {value} with a constant variable
+    "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
+    "UP006", # keep type annotation style as is
+    "UP007", # keep type annotation style as is
+    # Ignored due to performance: https://github.com/charliermarsh/ruff/issues/2923
+    "UP038", # Use `X | Y` in `isinstance` call instead of `(X, Y)`
+
+    # Ignored due to incompatible with mypy: https://github.com/python/mypy/issues/15238
+    "UP040", # Checks for use of TypeAlias annotation for declaring type aliases.
+
+    # May conflict with the formatter, https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+    "W191",
+    "E111",
+    "E114",
+    "E117",
+    "D206",
+    "D300",
+    "Q000",
+    "Q",
+    "COM812",
+    "COM819",
+    "ISC001",
+    "ISC002",
+
+    # Disabled because ruff does not understand type of __all__ generated by a function
+    "PLE0605",
+    "TRY003",
+    "TRY201",
+    "TRY300",
+
+    "SIM103", # Return the condition {condition} directly
+]
+
+[tool.ruff.lint.pep8-naming]
+# Allow Pydantic's `@validator` decorator to trigger class method treatment.
+classmethod-decorators = ["classmethod", "pydantic.validator", "pydantic.field_validator"]
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+
+[tool.ruff.lint.flake8-tidy-imports]
+# Disallow all relative imports.
+ban-relative-imports = "all"
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+known-first-party = [
+    "zha",
+    "tests",
+]
+combine-as-imports = true
+split-on-trailing-comma = false
+
+[tool.ruff.lint.per-file-ignores]
+
+# Allow for main entry & scripts to write to stdout
+"script/*" = ["T20"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 25
+
+[tool.coverage.report]
+show_missing = true
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
+
+[tool.pylint]
+load-plugins = "pylint_pydantic"
+max-line-length = 120
+disable = ["C0103", "W0212"]

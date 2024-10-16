@@ -1,4 +1,5 @@
 """WS API for common platform entity functionality."""
+
 from __future__ import annotations
 
 import logging
@@ -25,11 +26,13 @@ async def execute_platform_entity_command(
     try:
         if command.ieee:
             _LOGGER.debug("command: %s", command)
-            device = server.controller.get_device(command.ieee)
-            platform_entity: Any = device.get_platform_entity(command.unique_id)
+            device = server.controller.gateway.get_device(command.ieee)
+            platform_entity: Any = device.get_platform_entity(
+                command.platform, command.unique_id
+            )
         else:
             assert command.group_id
-            group = server.controller.get_group(command.group_id)
+            group = server.controller.gateway.get_group(command.group_id)
             platform_entity = group.group_entities[command.unique_id]
     except ValueError as err:
         _LOGGER.exception(
@@ -46,7 +49,7 @@ async def execute_platform_entity_command(
         if action.__code__.co_argcount == 1:  # the only argument is self
             await action()
         else:
-            await action(**command.dict(exclude_none=True))
+            await action(**command.model_dump(exclude_none=True))
     except Exception as err:
         _LOGGER.exception("Error executing command: %s", method_name, exc_info=err)
         client.send_result_error(command, "PLATFORM_ENTITY_ACTION_ERROR", str(err))
@@ -64,9 +67,9 @@ async def execute_platform_entity_command(
 class PlatformEntityRefreshStateCommand(PlatformEntityCommand):
     """Platform entity refresh state command."""
 
-    command: Literal[
+    command: Literal[APICommands.PLATFORM_ENTITY_REFRESH_STATE] = (
         APICommands.PLATFORM_ENTITY_REFRESH_STATE
-    ] = APICommands.PLATFORM_ENTITY_REFRESH_STATE
+    )
 
 
 @decorators.websocket_command(PlatformEntityRefreshStateCommand)

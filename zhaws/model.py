@@ -1,12 +1,15 @@
 """Shared models for zhaws."""
+
 import logging
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, no_type_check
+from typing import Any, Literal, Optional, Union
 
-from pydantic import BaseModel as PydanticBaseModel, validator
+from pydantic import (
+    BaseModel as PydanticBaseModel,
+    ConfigDict,
+    field_serializer,
+    field_validator,
+)
 from zigpy.types.named import EUI64
-
-if TYPE_CHECKING:
-    from pydantic.typing import AbstractSetIntStr, MappingIntStrAny
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -14,65 +17,60 @@ _LOGGER = logging.getLogger(__name__)
 class BaseModel(PydanticBaseModel):
     """Base model for zhawss models."""
 
-    class Config:
-        """Config for BaseModel."""
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
-        arbitrary_types_allowed = True
-        extra = "allow"
-
-    @validator("ieee", pre=True, always=True, each_item=False, check_fields=False)
-    def convert_ieee(
-        cls, ieee: Optional[Union[str, EUI64]], values: dict[str, Any], **kwargs: Any
-    ) -> Optional[EUI64]:
+    @field_validator("ieee", mode="before", check_fields=False)
+    @classmethod
+    def convert_ieee(cls, ieee: Optional[Union[str, EUI64, list]]) -> Optional[EUI64]:
         """Convert ieee to EUI64."""
         if ieee is None:
             return None
+        if isinstance(ieee, EUI64):
+            return ieee
         if isinstance(ieee, str):
             return EUI64.convert(ieee)
+        if isinstance(ieee, list):
+            return EUI64.deserialize(ieee)[0]
         return ieee
 
-    @validator(
-        "device_ieee", pre=True, always=True, each_item=False, check_fields=False
-    )
+    @field_serializer("ieee", check_fields=False)
+    def serialize_ieee(self, ieee):
+        """Customize how ieee is serialized."""
+        if isinstance(ieee, EUI64):
+            return str(ieee)
+        return ieee
+
+    @field_validator("device_ieee", mode="before", check_fields=False)
+    @classmethod
     def convert_device_ieee(
-        cls,
-        device_ieee: Optional[Union[str, EUI64]],
-        values: dict[str, Any],
-        **kwargs: Any
+        cls, device_ieee: Optional[Union[str, EUI64, list]]
     ) -> Optional[EUI64]:
         """Convert device ieee to EUI64."""
         if device_ieee is None:
             return None
+        if isinstance(device_ieee, EUI64):
+            return device_ieee
         if isinstance(device_ieee, str):
             return EUI64.convert(device_ieee)
+        if isinstance(device_ieee, list):
+            ieee = EUI64.deserialize(device_ieee)[0]
+            return ieee
+        return device_ieee
+
+    @field_serializer("device_ieee", check_fields=False)
+    def serialize_device_ieee(self, device_ieee):
+        """Customize how device_ieee is serialized."""
+        if isinstance(device_ieee, EUI64):
+            return str(device_ieee)
         return device_ieee
 
     @classmethod
-    @no_type_check
-    def _get_value(
-        cls,
-        v: Any,
-        to_dict: bool,
-        by_alias: bool,
-        include: Optional[Union["AbstractSetIntStr", "MappingIntStrAny"]],
-        exclude: Optional[Union["AbstractSetIntStr", "MappingIntStrAny"]],
-        exclude_unset: bool,
-        exclude_defaults: bool,
-        exclude_none: bool,
-    ) -> Any:
+    def _get_value(cls, *args, **kwargs) -> Any:
         """Convert EUI64 to string."""
-        if isinstance(v, EUI64):
-            return str(v)
-        return PydanticBaseModel._get_value(
-            v,
-            to_dict,
-            by_alias,
-            include,
-            exclude,
-            exclude_unset,
-            exclude_defaults,
-            exclude_none,
-        )
+        value = args[0]
+        if isinstance(value, EUI64):
+            return str(value)
+        return PydanticBaseModel._get_value(cls, *args, **kwargs)
 
 
 class BaseEvent(BaseModel):

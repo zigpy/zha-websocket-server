@@ -1,4 +1,5 @@
 """Websocket application to run a zigpy Zigbee network."""
+
 from __future__ import annotations
 
 import argparse
@@ -15,8 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 async def main(config_path: str | None = None) -> None:
     """Run the websocket server."""
     if config_path is None:
-        _LOGGER.info("No config file provided, using default configuration")
-        configuration = ServerConfiguration()
+        raise ValueError("config_path must be provided")
     else:
         _LOGGER.info("Loading configuration from %s", config_path)
         path = Path(config_path)

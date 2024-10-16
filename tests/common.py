@@ -1,20 +1,21 @@
 """Common test objects."""
+
 import asyncio
+from collections.abc import Awaitable
 import logging
-from typing import Any, Awaitable, Optional
+from typing import Any, Optional
 from unittest.mock import AsyncMock, Mock
 
-from slugify import slugify
 import zigpy.types as t
 import zigpy.zcl
 import zigpy.zcl.foundation as zcl_f
 
+from zha.application.discovery import Platform
+from zha.zigbee.device import Device
+from zha.zigbee.group import Group
 from zhaws.client.model.types import BasePlatformEntity
 from zhaws.client.proxy import DeviceProxy
-from zhaws.server.platforms.registries import Platform
 from zhaws.server.websocket.server import Server
-from zhaws.server.zigbee.device import Device
-from zhaws.server.zigbee.group import Group
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,21 +24,38 @@ def patch_cluster(cluster: zigpy.zcl.Cluster) -> None:
     """Patch a cluster for testing."""
     cluster.PLUGGED_ATTR_READS = {}
 
+    def _get_attr_from_cache(attr_id: str | int) -> Any:
+        value = cluster._attr_cache.get(attr_id)
+        if value is None:
+            # try converting attr_id to attr_name and lookup the plugs again
+            attr = cluster.attributes.get(attr_id)
+            if attr is not None:
+                value = cluster._attr_cache.get(attr.name)
+        return value
+
+    def _get_attr_from_plugs(attr_id: str | int) -> Any:
+        value = cluster.PLUGGED_ATTR_READS.get(attr_id)
+        if value is None:
+            # try converting attr_id to attr_name and lookup the plugs again
+            attr = cluster.attributes.get(attr_id)
+            if attr is not None:
+                value = cluster.PLUGGED_ATTR_READS.get(attr.name)
+        return value
+
     async def _read_attribute_raw(attributes: Any, *args: Any, **kwargs: Any) -> Any:
         result = []
         for attr_id in attributes:
-            value = cluster.PLUGGED_ATTR_READS.get(attr_id)
+            # first check attr cache
+            value = _get_attr_from_cache(attr_id)
             if value is None:
-                # try converting attr_id to attr_name and lookup the plugs again
-                attr = cluster.attributes.get(attr_id)
-                if attr is not None:
-                    value = cluster.PLUGGED_ATTR_READS.get(attr.name)
+                # then check plugged attributes
+                value = _get_attr_from_plugs(attr_id)
             if value is not None:
                 result.append(
                     zcl_f.ReadAttributeRecord(
                         attr_id,
                         zcl_f.Status.SUCCESS,
-                        zcl_f.TypeValue(python_type=None, value=value),
+                        zcl_f.TypeValue(type=None, value=value),
                     )
                 )
             else:
@@ -102,7 +120,7 @@ def update_attribute_cache(cluster: zigpy.zcl.Cluster) -> None:
             attrid = zigpy.types.uint16_t(attrid)
         attrs.append(make_attribute(attrid, value))
 
-    hdr = make_zcl_header(zcl_f.Command.Report_Attributes)
+    hdr = make_zcl_header(zcl_f.GeneralCommand.Report_Attributes)
     hdr.frame_control.disable_default_response = True
     msg = zcl_f.GENERAL_COMMANDS[zcl_f.GeneralCommand.Report_Attributes].schema(
         attribute_reports=attrs
@@ -204,6 +222,7 @@ def find_entity_id(
         for entity_id in entities:
             if qualifier in entity_id:
                 return entity_id
+        return None
     else:
         return entities[0]
 
@@ -216,11 +235,10 @@ def find_entity_ids(
     This is used to get the entity id in order to get the state from the state
     machine so that we can test state changes.
     """
-    ieeetail = "".join([f"{o:02x}" for o in zha_device.ieee[:4]])
-    head = f"{domain}.{slugify(f'{zha_device.name} {ieeetail}', separator='_')}"
+    head = f"{domain}.{str(zha_device.ieee)}"
 
     entity_ids = [
-        f"{entity.PLATFORM}.{slugify(entity.name, separator='_')}"
+        f"{entity.PLATFORM}.{entity.unique_id}"
         for entity in zha_device.platform_entities.values()
     ]
 
@@ -246,13 +264,8 @@ def find_entity_ids(
 
 def async_find_group_entity_id(domain: str, group: Group) -> Optional[str]:
     """Find the group entity id under test."""
-    entity_id = f"{domain}.{group.name.lower().replace(' ','_')}_0x{group.group_id:04x}"
+    entity_id = f"{domain}_zha_group_0x{group.group_id:04x}"
 
-    entity_ids = [
-        f"{entity.PLATFORM}.{slugify(entity.name, separator='_')}"
-        for entity in group.group_entities.values()
-    ]
-
-    if entity_id in entity_ids:
+    if entity_id in group.group_entities:
         return entity_id
     return None

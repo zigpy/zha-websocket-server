@@ -1,14 +1,16 @@
 """Client classes for zhawss."""
+
 from __future__ import annotations
 
 import asyncio
-import json
+from collections.abc import Callable
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import ValidationError
 from websockets.server import WebSocketServerProtocol
 
+from zhaws import json
 from zhaws.server.const import (
     COMMAND,
     ERROR_CODE,
@@ -114,8 +116,9 @@ class Client:
         """Send data to this client."""
         try:
             message = json.dumps(data)
-        except TypeError as exc:
-            _LOGGER.error("Couldn't serialize data: %s", data, exc_info=exc)
+        except ValueError as exc:
+            _LOGGER.exception("Couldn't serialize data: %s", data, exc_info=exc)
+            raise exc
         else:
             self._client_manager.server.track_task(
                 asyncio.create_task(self._websocket.send(message))
@@ -124,37 +127,50 @@ class Client:
     async def _handle_incoming_message(self, message: str | bytes) -> None:
         """Handle an incoming message."""
         _LOGGER.info("Message received: %s", message)
-        handlers: dict[
-            str, tuple[Callable, WebSocketCommand]
-        ] = self._client_manager.server.data[WEBSOCKET_API]
+        handlers: dict[str, tuple[Callable, WebSocketCommand]] = (
+            self._client_manager.server.data[WEBSOCKET_API]
+        )
 
-        loaded_message = json.loads(message)
+        try:
+            loaded_message = json.loads(message)
+        except ValueError as exception:
+            _LOGGER.exception(
+                "Received invalid message[unable to parse JSON]: %s",
+                message,
+                exc_info=exception,
+            )
+            return
         _LOGGER.debug(
             "Received message: %s on websocket: %s", loaded_message, self._websocket.id
         )
 
         try:
-            msg = WebSocketCommand.parse_obj(loaded_message)
+            msg = WebSocketCommand.model_validate(loaded_message)
         except ValidationError as exception:
-            _LOGGER.error(
-                f"Received invalid command[unable to parse command]: {loaded_message}",
+            _LOGGER.exception(
+                "Received invalid command[unable to parse command]: %s",
+                loaded_message,
                 exc_info=exception,
             )
             return
 
         if msg.command not in handlers:
             _LOGGER.error(
-                f"Received invalid command[command not registered]: {msg.command}"
+                "Received invalid command[command not registered]: %s", loaded_message
             )
             return
 
         handler, model = handlers[msg.command]
 
         try:
-            handler(self._client_manager.server, self, model.parse_obj(loaded_message))
+            handler(
+                self._client_manager.server, self, model.model_validate(loaded_message)
+            )
         except Exception as err:  # pylint: disable=broad-except
             # TODO Fix this - make real error codes with error messages
-            _LOGGER.error("Error handling message: %s", loaded_message, exc_info=err)
+            _LOGGER.exception(
+                "Error handling message: %s", loaded_message, exc_info=err
+            )
             self.send_result_error(
                 loaded_message, "INTERNAL_ERROR", f"Internal error: {err}"
             )
@@ -188,9 +204,9 @@ class Client:
 class ClientListenRawZCLCommand(WebSocketCommand):
     """Listen to raw ZCL data."""
 
-    command: Literal[
+    command: Literal[APICommands.CLIENT_LISTEN_RAW_ZCL] = (
         APICommands.CLIENT_LISTEN_RAW_ZCL
-    ] = APICommands.CLIENT_LISTEN_RAW_ZCL
+    )
 
 
 class ClientListenCommand(WebSocketCommand):

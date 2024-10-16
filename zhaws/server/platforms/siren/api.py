@@ -1,8 +1,10 @@
 """WS api for the siren platform entity."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, Union
 
+from zha.application.discovery import Platform
 from zhaws.server.const import APICommands
 from zhaws.server.platforms import PlatformEntityCommand
 from zhaws.server.platforms.api import execute_platform_entity_command
@@ -17,9 +19,10 @@ class SirenTurnOnCommand(PlatformEntityCommand):
     """Siren turn on command."""
 
     command: Literal[APICommands.SIREN_TURN_ON] = APICommands.SIREN_TURN_ON
-    duration: Union[int, None]
-    tone: Union[int, None]
-    volume_level: Union[int, None]
+    platform: str = Platform.SIREN
+    duration: Union[int, None] = None
+    tone: Union[int, None] = None
+    level: Union[int, None] = None
 
 
 @decorators.websocket_command(SirenTurnOnCommand)
@@ -33,6 +36,7 @@ class SirenTurnOffCommand(PlatformEntityCommand):
     """Siren turn off command."""
 
     command: Literal[APICommands.SIREN_TURN_OFF] = APICommands.SIREN_TURN_OFF
+    platform: str = Platform.SIREN
 
 
 @decorators.websocket_command(SirenTurnOffCommand)

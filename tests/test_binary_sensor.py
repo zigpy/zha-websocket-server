@@ -1,19 +1,19 @@
 """Test zhaws binary sensor."""
-from typing import Awaitable, Callable, Optional
+
+from collections.abc import Awaitable, Callable
+from typing import Optional
 
 import pytest
 from zigpy.device import Device as ZigpyDevice
 import zigpy.profiles.zha
-import zigpy.zcl.clusters.general as general
-import zigpy.zcl.clusters.measurement as measurement
-import zigpy.zcl.clusters.security as security
+from zigpy.zcl.clusters import general, measurement, security
 
+from zha.application.discovery import Platform
+from zha.zigbee.device import Device
 from zhaws.client.controller import Controller
 from zhaws.client.model.types import BinarySensorEntity
 from zhaws.client.proxy import DeviceProxy
-from zhaws.server.platforms.registries import Platform
 from zhaws.server.websocket.server import Server
-from zhaws.server.zigbee.device import Device
 
 from .common import find_entity, send_attributes_report, update_attribute_cache
 from .conftest import SIG_EP_INPUT, SIG_EP_OUTPUT, SIG_EP_PROFILE, SIG_EP_TYPE

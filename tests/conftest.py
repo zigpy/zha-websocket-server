@@ -1,12 +1,13 @@
 """Test configuration for the ZHA component."""
-from asyncio import AbstractEventLoop
+
+from collections.abc import AsyncGenerator, Callable
 import itertools
 import logging
 import os
 import tempfile
 import time
-from typing import Any, AsyncGenerator, Callable, Optional
-from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
+from typing import Any, Optional
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
 import pytest
@@ -18,82 +19,205 @@ import zigpy.device
 import zigpy.group
 import zigpy.profiles
 import zigpy.types
+from zigpy.zcl.clusters.general import Basic, Groups
+from zigpy.zcl.foundation import Status
 import zigpy.zdo.types as zdo_t
 
+from tests import common
+from zha.zigbee.device import Device
 from zhaws.client.controller import Controller
 from zhaws.server.config.model import ServerConfiguration
 from zhaws.server.websocket.server import Server
-from zhaws.server.zigbee.device import Device
-
-from tests import common
 
 FIXTURE_GRP_ID = 0x1001
 FIXTURE_GRP_NAME = "fixture group"
+COUNTER_NAMES = ["counter_1", "counter_2", "counter_3"]
 _LOGGER = logging.getLogger(__name__)
 
 
 @pytest.fixture
 def server_configuration() -> ServerConfiguration:
     """Server configuration fixture."""
-    port = aiohttp.test_utils.unused_port()  # type: ignore
+    port = aiohttp.test_utils.unused_port()
     with tempfile.TemporaryDirectory() as tempdir:
         # you can e.g. create a file here:
         config_path = os.path.join(tempdir, "configuration.json")
-        server_config = ServerConfiguration.parse_obj(
+        server_config = ServerConfiguration.model_validate(
             {
-                "zigpy_configuration": {
-                    "database_path": os.path.join(tempdir, "zigbee.db"),
-                    "enable_quirks": True,
-                },
-                "radio_configuration": {
-                    "type": "ezsp",
-                    "path": "/dev/tty.SLAB_USBtoUART",
-                    "baudrate": 115200,
-                    "flow_control": "hardware",
-                },
                 "host": "localhost",
                 "port": port,
                 "network_auto_start": False,
+                "zha_config": {
+                    "coordinator_configuration": {
+                        "path": "/dev/cu.wchusbserial971207DO",
+                        "baudrate": 115200,
+                        "flow_control": "hardware",
+                        "radio_type": "ezsp",
+                    },
+                    "quirks_configuration": {
+                        "enabled": True,
+                        "custom_quirks_path": "/Users/davidmulcahey/.homeassistant/quirks",
+                    },
+                    "device_overrides": {},
+                    "light_options": {
+                        "default_light_transition": 0.0,
+                        "enable_enhanced_light_transition": False,
+                        "enable_light_transitioning_flag": True,
+                        "always_prefer_xy_color_mode": True,
+                        "group_members_assume_state": True,
+                    },
+                    "device_options": {
+                        "enable_identify_on_join": True,
+                        "consider_unavailable_mains": 5,
+                        "consider_unavailable_battery": 21600,
+                        "enable_mains_startup_polling": True,
+                    },
+                    "alarm_control_panel_options": {
+                        "master_code": "1234",
+                        "failed_tries": 3,
+                        "arm_requires_code": False,
+                    },
+                },
+                "zigpy_config": {
+                    "startup_energy_scan": False,
+                    "handle_unknown_devices": True,
+                    "source_routing": True,
+                    "max_concurrent_requests": 128,
+                    "ezsp_config": {
+                        "CONFIG_PACKET_BUFFER_COUNT": 255,
+                        "CONFIG_MTORR_FLOW_CONTROL": 1,
+                        "CONFIG_KEY_TABLE_SIZE": 12,
+                        "CONFIG_ROUTE_TABLE_SIZE": 200,
+                    },
+                    "ota": {
+                        "otau_directory": "/Users/davidmulcahey/.homeassistant/zigpy_ota",
+                        "inovelli_provider": False,
+                        "thirdreality_provider": True,
+                    },
+                    "database_path": os.path.join(tempdir, "zigbee.db"),
+                    "device": {
+                        "baudrate": 115200,
+                        "flow_control": "hardware",
+                        "path": "/dev/cu.wchusbserial971207DO",
+                    },
+                },
             }
         )
         with open(config_path, "w") as tmpfile:
-            tmpfile.write(server_config.json())
+            tmpfile.write(server_config.model_dump_json())
             return server_config
 
 
+class _FakeApp(ControllerApplication):
+    async def add_endpoint(self, descriptor: zdo_t.SimpleDescriptor):
+        pass
+
+    async def connect(self):
+        pass
+
+    async def disconnect(self):
+        pass
+
+    async def force_remove(self, dev: zigpy.device.Device):
+        pass
+
+    async def load_network_info(self, *, load_devices: bool = False):
+        pass
+
+    async def permit_ncp(self, time_s: int = 60):
+        pass
+
+    async def permit_with_link_key(
+        self, node: zigpy.types.EUI64, link_key: zigpy.types.KeyData, time_s: int = 60
+    ):
+        pass
+
+    async def reset_network_info(self):
+        pass
+
+    async def send_packet(self, packet: zigpy.types.ZigbeePacket):
+        pass
+
+    async def start_network(self):
+        pass
+
+    async def write_network_info(
+        self, *, network_info: zigpy.state.NetworkInfo, node_info: zigpy.state.NodeInfo
+    ) -> None:
+        pass
+
+    async def request(
+        self,
+        device: zigpy.device.Device,
+        profile: zigpy.types.uint16_t,
+        cluster: zigpy.types.uint16_t,
+        src_ep: zigpy.types.uint8_t,
+        dst_ep: zigpy.types.uint8_t,
+        sequence: zigpy.types.uint8_t,
+        data: bytes,
+        *,
+        expect_reply: bool = True,
+        use_ieee: bool = False,
+        extended_timeout: bool = False,
+    ):
+        pass
+
+    async def move_network_to_channel(
+        self, new_channel: int, *, num_broadcasts: int = 5
+    ) -> None:
+        pass
+
+
 @pytest.fixture
-def zigpy_app_controller() -> ControllerApplication:
+async def zigpy_app_controller() -> AsyncGenerator[ControllerApplication, None]:
     """Zigpy ApplicationController fixture."""
-    app = MagicMock(spec_set=ControllerApplication)
-    app.startup = AsyncMock()
-    app.shutdown = AsyncMock()
-    groups = zigpy.group.Groups(app)
-    groups.add_group(FIXTURE_GRP_ID, FIXTURE_GRP_NAME, suppress_event=True)
-    app.configure_mock(groups=groups)
-    type(app).ieee = PropertyMock()
-    app.ieee.return_value = zigpy.types.EUI64.convert("00:15:8d:00:02:32:4f:32")
-    type(app).nwk = PropertyMock(return_value=zigpy.types.NWK(0x0000))
-    type(app).devices = PropertyMock(return_value={})
-    return app
+    with tempfile.TemporaryDirectory() as tempdir:
+        app = _FakeApp(
+            {
+                zigpy.config.CONF_DATABASE: os.path.join(tempdir, "zigbee.db"),
+                zigpy.config.CONF_DEVICE: {zigpy.config.CONF_DEVICE_PATH: "/dev/null"},
+                zigpy.config.CONF_STARTUP_ENERGY_SCAN: False,
+                zigpy.config.CONF_NWK_BACKUP_ENABLED: False,
+                zigpy.config.CONF_TOPO_SCAN_ENABLED: False,
+                zigpy.config.CONF_OTA: {
+                    zigpy.config.CONF_OTA_ENABLED: False,
+                },
+            }
+        )
+        app.groups.add_group(FIXTURE_GRP_ID, FIXTURE_GRP_NAME, suppress_event=True)
 
+        app.state.node_info.nwk = 0x0000
+        app.state.node_info.ieee = zigpy.types.EUI64.convert("00:15:8d:00:02:32:4f:32")
+        app.state.network_info.pan_id = 0x1234
+        app.state.network_info.extended_pan_id = app.state.node_info.ieee
+        app.state.network_info.channel = 15
+        app.state.network_info.network_key.key = zigpy.types.KeyData(range(16))
+        app.state.counters = zigpy.state.CounterGroups()
+        app.state.counters["ezsp_counters"] = zigpy.state.CounterGroup("ezsp_counters")
+        for name in COUNTER_NAMES:
+            app.state.counters["ezsp_counters"][name].increment()
 
-@pytest.fixture(scope="session", autouse=True)
-def globally_load_quirks():
-    """Load quirks automatically so that ZHA tests run deterministically in isolation.
+        app.remove = AsyncMock(return_value=[Status.SUCCESS])
 
-    If portions of the ZHA test suite that do not happen to load quirks are run
-    independently, bugs can emerge that will show up only when more of the test suite is
-    run.
-    """
+        # Create a fake coordinator device
+        dev = app.add_device(nwk=app.state.node_info.nwk, ieee=app.state.node_info.ieee)
+        dev.node_desc = zdo_t.NodeDescriptor.deserialize(
+            b"\x02@\x807\x10\x7fd\x00\x00*d\x00\x00"
+        )[0]
+        dev.node_desc.logical_type = zdo_t.LogicalType.Coordinator
+        dev.manufacturer = "Coordinator Manufacturer"
+        dev.model = "Coordinator Model"
 
-    import zhaquirks
+        ep = dev.add_endpoint(1)
+        ep.add_input_cluster(Basic.cluster_id)
+        ep.add_input_cluster(Groups.cluster_id)
 
-    zhaquirks.setup()
+        with patch("zigpy.device.Device.request", return_value=[Status.SUCCESS]):
+            yield app
 
 
 @pytest.fixture
 async def connected_client_and_server(
-    event_loop: AbstractEventLoop,
     server_configuration: ServerConfiguration,
     zigpy_app_controller: ControllerApplication,
 ) -> AsyncGenerator[tuple[Controller, Server], None]:
@@ -116,15 +240,15 @@ async def connected_client_and_server(
 
 @pytest.fixture
 def device_joined(
-    connected_client_and_server: tuple[Controller, Server]
+    connected_client_and_server: tuple[Controller, Server],
 ) -> Callable[[zigpy.device.Device], Device]:
     """Return a newly joined ZHAWS device."""
 
     async def _zha_device(zigpy_dev: zigpy.device.Device) -> Device:
         client, server = connected_client_and_server
-        await server.controller.async_device_initialized(zigpy_dev)
+        await server.controller.gateway.async_device_initialized(zigpy_dev)
         await server.block_till_done()
-        return server.controller.get_device(zigpy_dev.ieee)
+        return server.controller.gateway.get_device(zigpy_dev.ieee)
 
     return _zha_device
 
@@ -168,6 +292,10 @@ def zigpy_device_mock(
         device.manufacturer = manufacturer
         device.model = model
         device.node_desc = zdo_t.NodeDescriptor.deserialize(node_descriptor)[0]
+        device.node_desc.mac_capability_flags = (
+            device.node_desc.mac_capability_flags
+            | zdo_t._NodeDescriptorEnums.MACCapabilityFlags.MainsPowered
+        )
         device.last_seen = time.time()
 
         for epid, ep in endpoints.items():

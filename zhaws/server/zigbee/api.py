@@ -1,19 +1,26 @@
 """Websocket API for zhawss."""
+
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import logging
 from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeVar, Union, cast
 
 from pydantic import Field
 from zigpy.types.named import EUI64
 
+from zha.zigbee.device import Device
+from zha.zigbee.group import Group
+from zhaws.client.model.types import (
+    Device as DeviceModel,
+    Group as GroupModel,
+    GroupMemberReference,
+)
 from zhaws.server.const import DEVICES, DURATION, GROUPS, APICommands
 from zhaws.server.websocket.api import decorators, register_api_command
 from zhaws.server.websocket.api.model import WebSocketCommand
 from zhaws.server.zigbee.controller import Controller
-from zhaws.server.zigbee.device import Device
-from zhaws.server.zigbee.group import Group, GroupMemberReference
 
 if TYPE_CHECKING:
     from zhaws.server.websocket.client import Client
@@ -69,9 +76,9 @@ async def stop_network(
 class UpdateTopologyCommand(WebSocketCommand):
     """Stop the Zigbee network."""
 
-    command: Literal[
+    command: Literal[APICommands.UPDATE_NETWORK_TOPOLOGY] = (
         APICommands.UPDATE_NETWORK_TOPOLOGY
-    ] = APICommands.UPDATE_NETWORK_TOPOLOGY
+    )
 
 
 @decorators.websocket_command(UpdateTopologyCommand)
@@ -96,12 +103,18 @@ async def get_devices(
     server: Server, client: Client, command: GetDevicesCommand
 ) -> None:
     """Get Zigbee devices."""
-    response_devices: dict[str, dict] = {
-        str(ieee): device.zha_device_info
-        for ieee, device in server.controller.devices.items()
-    }
-    _LOGGER.info("devices: %s", response_devices)
-    client.send_result_success(command, {DEVICES: response_devices})
+    try:
+        response_devices: dict[str, dict] = {
+            str(ieee): DeviceModel.model_validate(
+                dataclasses.asdict(device.extended_device_info)
+            ).model_dump()
+            for ieee, device in server.controller.gateway.devices.items()
+        }
+        _LOGGER.info("devices: %s", response_devices)
+        client.send_result_success(command, {DEVICES: response_devices})
+    except Exception as e:
+        _LOGGER.exception("Error getting devices", exc_info=e)
+        client.send_result_error(command, "Error getting devices", str(e))
 
 
 class ReconfigureDeviceCommand(WebSocketCommand):
@@ -117,7 +130,7 @@ async def reconfigure_device(
     server: Server, client: Client, command: ReconfigureDeviceCommand
 ) -> None:
     """Reconfigure a zigbee device."""
-    device = server.controller.devices.get(command.ieee)
+    device = server.controller.gateway.devices.get(command.ieee)
     if device:
         await device.async_configure()
     client.send_result_success(command)
@@ -133,9 +146,11 @@ class GetGroupsCommand(WebSocketCommand):
 @decorators.async_response
 async def get_groups(server: Server, client: Client, command: GetGroupsCommand) -> None:
     """Get Zigbee groups."""
-    groups: dict[int, Any] = {
-        id: group.to_json() for id, group in server.controller.groups.items()
-    }
+    groups: dict[int, Any] = {}
+    for id, group in server.controller.gateway.groups.items():
+        group_data = dataclasses.asdict(group.info_object)
+        group_data["id"] = group_data["group_id"]
+        groups[id] = GroupModel.model_validate(group_data).model_dump()
     _LOGGER.info("groups: %s", groups)
     client.send_result_success(command, {GROUPS: groups})
 
@@ -145,7 +160,7 @@ class PermitJoiningCommand(WebSocketCommand):
 
     command: Literal[APICommands.PERMIT_JOINING] = APICommands.PERMIT_JOINING
     duration: Annotated[int, Field(ge=1, le=254)] = 60
-    ieee: Union[EUI64, None]
+    ieee: Union[EUI64, None] = None
 
 
 @decorators.websocket_command(PermitJoiningCommand)
@@ -177,22 +192,22 @@ async def remove_device(
     server: Server, client: Client, command: RemoveDeviceCommand
 ) -> None:
     """Permit joining devices to the Zigbee network."""
-    await server.controller.application_controller.remove(command.ieee)
+    await server.controller.gateway.async_remove_device(command.ieee)
     client.send_result_success(command)
 
 
 class ReadClusterAttributesCommand(WebSocketCommand):
     """Read cluster attributes command."""
 
-    command: Literal[
+    command: Literal[APICommands.READ_CLUSTER_ATTRIBUTES] = (
         APICommands.READ_CLUSTER_ATTRIBUTES
-    ] = APICommands.READ_CLUSTER_ATTRIBUTES
+    )
     ieee: EUI64
     endpoint_id: int
     cluster_id: int
     cluster_type: Literal["in", "out"]
     attributes: list[str]
-    manufacturer_code: Union[int, None]
+    manufacturer_code: Union[int, None] = None
 
 
 @decorators.websocket_command(ReadClusterAttributesCommand)
@@ -201,7 +216,7 @@ async def read_cluster_attributes(
     server: Server, client: Client, command: ReadClusterAttributesCommand
 ) -> None:
     """Read the specified cluster attributes."""
-    device: Device = server.controller.devices[command.ieee]
+    device: Device = server.controller.gateway.devices[command.ieee]
     if not device:
         client.send_result_error(
             command,
@@ -251,16 +266,16 @@ async def read_cluster_attributes(
 class WriteClusterAttributeCommand(WebSocketCommand):
     """Write cluster attribute command."""
 
-    command: Literal[
+    command: Literal[APICommands.WRITE_CLUSTER_ATTRIBUTE] = (
         APICommands.WRITE_CLUSTER_ATTRIBUTE
-    ] = APICommands.WRITE_CLUSTER_ATTRIBUTE
+    )
     ieee: EUI64
     endpoint_id: int
     cluster_id: int
     cluster_type: Literal["in", "out"]
     attribute: str
     value: Union[str, int, float, bool]
-    manufacturer_code: Union[int, None]
+    manufacturer_code: Union[int, None] = None
 
 
 @decorators.websocket_command(WriteClusterAttributeCommand)
@@ -268,8 +283,8 @@ class WriteClusterAttributeCommand(WebSocketCommand):
 async def write_cluster_attribute(
     server: Server, client: Client, command: WriteClusterAttributeCommand
 ) -> None:
-    """Set the value of the specifiec cluster attribute."""
-    device: Device = server.controller.devices[command.ieee]
+    """Set the value of the specific cluster attribute."""
+    device: Device = server.controller.gateway.devices[command.ieee]
     if not device:
         client.send_result_error(
             command,
@@ -318,7 +333,7 @@ async def write_cluster_attribute(
             "manufacturer_code": manufacturer,
             "response": {
                 "attribute": attribute,
-                "status": response[0][0].status.name,  # type: ignore
+                "status": response[0][0].status.name,
             },  # TODO there has to be a better way to do this
         },
     )
@@ -330,7 +345,7 @@ class CreateGroupCommand(WebSocketCommand):
     command: Literal[APICommands.CREATE_GROUP] = APICommands.CREATE_GROUP
     group_name: str
     members: list[GroupMemberReference]
-    group_id: Union[int, None]
+    group_id: Union[int, None] = None
 
 
 @decorators.websocket_command(CreateGroupCommand)
@@ -343,10 +358,13 @@ async def create_group(
     group_name = command.group_name
     members = command.members
     group_id = command.group_id
-    group: Group = await controller.async_create_zigpy_group(
+    group: Group = await controller.gateway.async_create_zigpy_group(
         group_name, members, group_id
     )
-    client.send_result_success(command, {"group": group.to_json()})
+    ret_group = dataclasses.asdict(group.info_object)
+    ret_group["id"] = ret_group["group_id"]
+    ret_group = GroupModel.model_validate(ret_group).model_dump()
+    client.send_result_success(command, {"group": ret_group})
 
 
 class RemoveGroupsCommand(WebSocketCommand):
@@ -368,13 +386,16 @@ async def remove_groups(
     if len(group_ids) > 1:
         tasks = []
         for group_id in group_ids:
-            tasks.append(controller.async_remove_zigpy_group(group_id))
+            tasks.append(controller.gateway.async_remove_zigpy_group(group_id))
         await asyncio.gather(*tasks)
     else:
-        await controller.async_remove_zigpy_group(group_ids[0])
-    groups: dict[int, Any] = {
-        id: group.to_json() for id, group in server.controller.groups.items()
-    }
+        await controller.gateway.async_remove_zigpy_group(group_ids[0])
+    groups: dict[int, Any] = {}
+    for id, group in server.controller.gateway.groups.items():
+        group_data = dataclasses.asdict(group.info_object)
+        group_data["id"] = group_data["group_id"]
+        groups[id] = GroupModel.model_validate(group_data).model_dump()
+    _LOGGER.info("groups: %s", groups)
     client.send_result_success(command, {GROUPS: groups})
 
 
@@ -399,22 +420,24 @@ async def add_group_members(
     members = command.members
     group = None
 
-    if group_id in controller.groups:
-        group = controller.groups[group_id]
+    if group_id in controller.gateway.groups:
+        group = controller.gateway.groups[group_id]
         await group.async_add_members(members)
     if not group:
         client.send_result_error(command, "G1", "ZHA Group not found")
         return
-    ret_group = group.to_json()
+    ret_group = dataclasses.asdict(group.info_object)
+    ret_group["id"] = ret_group["group_id"]
+    ret_group = GroupModel.model_validate(ret_group).model_dump()
     client.send_result_success(command, {GROUP: ret_group})
 
 
 class RemoveGroupMembersCommand(AddGroupMembersCommand):
     """Remove group members command."""
 
-    command: Literal[
+    command: Literal[APICommands.REMOVE_GROUP_MEMBERS] = (
         APICommands.REMOVE_GROUP_MEMBERS
-    ] = APICommands.REMOVE_GROUP_MEMBERS
+    )
 
 
 @decorators.websocket_command(RemoveGroupMembersCommand)
@@ -428,13 +451,15 @@ async def remove_group_members(
     members = command.members
     group = None
 
-    if group_id in controller.groups:
-        group = controller.groups[group_id]
+    if group_id in controller.gateway.groups:
+        group = controller.gateway.groups[group_id]
         await group.async_remove_members(members)
     if not group:
         client.send_result_error(command, "G1", "ZHA Group not found")
         return
-    ret_group = group.to_json()
+    ret_group = dataclasses.asdict(group.info_object)
+    ret_group["id"] = ret_group["group_id"]
+    ret_group = GroupModel.model_validate(ret_group).model_dump()
     client.send_result_success(command, {GROUP: ret_group})
 
 

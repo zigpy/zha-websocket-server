@@ -1,8 +1,10 @@
 """WS api for the lock platform entity."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
+from zha.application.discovery import Platform
 from zhaws.server.const import APICommands
 from zhaws.server.platforms import PlatformEntityCommand
 from zhaws.server.platforms.api import execute_platform_entity_command
@@ -17,6 +19,7 @@ class LockLockCommand(PlatformEntityCommand):
     """Lock lock command."""
 
     command: Literal[APICommands.LOCK_LOCK] = APICommands.LOCK_LOCK
+    platform: str = Platform.LOCK
 
 
 @decorators.websocket_command(LockLockCommand)
@@ -30,6 +33,7 @@ class LockUnlockCommand(PlatformEntityCommand):
     """Lock unlock command."""
 
     command: Literal[APICommands.LOCK_UNLOCK] = APICommands.LOCK_UNLOCK
+    platform: str = Platform.LOCK
 
 
 @decorators.websocket_command(LockUnlockCommand)
@@ -43,6 +47,7 @@ class LockSetUserLockCodeCommand(PlatformEntityCommand):
     """Set user lock code command."""
 
     command: Literal[APICommands.LOCK_SET_USER_CODE] = APICommands.LOCK_SET_USER_CODE
+    platform: str = Platform.LOCK
     code_slot: int
     user_code: str
 
@@ -61,9 +66,10 @@ async def set_user_lock_code(
 class LockEnableUserLockCodeCommand(PlatformEntityCommand):
     """Enable user lock code command."""
 
-    command: Literal[
+    command: Literal[APICommands.LOCK_ENAABLE_USER_CODE] = (
         APICommands.LOCK_ENAABLE_USER_CODE
-    ] = APICommands.LOCK_ENAABLE_USER_CODE
+    )
+    platform: str = Platform.LOCK
     code_slot: int
 
 
@@ -81,9 +87,10 @@ async def enable_user_lock_code(
 class LockDisableUserLockCodeCommand(PlatformEntityCommand):
     """Disable user lock code command."""
 
-    command: Literal[
+    command: Literal[APICommands.LOCK_DISABLE_USER_CODE] = (
         APICommands.LOCK_DISABLE_USER_CODE
-    ] = APICommands.LOCK_DISABLE_USER_CODE
+    )
+    platform: str = Platform.LOCK
     code_slot: int
 
 
@@ -101,9 +108,10 @@ async def disable_user_lock_code(
 class LockClearUserLockCodeCommand(PlatformEntityCommand):
     """Clear user lock code command."""
 
-    command: Literal[
+    command: Literal[APICommands.LOCK_CLEAR_USER_CODE] = (
         APICommands.LOCK_CLEAR_USER_CODE
-    ] = APICommands.LOCK_CLEAR_USER_CODE
+    )
+    platform: str = Platform.LOCK
     code_slot: int
 
 

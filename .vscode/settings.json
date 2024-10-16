@@ -1,22 +1,13 @@
 {
   "editor.formatOnSave": true,
-  "python.linting.mypyEnabled": true,
-  "python.linting.mypyArgs": [
-    "--show-error-codes",
-    "--ignore-missing-imports",
-    "--strict-equality",
-    "--warn-incomplete-stub",
-    "--warn-redundant-casts",
-    "--warn-unused-configs",
-    "--warn-unused-ignores",
-    "--check-untyped-defs",
-    "--disallow-incomplete-defs",
-    "--disallow-subclassing-any",
-    "--disallow-untyped-calls",
-    "--disallow-untyped-decorators",
-    "--disallow-untyped-defs",
-    "--no-implicit-optional",
-    "--warn-unreachable",
-    "--python-version=3.9"
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "debugpy.debugJustMyCode": false,
+  "pylint.args": [
+    "--load-plugins",
+    "pylint_pydantic"
   ]
 }

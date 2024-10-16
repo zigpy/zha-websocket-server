@@ -9,6 +9,7 @@ from aiohttp import ClientSession
 from async_timeout import timeout
 from zigpy.types.named import EUI64
 
+from zha.event import EventBase
 from zhaws.client.client import Client
 from zhaws.client.helpers import (
     AlarmControlPanelHelper,
@@ -45,7 +46,6 @@ from zhaws.client.model.events import (
     ZHAEvent,
 )
 from zhaws.client.proxy import DeviceProxy, GroupProxy
-from zhaws.event import EventBase
 from zhaws.server.const import ControllerEvents, EventTypes
 from zhaws.server.websocket.api.model import WebSocketCommand
 
@@ -117,7 +117,7 @@ class Controller(EventBase):
             async with timeout(CONNECT_TIMEOUT):
                 await self._client.connect()
         except Exception as err:
-            _LOGGER.error("Unable to connect to the ZHA wss: %s", err)
+            _LOGGER.exception("Unable to connect to the ZHA wss", exc_info=err)
             raise err
 
         await self._client.listen()

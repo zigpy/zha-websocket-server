@@ -1,10 +1,12 @@
 """WS API for the fan platform entity."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Annotated, Literal, Union
 
 from pydantic import Field
 
+from zha.application.discovery import Platform
 from zhaws.server.const import APICommands
 from zhaws.server.platforms import PlatformEntityCommand
 from zhaws.server.platforms.api import execute_platform_entity_command
@@ -19,6 +21,7 @@ class FanTurnOnCommand(PlatformEntityCommand):
     """Fan turn on command."""
 
     command: Literal[APICommands.FAN_TURN_ON] = APICommands.FAN_TURN_ON
+    platform: str = Platform.FAN
     speed: Union[str, None]
     percentage: Union[Annotated[int, Field(ge=0, le=100)], None]
     preset_mode: Union[str, None]
@@ -35,6 +38,7 @@ class FanTurnOffCommand(PlatformEntityCommand):
     """Fan turn off command."""
 
     command: Literal[APICommands.FAN_TURN_OFF] = APICommands.FAN_TURN_OFF
+    platform: str = Platform.FAN
 
 
 @decorators.websocket_command(FanTurnOffCommand)
@@ -48,6 +52,7 @@ class FanSetPercentageCommand(PlatformEntityCommand):
     """Fan set percentage command."""
 
     command: Literal[APICommands.FAN_SET_PERCENTAGE] = APICommands.FAN_SET_PERCENTAGE
+    platform: str = Platform.FAN
     percentage: Annotated[int, Field(ge=0, le=100)]
 
 
@@ -66,6 +71,7 @@ class FanSetPresetModeCommand(PlatformEntityCommand):
     """Fan set preset mode command."""
 
     command: Literal[APICommands.FAN_SET_PRESET_MODE] = APICommands.FAN_SET_PRESET_MODE
+    platform: str = Platform.FAN
     preset_mode: str
 
 

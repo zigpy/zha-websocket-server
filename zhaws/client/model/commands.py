@@ -2,7 +2,7 @@
 
 from typing import Annotated, Any, Literal, Optional, Union
 
-from pydantic import validator
+from pydantic import field_validator
 from pydantic.fields import Field
 from zigpy.types.named import EUI64
 
@@ -134,9 +134,10 @@ class GetDevicesResponse(CommandResponse):
     command: Literal["get_devices"] = "get_devices"
     devices: dict[EUI64, Device]
 
-    @validator("devices", pre=True, always=True, each_item=False, check_fields=False)
-    def convert_device_ieee(
-        cls, devices: dict[str, dict], values: dict[str, Any], **kwargs: Any
+    @field_validator("devices", mode="before", check_fields=False)
+    @classmethod
+    def convert_devices_device_ieee(
+        cls, devices: dict[str, dict]
     ) -> dict[EUI64, Device]:
         """Convert device ieee to EUI64."""
         return {EUI64.convert(k): Device(**v) for k, v in devices.items()}
@@ -173,7 +174,7 @@ class WriteClusterAttributeResponse(CommandResponse):
 class GroupsResponse(CommandResponse):
     """Get groups response."""
 
-    command: Literal["get_groups", "create_group", "remove_groups"]
+    command: Literal["get_groups", "remove_groups"]
     groups: dict[int, Group]
 
 

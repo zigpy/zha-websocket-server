@@ -1,7 +1,6 @@
 # Test dependencies
 
 asynctest
-coveralls
 pytest
 pytest-xdist
 pytest-aiohttp

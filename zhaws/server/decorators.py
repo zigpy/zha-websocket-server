@@ -1,14 +1,15 @@
 """Decorators for zhawss."""
 
 import asyncio
+from collections.abc import Callable, Coroutine
 import logging
 import random
-from typing import Any, Callable, Coroutine, Tuple
+from typing import Any
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def periodic(refresh_interval: Tuple) -> Callable:
+def periodic(refresh_interval: tuple) -> Callable:
     """Make a method with periodic refresh."""
 
     def scheduler(func: Callable) -> Callable[[Any, Any], Coroutine[Any, Any, None]]:

@@ -5,11 +5,12 @@ Types are representations of the objects that exist in zhawss.
 
 from typing import Annotated, Any, Literal, Optional, Union
 
-from pydantic import validator
+from pydantic import ValidationInfo, field_serializer, field_validator
 from pydantic.fields import Field
-from zigpy.types.named import EUI64
+from zigpy.types.named import EUI64, NWK
+from zigpy.zdo.types import NodeDescriptor as ZigpyNodeDescriptor
 
-from zhaws.event import EventBase
+from zha.event import EventBase
 from zhaws.model import BaseModel
 
 
@@ -75,7 +76,14 @@ class GenericState(BaseModel):
         "LQISensor",
         "LastSeenSensor",
     ]
-    state: Union[str, bool, int, float, None]
+    state: Union[str, bool, int, float, None] = None
+
+
+class DeviceCounterSensorState(BaseModel):
+    """Device counter sensor state model."""
+
+    class_name: Literal["DeviceCounterSensor"] = "DeviceCounterSensor"
+    state: int
 
 
 class DeviceTrackerState(BaseModel):
@@ -83,7 +91,7 @@ class DeviceTrackerState(BaseModel):
 
     class_name: Literal["DeviceTracker"] = "DeviceTracker"
     connected: bool
-    battery_level: Optional[float]
+    battery_level: Optional[float] = None
 
 
 class BooleanState(BaseModel):
@@ -106,7 +114,7 @@ class CoverState(BaseModel):
 
     class_name: Literal["Cover"] = "Cover"
     current_position: int
-    state: Optional[str]
+    state: Optional[str] = None
     is_opening: bool
     is_closing: bool
     is_closed: bool
@@ -116,23 +124,25 @@ class ShadeState(BaseModel):
     """Cover state model."""
 
     class_name: Literal["Shade", "KeenVent"]
-    current_position: Optional[
-        int
-    ]  # TODO: how should we represent this when it is None?
+    current_position: Optional[int] = (
+        None  # TODO: how should we represent this when it is None?
+    )
     is_closed: bool
-    state: Optional[str]
+    state: Optional[str] = None
 
 
 class FanState(BaseModel):
     """Fan state model."""
 
     class_name: Literal["Fan", "FanGroup"]
-    preset_mode: Optional[
-        str
-    ]  # TODO: how should we represent these when they are None?
-    percentage: Optional[int]  # TODO: how should we represent these when they are None?
+    preset_mode: Optional[str] = (
+        None  # TODO: how should we represent these when they are None?
+    )
+    percentage: Optional[int] = (
+        None  # TODO: how should we represent these when they are None?
+    )
     is_on: bool
-    speed: Optional[str]
+    speed: Optional[str] = None
 
 
 class LockState(BaseModel):
@@ -146,10 +156,10 @@ class BatteryState(BaseModel):
     """Battery state model."""
 
     class_name: Literal["Battery"] = "Battery"
-    state: Optional[Union[str, float, int]]
-    battery_size: Optional[str]
-    battery_quantity: Optional[int]
-    battery_voltage: Optional[float]
+    state: Optional[Union[str, float, int]] = None
+    battery_size: Optional[str] = None
+    battery_quantity: Optional[int] = None
+    battery_voltage: Optional[float] = None
 
 
 class ElectricalMeasurementState(BaseModel):
@@ -161,11 +171,11 @@ class ElectricalMeasurementState(BaseModel):
         "ElectricalMeasurementRMSCurrent",
         "ElectricalMeasurementRMSVoltage",
     ]
-    state: Optional[Union[str, float, int]]
-    measurement_type: Optional[str]
-    active_power_max: Optional[str]
-    rms_current_max: Optional[str]
-    rms_voltage_max: Optional[str]
+    state: Optional[Union[str, float, int]] = None
+    measurement_type: Optional[str] = None
+    active_power_max: Optional[str] = None
+    rms_current_max: Optional[str] = None
+    rms_voltage_max: Optional[str] = None
 
 
 class LightState(BaseModel):
@@ -173,11 +183,11 @@ class LightState(BaseModel):
 
     class_name: Literal["Light", "HueLight", "ForceOnLight", "LightGroup"]
     on: bool
-    brightness: Optional[int]
-    hs_color: Optional[tuple[float, float]]
-    color_temp: Optional[int]
-    effect: Optional[str]
-    off_brightness: Optional[int]
+    brightness: Optional[int] = None
+    hs_color: Optional[tuple[float, float]] = None
+    color_temp: Optional[int] = None
+    effect: Optional[str] = None
+    off_brightness: Optional[int] = None
 
 
 class ThermostatState(BaseModel):
@@ -190,14 +200,14 @@ class ThermostatState(BaseModel):
         "MoesThermostat",
         "BecaThermostat",
     ]
-    current_temperature: Optional[float]
-    target_temperature: Optional[float]
-    target_temperature_low: Optional[float]
-    target_temperature_high: Optional[float]
-    hvac_action: Optional[str]
-    hvac_mode: Optional[str]
-    preset_mode: Optional[str]
-    fan_mode: Optional[str]
+    current_temperature: Optional[float] = None
+    target_temperature: Optional[float] = None
+    target_temperature_low: Optional[float] = None
+    target_temperature_high: Optional[float] = None
+    hvac_action: Optional[str] = None
+    hvac_mode: Optional[str] = None
+    preset_mode: Optional[str] = None
+    fan_mode: Optional[str] = None
 
 
 class SwitchState(BaseModel):
@@ -211,18 +221,24 @@ class SmareEnergyMeteringState(BaseModel):
     """Smare energy metering state model."""
 
     class_name: Literal["SmartEnergyMetering", "SmartEnergySummation"]
-    state: Optional[Union[str, float, int]]
-    device_type: Optional[str]
-    status: Optional[str]
+    state: Optional[Union[str, float, int]] = None
+    device_type: Optional[str] = None
+    status: Optional[str] = None
 
 
 class BaseEntity(BaseEventedModel):
     """Base platform entity model."""
 
-    name: str
     unique_id: str
     platform: str
     class_name: str
+    fallback_name: str | None = None
+    translation_key: str | None = None
+    device_class: str | None = None
+    state_class: str | None = None
+    entity_category: str | None = None
+    entity_registry_enabled_default: bool
+    enabled: bool
 
 
 class BasePlatformEntity(BaseEntity):
@@ -266,8 +282,7 @@ class BinarySensorEntity(BasePlatformEntity):
     class_name: Literal[
         "Accelerometer", "Occupancy", "Opening", "BinaryInput", "Motion", "IASZone"
     ]
-    sensor_attribute: str
-    zone_type: Optional[int]
+    attribute_name: str
     state: BooleanState
 
 
@@ -278,7 +293,7 @@ class BaseSensorEntity(BasePlatformEntity):
     decimals: int
     divisor: int
     multiplier: Union[int, float]
-    unit: Optional[int]
+    unit: Optional[int | str]
 
 
 class SensorEntity(BaseSensorEntity):
@@ -304,6 +319,35 @@ class SensorEntity(BaseSensorEntity):
         "LastSeenSensor",
     ]
     state: GenericState
+
+
+class DeviceCounterSensorEntity(BaseEntity):
+    """Device counter sensor model."""
+
+    class_name: Literal["DeviceCounterSensor"]
+    counter: str
+    counter_value: int
+    counter_groups: str
+    counter_group: str
+    state: DeviceCounterSensorState
+
+    @field_validator("state", mode="before", check_fields=False)
+    @classmethod
+    def convert_state(
+        cls, state: dict | int | None, validation_info: ValidationInfo
+    ) -> DeviceCounterSensorState:
+        """Convert counter value to counter_value."""
+        if state is not None:
+            if isinstance(state, int):
+                return DeviceCounterSensorState(state=state)
+            if isinstance(state, dict):
+                if "state" in state:
+                    return DeviceCounterSensorState(state=state["state"])
+                else:
+                    return DeviceCounterSensorState(
+                        state=validation_info.data["counter_value"]
+                    )
+        return DeviceCounterSensorState(state=validation_info.data["counter_value"])
 
 
 class BatteryEntity(BaseSensorEntity):
@@ -376,14 +420,15 @@ class NumberEntity(BasePlatformEntity):
     """Number entity model."""
 
     class_name: Literal["Number"]
-    engineer_units: Optional[int]  # TODO: how should we represent this when it is None?
+    engineering_units: Optional[
+        int
+    ]  # TODO: how should we represent this when it is None?
     application_type: Optional[
         int
     ]  # TODO: how should we represent this when it is None?
     step: Optional[float]  # TODO: how should we represent this when it is None?
     min_value: float
     max_value: float
-    name: str
     state: GenericState
 
 
@@ -436,10 +481,50 @@ class SwitchEntity(BasePlatformEntity):
 class DeviceSignatureEndpoint(BaseModel):
     """Device signature endpoint model."""
 
-    profile_id: Optional[str]
-    device_type: Optional[str]
+    profile_id: Optional[str] = None
+    device_type: Optional[str] = None
     input_clusters: list[str]
     output_clusters: list[str]
+
+    @field_validator("profile_id", mode="before", check_fields=False)
+    @classmethod
+    def convert_profile_id(cls, profile_id: int | str) -> str:
+        """Convert profile_id."""
+        if isinstance(profile_id, int):
+            return f"0x{profile_id:04x}"
+        return profile_id
+
+    @field_validator("device_type", mode="before", check_fields=False)
+    @classmethod
+    def convert_device_type(cls, device_type: int | str) -> str:
+        """Convert device_type."""
+        if isinstance(device_type, int):
+            return f"0x{device_type:04x}"
+        return device_type
+
+    @field_validator("input_clusters", mode="before", check_fields=False)
+    @classmethod
+    def convert_input_clusters(cls, input_clusters: list[int | str]) -> list[str]:
+        """Convert input_clusters."""
+        clusters = []
+        for cluster_id in input_clusters:
+            if isinstance(cluster_id, int):
+                clusters.append(f"0x{cluster_id:04x}")
+            else:
+                clusters.append(cluster_id)
+        return clusters
+
+    @field_validator("output_clusters", mode="before", check_fields=False)
+    @classmethod
+    def convert_output_clusters(cls, output_clusters: list[int | str]) -> list[str]:
+        """Convert output_clusters."""
+        clusters = []
+        for cluster_id in output_clusters:
+            if isinstance(cluster_id, int):
+                clusters.append(f"0x{cluster_id:04x}")
+            else:
+                clusters.append(cluster_id)
+        return clusters
 
 
 class NodeDescriptor(BaseModel):
@@ -463,10 +548,20 @@ class NodeDescriptor(BaseModel):
 class DeviceSignature(BaseModel):
     """Device signature model."""
 
-    node_descriptor: Optional[NodeDescriptor]
-    manufacturer: Optional[str]
-    model: Optional[str]
+    node_descriptor: Optional[NodeDescriptor] = None
+    manufacturer: Optional[str] = None
+    model: Optional[str] = None
     endpoints: dict[int, DeviceSignatureEndpoint]
+
+    @field_validator("node_descriptor", mode="before", check_fields=False)
+    @classmethod
+    def convert_node_descriptor(
+        cls, node_descriptor: ZigpyNodeDescriptor
+    ) -> NodeDescriptor:
+        """Convert node descriptor."""
+        if isinstance(node_descriptor, ZigpyNodeDescriptor):
+            return node_descriptor.as_dict()
+        return node_descriptor
 
 
 class BaseDevice(BaseModel):
@@ -478,15 +573,30 @@ class BaseDevice(BaseModel):
     model: str
     name: str
     quirk_applied: bool
-    quirk_class: Union[str, None]
+    quirk_class: Union[str, None] = None
     manufacturer_code: int
     power_source: str
-    lqi: Union[int, None]
-    rssi: Union[int, None]
+    lqi: Union[int, None] = None
+    rssi: Union[int, None] = None
     last_seen: str
     available: bool
     device_type: Literal["Coordinator", "Router", "EndDevice"]
     signature: DeviceSignature
+
+    @field_validator("nwk", mode="before", check_fields=False)
+    @classmethod
+    def convert_nwk(cls, nwk: NWK) -> str:
+        """Convert nwk to hex."""
+        if isinstance(nwk, NWK):
+            return repr(nwk)
+        return nwk
+
+    @field_serializer("ieee")
+    def serialize_ieee(self, ieee):
+        """Customize how ieee is serialized."""
+        if isinstance(ieee, EUI64):
+            return str(ieee)
+        return ieee
 
 
 class Device(BaseDevice):
@@ -514,12 +624,30 @@ class Device(BaseDevice):
                 ElectricalMeasurementEntity,
                 SmartEnergyMeteringEntity,
                 ThermostatEntity,
+                DeviceCounterSensorEntity,
             ],
             Field(discriminator="class_name"),  # noqa: F821
         ],
     ]
     neighbors: list[Any]
     device_automation_triggers: dict[str, dict[str, Any]]
+
+    @field_validator("entities", mode="before", check_fields=False)
+    @classmethod
+    def convert_entities(cls, entities: dict) -> dict:
+        """Convert entities keys from tuple to string."""
+        if all(isinstance(k, tuple) for k in entities):
+            return {f"{k[0]}.{k[1]}": v for k, v in entities.items()}
+        assert all(isinstance(k, str) for k in entities)
+        return entities
+
+    @field_validator("device_automation_triggers", mode="before", check_fields=False)
+    @classmethod
+    def convert_device_automation_triggers(cls, triggers: dict) -> dict:
+        """Convert device automation triggers keys from tuple to string."""
+        if all(isinstance(k, tuple) for k in triggers):
+            return {f"{k[0]}~{k[1]}": v for k, v in triggers.items()}
+        return triggers
 
 
 class GroupEntity(BaseEntity):
@@ -553,8 +681,9 @@ class SwitchGroupEntity(GroupEntity):
 class GroupMember(BaseModel):
     """Group member model."""
 
+    ieee: EUI64
     endpoint_id: int
-    device: Device
+    device: Device = Field(alias="device_info")
     entities: dict[
         str,
         Annotated[
@@ -597,12 +726,31 @@ class Group(BaseModel):
         ],
     ]
 
-    @validator("members", pre=True, always=True, each_item=False, check_fields=False)
-    def convert_member_ieee(
-        cls, members: dict[str, dict], values: dict[str, Any], **kwargs: Any
-    ) -> dict[EUI64, Device]:
-        """Convert member IEEE to EUI64."""
-        return {EUI64.convert(k): GroupMember(**v) for k, v in members.items()}
+    @field_validator("members", mode="before", check_fields=False)
+    @classmethod
+    def convert_members(cls, members: dict | list[dict]) -> dict:
+        """Convert members."""
+
+        converted_members = {}
+        if isinstance(members, dict):
+            return {EUI64.convert(k): v for k, v in members.items()}
+        for member in members:
+            if "device" in member:
+                ieee = member["device"]["ieee"]
+            else:
+                ieee = member["device_info"]["ieee"]
+            if isinstance(ieee, str):
+                ieee = EUI64.convert(ieee)
+            elif isinstance(ieee, list) and not isinstance(ieee, EUI64):
+                ieee = EUI64.deserialize(ieee)[0]
+            converted_members[ieee] = member
+        return converted_members
+
+    @field_serializer("members")
+    def serialize_members(self, members):
+        """Customize how members are serialized."""
+        data = {str(k): v.model_dump(by_alias=True) for k, v in members.items()}
+        return data
 
 
 class GroupMemberReference(BaseModel):

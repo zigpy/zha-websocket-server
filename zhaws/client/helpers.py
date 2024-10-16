@@ -1,10 +1,12 @@
 """Helper classes for zhaws.client."""
+
 from __future__ import annotations
 
 from typing import Any, Literal, cast
 
 from zigpy.types.named import EUI64
 
+from zha.application.discovery import Platform
 from zhaws.client.client import Client
 from zhaws.client.model.commands import (
     CommandResponse,
@@ -59,7 +61,6 @@ from zhaws.server.platforms.lock.api import (
     LockUnlockCommand,
 )
 from zhaws.server.platforms.number.api import NumberSetValueCommand
-from zhaws.server.platforms.registries import Platform
 from zhaws.server.platforms.select.api import SelectSelectOptionCommand
 from zhaws.server.platforms.siren.api import SirenTurnOffCommand, SirenTurnOnCommand
 from zhaws.server.platforms.switch.api import SwitchTurnOffCommand, SwitchTurnOnCommand
@@ -215,7 +216,7 @@ class SirenHelper:
             ieee=siren_platform_entity.device_ieee,
             unique_id=siren_platform_entity.unique_id,
             duration=duration,
-            volume_level=volume_level,
+            level=volume_level,
             tone=tone,
         )
         return await self._client.async_send_command(command)
@@ -687,6 +688,7 @@ class PlatformEntityHelper:
         command = PlatformEntityRefreshStateCommand(
             ieee=platform_entity.device_ieee,
             unique_id=platform_entity.unique_id,
+            platform=platform_entity.platform,
         )
         return await self._client.async_send_command(command)
 

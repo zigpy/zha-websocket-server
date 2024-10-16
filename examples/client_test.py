@@ -1,4 +1,5 @@
 """Client tests for zhawss."""
+
 import asyncio
 import logging
 
@@ -27,19 +28,7 @@ async def main() -> None:
     async with Controller("ws://localhost:8001/") as controller:
         await controller.clients.listen()
 
-        await controller.network.start_network(
-            {
-                "radio_type": "ezsp",
-                "device": {
-                    "path": "/dev/cu.GoControl_zigbee\u0011",
-                    "flow_control": "software",
-                    "baudrate": 57600,
-                },
-                "database_path": "./zigbee.db",
-                "enable_quirks": True,
-                "message_id": 1,
-            }
-        )
+        await controller.network.start_network()
 
         await controller.load_devices()
         await controller.load_groups()
@@ -93,7 +82,7 @@ async def main() -> None:
 
                 await asyncio.sleep(3)
             except Exception as err:
-                _LOGGER.error(err)
+                _LOGGER.exception("Exception testing lights", exc_info=err)
 
         if test_switches:
             try:
@@ -115,10 +104,9 @@ async def main() -> None:
 
                 await asyncio.sleep(3)
             except Exception as err:
-                _LOGGER.error(err)
+                _LOGGER.exception("Exception testing switches", exc_info=err)
 
         if test_alarm_control_panel:
-
             try:
                 alarm_control_panel_platform_entity = devices[
                     "00:0d:6f:00:05:65:83:f2"
@@ -130,10 +118,9 @@ async def main() -> None:
 
                 await asyncio.sleep(3)
             except Exception as err:
-                _LOGGER.error(err)
+                _LOGGER.exception("Exception testing alarm control panel", exc_info=err)
 
         if test_locks:
-
             try:
                 lock_platform_entity = devices[
                     "68:0a:e2:ff:fe:6a:22:af"
@@ -147,10 +134,9 @@ async def main() -> None:
 
                 await asyncio.sleep(3)
             except Exception as err:
-                _LOGGER.error(err)
+                _LOGGER.exception("Exception testing locks", exc_info=err)
 
         if test_buttons:
-
             try:
                 button_platform_entity = devices[
                     "04:cf:8c:df:3c:7f:c5:a7"
@@ -160,7 +146,7 @@ async def main() -> None:
 
                 await asyncio.sleep(3)
             except Exception as err:
-                _LOGGER.error(err)
+                _LOGGER.exception("Exception testing buttons", exc_info=err)
 
         """TODO turn this into an example for how to create a group with the client
         await controller.groups_helper.create_group(

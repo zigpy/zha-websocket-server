@@ -1,15 +1,16 @@
 """Proxy object for the client side objects."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from zha.event import EventBase
 from zhaws.client.model.events import PlatformEntityStateChangedEvent
 from zhaws.client.model.types import (
     ButtonEntity,
     Device as DeviceModel,
     Group as GroupModel,
 )
-from zhaws.event import EventBase
 
 if TYPE_CHECKING:
     from zhaws.client.client import Client
@@ -40,11 +41,15 @@ class BaseProxyObject(EventBase):
         self, event: PlatformEntityStateChangedEvent
     ) -> None:
         """Proxy the firing of an entity event."""
-        entity = self._proxied_object.entities.get(event.platform_entity.unique_id)
+        entity = self._proxied_object.entities.get(
+            f"{event.platform_entity.platform}.{event.platform_entity.unique_id}"
+            if event.group is None
+            else event.platform_entity.unique_id
+        )
         if entity is None:
             if isinstance(self._proxied_object, DeviceModel):
                 raise ValueError(
-                    "Entity not found: %s", event.platform_entity.unique_id
+                    f"Entity not found: {event.platform_entity.unique_id}",
                 )
             return  # group entities are updated to get state when created so we may not have the entity yet
         if not isinstance(entity, ButtonEntity):
