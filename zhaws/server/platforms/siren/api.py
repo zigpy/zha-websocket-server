@@ -20,9 +20,9 @@ class SirenTurnOnCommand(PlatformEntityCommand):
 
     command: Literal[APICommands.SIREN_TURN_ON] = APICommands.SIREN_TURN_ON
     platform: str = Platform.SIREN
-    duration: Union[int, None]
-    tone: Union[int, None]
-    volume_level: Union[int, None]
+    duration: Union[int, None] = None
+    tone: Union[int, None] = None
+    level: Union[int, None] = None
 
 
 @decorators.websocket_command(SirenTurnOnCommand)

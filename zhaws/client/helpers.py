@@ -216,7 +216,7 @@ class SirenHelper:
             ieee=siren_platform_entity.device_ieee,
             unique_id=siren_platform_entity.unique_id,
             duration=duration,
-            volume_level=volume_level,
+            level=volume_level,
             tone=tone,
         )
         return await self._client.async_send_command(command)
