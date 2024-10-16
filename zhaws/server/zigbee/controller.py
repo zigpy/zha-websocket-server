@@ -285,29 +285,53 @@ class Controller(EventBase):
                 EVENT: event,
             }
         )
+        zha_group = self.gateway.groups[group["group_id"]]
+        for entity in zha_group.group_entities.values():
+            if self._handle_event_protocol not in entity._global_listeners:
+                entity.on_all_events(self._handle_event_protocol)
 
     def handle_state_changed(self, event: EntityStateChangedEvent) -> None:
         """Handle platform entity state changed event."""
 
-        state = (
-            self.gateway.devices[event.device_ieee]
-            .platform_entities[(event.platform, event.unique_id)]
-            .state
-        )
-        self.server.client_manager.broadcast(
-            {
-                "state": state,
-                "platform_entity": {
-                    "unique_id": event.unique_id,
-                    "platform": event.platform,
-                },
-                "endpoint": {
-                    "id": event.endpoint_id,
-                    "unique_id": str(event.endpoint_id),
-                },
-                "device": {"ieee": str(event.device_ieee)},
-                MESSAGE_TYPE: MessageTypes.EVENT,
-                EVENT: PlatformEntityEvents.PLATFORM_ENTITY_STATE_CHANGED,
-                EVENT_TYPE: EventTypes.PLATFORM_ENTITY_EVENT,
-            }
-        )
+        if not event.device_ieee:
+            state = (
+                self.gateway.groups[event.group_id]
+                .group_entities[event.unique_id]
+                .state
+            )
+            self.server.client_manager.broadcast(
+                {
+                    "state": state,
+                    "platform_entity": {
+                        "unique_id": event.unique_id,
+                        "platform": event.platform,
+                    },
+                    "group": {"id": event.group_id},
+                    MESSAGE_TYPE: MessageTypes.EVENT,
+                    EVENT: PlatformEntityEvents.PLATFORM_ENTITY_STATE_CHANGED,
+                    EVENT_TYPE: EventTypes.PLATFORM_ENTITY_EVENT,
+                }
+            )
+        else:
+            state = (
+                self.gateway.devices[event.device_ieee]
+                .platform_entities[(event.platform, event.unique_id)]
+                .state
+            )
+            self.server.client_manager.broadcast(
+                {
+                    "state": state,
+                    "platform_entity": {
+                        "unique_id": event.unique_id,
+                        "platform": event.platform,
+                    },
+                    "endpoint": {
+                        "id": event.endpoint_id,
+                        "unique_id": str(event.endpoint_id),
+                    },
+                    "device": {"ieee": str(event.device_ieee)},
+                    MESSAGE_TYPE: MessageTypes.EVENT,
+                    EVENT: PlatformEntityEvents.PLATFORM_ENTITY_STATE_CHANGED,
+                    EVENT_TYPE: EventTypes.PLATFORM_ENTITY_EVENT,
+                }
+            )
