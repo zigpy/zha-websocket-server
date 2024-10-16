@@ -32,7 +32,7 @@ async def execute_platform_entity_command(
             )
         else:
             assert command.group_id
-            group = server.controller.get_group(command.group_id)
+            group = server.controller.gateway.get_group(command.group_id)
             platform_entity = group.group_entities[command.unique_id]
     except ValueError as err:
         _LOGGER.exception(
