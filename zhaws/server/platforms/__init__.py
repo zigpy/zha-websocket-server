@@ -13,7 +13,7 @@ from zhaws.server.websocket.api.model import WebSocketCommand
 class PlatformEntityCommand(WebSocketCommand):
     """Base class for platform entity commands."""
 
-    ieee: Union[EUI64, None]
+    ieee: Union[EUI64, None] = None
     group_id: Union[int, None] = None
     unique_id: str
     platform: Platform
