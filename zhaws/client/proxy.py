@@ -43,6 +43,8 @@ class BaseProxyObject(EventBase):
         """Proxy the firing of an entity event."""
         entity = self._proxied_object.entities.get(
             f"{event.platform_entity.platform}.{event.platform_entity.unique_id}"
+            if event.group is None
+            else event.platform_entity.unique_id
         )
         if entity is None:
             if isinstance(self._proxied_object, DeviceModel):
